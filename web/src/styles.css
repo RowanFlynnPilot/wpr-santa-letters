@@ -1,8 +1,10 @@
 /* Letters to Santa. WPR's cream, ink and teal. The page is mail bound for the North Pole: the title
    sits on an airmail envelope (red and teal stripes) whose stamp is the presenting sponsor, and every
-   letter is set on the ruled paper children learn to print on (a solid baseline, a dashed midline,
-   a red margin), with its name, age and town filled into the blanks across the top. The envelope is
-   the one loud thing; the letters stay quiet so the children's words carry the page. */
+   letter is a sheet of ruled paper with its name, age and town filled into the blanks across the top:
+   the primary-ruled sheet children learn to print on (a solid baseline, a dashed midline, a red
+   margin), a notebook page or a yellow pad, by the letter. A photo of the handwritten letter leads its
+   sheet, and a small red postmark carries the day it arrived. The envelope is the one loud thing; the
+   letters stay quiet so the children's words carry the page. */
 
 :root {
   --paper: #f6f2e9; /* WPR cream */
@@ -378,6 +380,8 @@ img {
   width: 8.5rem;
   aspect-ratio: 4 / 5;
   padding: 0.85rem;
+  /* The name set in type sizes itself to this box (.stamp-name). */
+  container-type: inline-size;
   background: #fff;
   /* The stamp's printed frame, inside the perforations. */
   box-shadow: inset 0 0 0 7px #fff, inset 0 0 0 8px var(--line);
@@ -398,18 +402,28 @@ img {
   object-fit: contain;
 }
 
+/* A sponsor without a logo yet: its name in type, sized so its widest word fits the stamp whole on
+   every stamp (the envelope's, a phone's, the strip's). --widest is that word's width in average
+   letters (looks.ts); a letter of this face at weight 650 sets about 0.62em wide, and 0.66 leaves a little air. A word never splits:
+   "Northwoods" once read "Northwoo / ds". */
 .stamp-name {
   max-width: 100%;
-  font: 650 0.9375rem / 1.15 var(--display);
+  font: 650 0.75rem / 1.15 var(--display);
   text-align: center;
+  text-wrap: balance;
+  overflow-wrap: normal;
+  hyphens: none;
 }
 
-/* A name with a long word ("IncredibleBank") is set a step down so the word fits whole. */
-.stamp-name-long {
-  font-size: 0.75rem;
+@supports (font-size: 1cqi) {
+  .stamp-name {
+    font-size: clamp(0.4375rem, calc((100cqi - var(--inset, 0px)) / (var(--widest, 8) * 0.66)), 0.9375rem);
+  }
 }
 
 .stamp-demo {
+  /* Its dashed box takes room from the name. */
+  --inset: 1.25rem;
   padding: 0.5rem;
   border: 2px dashed var(--bark);
   color: var(--bark);
@@ -454,14 +468,6 @@ img {
   .stamp-face {
     width: 5rem;
     padding: 0.5rem;
-  }
-
-  .stamp-name {
-    font-size: 0.75rem;
-  }
-
-  .stamp-name-long {
-    font-size: 0.5rem;
   }
 
   .stamp-caption {
@@ -514,9 +520,43 @@ img {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.25rem;
-  padding: 1rem 1.25rem 1.25rem 0;
+  padding: 1rem 1.25rem 0.75rem 0;
   border: 1px solid var(--line);
-  background: var(--sheet);
+  background-color: var(--sheet);
+}
+
+/* Three kinds of paper, by the letter (looks.ts), so the mailbag reads as a pile of different mail.
+   The default is the primary-ruled sheet above. Each stays pale: ink on any of them is over 13:1. */
+
+/* A notebook page: plain blue rules and three punched holes down the margin. */
+.letter[data-paper="notebook"] {
+  --sheet: #fdfdfb;
+  --ruled: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='32' viewBox='0 0 12 32' preserveAspectRatio='none'%3E%3Cpath d='M0 23.5h12' stroke='%23b4c8e2' stroke-width='1'/%3E%3C/svg%3E");
+  --hole: radial-gradient(circle, var(--paper) 0 0.28rem, var(--line) 0.3rem 0.36rem, transparent 0.38rem);
+  background-image: var(--hole), var(--hole), var(--hole);
+  background-size: 1rem 1rem;
+  background-repeat: no-repeat;
+  background-position: 0.5rem 12%, 0.5rem 50%, 0.5rem 88%;
+}
+
+/* A yellow pad: its glued top edge, gray-blue rules and a double margin. */
+.letter[data-paper="pad"] {
+  --sheet: #fcf7d6;
+  --ruled: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='32' viewBox='0 0 12 32' preserveAspectRatio='none'%3E%3Cpath d='M0 23.5h12' stroke='%23b3c3cf' stroke-width='1'/%3E%3C/svg%3E");
+  border-top: 0.5rem solid #8a4a3f;
+}
+
+.letter[data-paper="pad"] .letter-body {
+  background-image:
+    linear-gradient(
+      to right,
+      transparent calc(var(--margin) - 0.75rem - 3px),
+      var(--margin-red) calc(var(--margin) - 0.75rem - 3px) calc(var(--margin) - 0.75rem - 2px),
+      transparent calc(var(--margin) - 0.75rem - 2px) calc(var(--margin) - 0.75rem),
+      var(--margin-red) calc(var(--margin) - 0.75rem) calc(var(--margin) - 0.75rem + 1px),
+      transparent calc(var(--margin) - 0.75rem + 1px)
+    ),
+    var(--ruled);
 }
 
 /* The blanks across the top of the page, filled in. */
@@ -571,31 +611,53 @@ textarea.ruled {
   margin-top: var(--row);
 }
 
+/* The photo of the handwritten letter leads, the width of the page. A tall one shows its top in a 4:5
+   frame (LetterCard sets the ratio), held open before it loads; opened, it shows whole. */
 .letter-photo {
   display: grid;
   justify-items: start;
   gap: 0.35rem;
-  margin: 0.75rem 0 0 var(--margin);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--teal-deep);
-  font: 600 0.875rem var(--body);
-  text-align: left;
-  cursor: pointer;
+  margin: 0.5rem 0 0.75rem var(--margin);
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .letter-photo img {
-  max-height: 12rem;
+  width: 100%;
   border: 1px solid var(--line);
+  background: var(--paper);
+  object-fit: cover;
+  object-position: top;
 }
 
-.letter-photo[aria-expanded="true"] img {
-  max-height: none;
+.letter-photo[data-cropped] img {
+  cursor: zoom-in;
 }
 
-.letter-photo-label {
-  text-decoration: underline;
+.letter-photo[data-open] img {
+  cursor: zoom-out;
+}
+
+/* Under the words: Share on the left, and in the corner the day the letter reached the mailbag, in the
+   same red ink as the postmark on Santa's reply. */
+.letter-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding-left: var(--margin);
+}
+
+.letter-foot .postmark {
+  flex: none;
+  width: 4.25rem;
+  margin-left: auto;
+  color: var(--airmail);
+  opacity: 0.8;
+  mix-blend-mode: multiply;
+  rotate: -9deg;
+  font-family: var(--body);
 }
 
 /* The letter a link opened, under the envelope, before the rest. */
@@ -619,7 +681,7 @@ textarea.ruled {
   display: grid;
   justify-items: start;
   gap: 0.25rem;
-  margin: 0.5rem 0 0 var(--margin);
+  padding-bottom: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
 }
