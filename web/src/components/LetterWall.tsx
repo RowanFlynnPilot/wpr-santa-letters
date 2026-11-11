@@ -32,7 +32,8 @@ function useColumns() {
 // Roughly how tall a letter will be, in ruled rows: enough to keep columns even without measuring.
 function rows(letter: Letter): number {
   const lines = letter.body.split("\n").reduce((n, line) => n + Math.max(1, Math.ceil(line.length / 34)), 0);
-  return 3 + lines + (letter.photo_id ? 7 : 0);
+  // The blanks and the foot, the words, and a photo's frame (4:5 at most, the width of a column).
+  return 5 + lines + (letter.photo_id ? 10 : 0);
 }
 
 function stack(letters: Letter[], columns: number): Letter[][] {

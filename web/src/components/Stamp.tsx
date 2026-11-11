@@ -1,4 +1,6 @@
+import type { CSSProperties } from "react";
 import { track } from "../analytics";
+import { widestWord } from "../looks";
 import { sponsorHref, type Placement } from "../sales";
 import { logoUrl } from "../storage";
 import type { Sponsor } from "../types";
@@ -19,7 +21,11 @@ export function Stamp({ sponsor, placement }: { sponsor: Sponsor | undefined; pl
   const face = sponsor.logo_path ? (
     <img src={logoUrl(sponsor.logo_path)} alt={sponsor.name} />
   ) : (
-    <span className={["stamp-name", longestWord(sponsor.name) > 10 && "stamp-name-long", sponsor.demo && "stamp-demo"].filter(Boolean).join(" ")}>
+    // The type is sized so the name's widest word fits the stamp whole, at any stamp size (styles.css).
+    <span
+      className={sponsor.demo ? "stamp-name stamp-demo" : "stamp-name"}
+      style={{ "--widest": widestWord(sponsor.name) } as CSSProperties}
+    >
       {sponsor.name}
     </span>
   );
@@ -43,8 +49,4 @@ export function Stamp({ sponsor, placement }: { sponsor: Sponsor | undefined; pl
       <p className="stamp-caption">Presented by {sponsor.name}</p>
     </div>
   );
-}
-
-function longestWord(name: string): number {
-  return Math.max(...name.split(/\s+/).map((word) => word.length));
 }

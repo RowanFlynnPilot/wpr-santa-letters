@@ -69,7 +69,7 @@ export function Mailbag() {
             <>
               <h2>{possessive(linked.first_name)} letter</h2>
               <div className="linked-card">
-                <LetterCard letter={linked} share />
+                <LetterCard letter={linked} share large />
               </div>
             </>
           ) : (

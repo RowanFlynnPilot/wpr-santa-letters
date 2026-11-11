@@ -3,6 +3,7 @@
 // so it prints as one sheet. It speaks to the child by first name and town and promises nothing:
 // no gifts, no lists. The presenting sponsor's stamp sits in the corner, as on the mailbag's envelope.
 import { track } from "../analytics";
+import { Postmark } from "../components/Postmark";
 import { Stamp } from "../components/Stamp";
 import { apDate } from "../format";
 import { LINKED_FROM, LINKED_LETTER } from "../linked";
@@ -67,7 +68,7 @@ function SantasReply({ letter, sponsor }: { letter: Letter; sponsor: ReturnType<
             <p className="reply-place">The North Pole</p>
           </div>
           <div className="reply-marks">
-            <Postmark date={today} />
+            <Postmark place="North Pole" date={today} label={`Postmarked North Pole, ${today}`} cancelled />
             <Stamp sponsor={sponsor} placement="santa-reply" />
           </div>
         </header>
@@ -83,35 +84,5 @@ function SantasReply({ letter, sponsor }: { letter: Letter; sponsor: ReturnType<
         </footer>
       </article>
     </main>
-  );
-}
-
-// A round North Pole postmark in red ink, with the day it's printed and wavy cancellation lines.
-function Postmark({ date }: { date: string }) {
-  return (
-    <svg className="postmark" viewBox="0 0 168 96" role="img" aria-label={`Postmarked North Pole, ${date}`}>
-      <defs>
-        <path id="postmark-top" d="M 17 48 A 31 31 0 0 1 79 48" />
-        <path id="postmark-bottom" d="M 13 48 A 35 35 0 0 0 83 48" />
-      </defs>
-      <circle cx="48" cy="48" r="40" fill="none" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="48" cy="48" r="25" fill="none" stroke="currentColor" strokeWidth="1" />
-      <text fontSize="9.5" letterSpacing="1.2" fill="currentColor" textAnchor="middle">
-        <textPath href="#postmark-top" startOffset="50%">
-          NORTH POLE
-        </textPath>
-      </text>
-      <text fontSize="8" letterSpacing="4" fill="currentColor" textAnchor="middle">
-        <textPath href="#postmark-bottom" startOffset="50%">
-          ★★★
-        </textPath>
-      </text>
-      <text x="48" y="52" fontSize="11" textAnchor="middle" fill="currentColor" fontWeight="700">
-        {date.toUpperCase()}
-      </text>
-      {[34, 44, 54, 64].map((y) => (
-        <path key={y} d={`M 92 ${y} q 9 -6 18 0 t 18 0 t 18 0 t 18 0`} fill="none" stroke="currentColor" strokeWidth="2" />
-      ))}
-    </svg>
   );
 }
