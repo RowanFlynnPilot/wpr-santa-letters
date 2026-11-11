@@ -12,3 +12,7 @@ samples/
 # Browser test output (web/tests); the approved screenshots in web/tests/__screenshots__ are committed.
 test-results/
 playwright-report/
+
+# Sponsor sheet: working files (the .html and .pdf beside them are the ones to send).
+docs/sponsor-sheet/preview.png
+docs/sponsor-sheet/page.html

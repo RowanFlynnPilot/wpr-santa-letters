@@ -8,8 +8,16 @@ import type { Page, Route } from "@playwright/test";
 
 const file = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
-// The day the tests run on: letters are open, with 13 days left to write (Dec. 5 to Dec. 18).
-export const TODAY = new Date("2026-12-05T18:00:00Z");
+// The day the tests run on, for each phase of the season (the database decides the phase; here it's given).
+// Open is the default: Dec. 5, with 13 days left to write.
+export type Phase = "upcoming" | "open" | "closed" | "delivered";
+export const DAYS: Record<Phase, Date> = {
+  upcoming: new Date("2026-11-20T18:00:00Z"),
+  open: new Date("2026-12-05T18:00:00Z"),
+  closed: new Date("2026-12-20T18:00:00Z"),
+  delivered: new Date("2026-12-23T18:00:00Z"),
+};
+export const TODAY = DAYS.open;
 
 export const SEASON = {
   id: "00000000-0000-4000-8000-0000000000aa",
@@ -57,8 +65,13 @@ const json = (route: Route, body: unknown, headers: Record<string, string> = {})
     body: JSON.stringify(body),
   });
 
-export async function mockBackend(page: Page, options: { pick?: boolean } = {}) {
-  await page.clock.setFixedTime(TODAY);
+export const PRIZE = { id: "00000000-0000-4000-8000-0000000000d1", sponsor_id: SPONSOR.id, description: "a $50 savings starter", created_at: at(1, 12) };
+
+export async function mockBackend(page: Page, options: { pick?: boolean; sponsors?: unknown[]; phase?: Phase } = {}) {
+  const phase = options.phase ?? "open";
+  // Before letters open the mailbag is empty; on delivery day the first letter has won the prize.
+  const letters = phase === "upcoming" ? [] : LETTERS;
+  await page.clock.setFixedTime(DAYS[phase]);
 
   // Analytics and the spam check are other people's services: not loaded in tests.
   await page.route(/plausible\.io|challenges\.cloudflare\.com/, (route) => route.abort());
@@ -80,22 +93,23 @@ export async function mockBackend(page: Page, options: { pick?: boolean } = {}) 
     }
     switch (table) {
       case "current_season":
-        return json(route, SEASON);
+        return json(route, { ...SEASON, phase });
       case "sponsors":
-        return json(route, [SPONSOR]);
+        return json(route, options.sponsors ?? [SPONSOR]);
       case "prizes":
-        return json(route, [{ id: "00000000-0000-4000-8000-0000000000d1", sponsor_id: SPONSOR.id, description: "a $50 savings starter", created_at: at(1, 12) }]);
+        return json(route, [PRIZE]);
       case "prize_winners":
-        return json(route, []);
+        // Readers get winners only once the letters are delivered (RLS, in the real database).
+        return json(route, phase === "delivered" ? [{ prize_id: PRIZE.id, letter_id: LETTERS[0].id }] : []);
       case "featured_letters":
-        return json(route, options.pick === false ? [] : [{ letter_id: PICK.id }]);
+        return json(route, options.pick === false || letters.length === 0 ? [] : [{ letter_id: PICK.id }]);
       case "mailbag": {
         if (request.method() === "HEAD") {
-          return route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "access-control-expose-headers": "content-range", "content-range": `0-0/${LETTERS.length}` } });
+          return route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "access-control-expose-headers": "content-range", "content-range": `0-0/${letters.length}` } });
         }
         const one = url.searchParams.get("id")?.replace("eq.", "");
-        const limit = Number(url.searchParams.get("limit")) || LETTERS.length;
-        return json(route, one ? LETTERS.filter((l) => l.id === one) : LETTERS.slice(0, limit));
+        const limit = Number(url.searchParams.get("limit")) || letters.length;
+        return json(route, one ? letters.filter((l) => l.id === one) : letters.slice(0, limit));
       }
       default:
         return route.fulfill({ status: 404, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: "{}" });

@@ -7,6 +7,9 @@
 #                                      change a page; look at the new ones (web/tests/__screenshots__)
 #                                      before committing them
 #   scripts/browser-tests.sh og        remake web/public/og-image.png, the picture a pasted link shows
+#   scripts/browser-tests.sh sheet     print the sponsor sheet (docs/sponsor-sheet, after its build.py) to PDF
+#   scripts/browser-tests.sh shots     retake the sales pictures in docs/media: the site in its preview
+#                                      mode ("Your business here"), for the sponsor sheet
 #
 # The repo is copied into the container, so its Linux node_modules never touch the ones on this machine.
 set -euo pipefail
@@ -18,9 +21,11 @@ WEB="$(cd web && (pwd -W 2>/dev/null || pwd))"
 ARGS=""
 [ "${1:-run}" = "update" ] && ARGS="--update-snapshots"
 RUN="CI=1 npx playwright test $ARGS"
+[ "${1:-run}" = "shots" ] && RUN="SPONSOR_SHOTS=1 npx playwright test sponsor-shots --project=chromium && mkdir -p /repo-docs/media && cp sponsor-shots/* /repo-docs/media/"
+[ "${1:-run}" = "sheet" ] && RUN="node tests/sponsor-sheet-pdf.mjs /repo-docs/sponsor-sheet"
 [ "${1:-run}" = "og" ] && RUN="node tests/og-image.mjs && cp public/og-image.png /repo-web/public/og-image.png"
 
-MSYS_NO_PATHCONV=1 docker run --rm --ipc=host -v "$WEB:/repo-web" "$IMAGE" bash -c "
+MSYS_NO_PATHCONV=1 docker run --rm --ipc=host -v "$WEB:/repo-web" -v "$WEB/../docs:/repo-docs" "$IMAGE" bash -c "
   set -e
   mkdir /work && cd /repo-web
   tar --exclude=./node_modules --exclude=./dist --exclude=./test-results --exclude=./playwright-report -cf - . | tar -xf - -C /work
