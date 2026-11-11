@@ -6,6 +6,7 @@
 #   scripts/browser-tests.sh update    re-approve the screenshots after a change that was meant to
 #                                      change a page; look at the new ones (web/tests/__screenshots__)
 #                                      before committing them
+#   scripts/browser-tests.sh og        remake web/public/og-image.png, the picture a pasted link shows
 #
 # The repo is copied into the container, so its Linux node_modules never touch the ones on this machine.
 set -euo pipefail
@@ -16,6 +17,8 @@ IMAGE="mcr.microsoft.com/playwright:v${VERSION}-noble"
 WEB="$(cd web && (pwd -W 2>/dev/null || pwd))"
 ARGS=""
 [ "${1:-run}" = "update" ] && ARGS="--update-snapshots"
+RUN="CI=1 npx playwright test $ARGS"
+[ "${1:-run}" = "og" ] && RUN="node tests/og-image.mjs && cp public/og-image.png /repo-web/public/og-image.png"
 
 MSYS_NO_PATHCONV=1 docker run --rm --ipc=host -v "$WEB:/repo-web" "$IMAGE" bash -c "
   set -e
@@ -23,7 +26,7 @@ MSYS_NO_PATHCONV=1 docker run --rm --ipc=host -v "$WEB:/repo-web" "$IMAGE" bash 
   tar --exclude=./node_modules --exclude=./dist --exclude=./test-results --exclude=./playwright-report -cf - . | tar -xf - -C /work
   cd /work && npm ci --no-audit --no-fund >/dev/null
   status=0
-  CI=1 npx playwright test $ARGS || status=\$?
+  $RUN || status=\$?
   mkdir -p /repo-web/tests/__screenshots__
   cp -r tests/__screenshots__/. /repo-web/tests/__screenshots__/ 2>/dev/null || true
   rm -rf /repo-web/test-results && cp -r test-results /repo-web/test-results 2>/dev/null || true

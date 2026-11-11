@@ -1,6 +1,7 @@
 // A made-up mailbag for the browser tests, and the answers the app would get from Supabase, served from
 // here instead (pages.spec.ts). No backend runs: the tests exercise the built app against fixed data and a
-// fixed day, so a screenshot changes only when the page does. Nobody here is a real child.
+// fixed day, so a screenshot changes only when the page does. The fonts are the page's own (src/fonts),
+// so nothing here needs the network. Nobody here is a real child.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Page, Route } from "@playwright/test";
@@ -56,34 +57,11 @@ const json = (route: Route, body: unknown, headers: Record<string, string> = {})
     body: JSON.stringify(body),
   });
 
-// The page's own fonts, from files in the repo's dev dependencies rather than Google's servers, so the
-// tests measure the real letterforms (the stamp's fit depends on them) and don't depend on the network.
-const FONTS = `
-@font-face { font-family: "Fraunces"; font-style: normal; font-weight: 100 900; font-display: block;
-  src: url("https://fonts.test/fraunces.woff2") format("woff2"); }
-@font-face { font-family: "Public Sans"; font-style: normal; font-weight: 100 900; font-display: block;
-  src: url("https://fonts.test/public-sans.woff2") format("woff2"); }`;
-const FONT_FILES: Record<string, string> = {
-  "fraunces.woff2": "../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-full-normal.woff2",
-  "public-sans.woff2": "../node_modules/@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2",
-};
-
 export async function mockBackend(page: Page, options: { pick?: boolean } = {}) {
   await page.clock.setFixedTime(TODAY);
 
-  await page.route("https://fonts.googleapis.com/**", (route) =>
-    route.fulfill({ status: 200, contentType: "text/css", headers: { "access-control-allow-origin": "*" }, body: FONTS }));
-  await page.route("https://fonts.test/**", (route) => {
-    const name = new URL(route.request().url()).pathname.slice(1);
-    return route.fulfill({
-      status: 200,
-      contentType: "font/woff2",
-      headers: { "access-control-allow-origin": "*" },
-      body: readFileSync(file(FONT_FILES[name])),
-    });
-  });
   // Analytics and the spam check are other people's services: not loaded in tests.
-  await page.route(/plausible\.io|challenges\.cloudflare\.com|fonts\.gstatic\.com/, (route) => route.abort());
+  await page.route(/plausible\.io|challenges\.cloudflare\.com/, (route) => route.abort());
 
   await page.route("**/storage/v1/object/public/letter-photos/**", (route) =>
     route.fulfill({
