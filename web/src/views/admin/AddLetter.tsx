@@ -3,7 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { LetterFields } from "../../components/LetterFields";
 import { PhotoField, type ChosenPhoto } from "../../components/PhotoField";
-import { addLetter, loadDraws, notifyPosted, type TypedLetter } from "../../data";
+import { ReadLetter } from "../../components/ReadLetter";
+import { addLetter, loadDraws, notifyPosted, type Reading, type TypedLetter } from "../../data";
 import { apLastDay, possessive } from "../../format";
 import type { Season } from "../../types";
 import { useDraft } from "../../useDraft";
@@ -18,6 +19,8 @@ export function AddLetter({ season }: { season: Season }) {
   const [source, setSource] = useDraft<Source>("add-letter:source", "mail");
   const [fields, setFields] = useDraft("add-letter:fields", BLANK);
   const [photo, setPhoto] = useDraft<ChosenPhoto | null>("add-letter:photo", null);
+  // Claude's reading of the photo, if staff asked for one: what it filled in and what to take out.
+  const [reading, setReading] = useDraft<{ result: Reading; filled: string[] } | null>("add-letter:reading", null);
   const [preparing, setPreparing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +40,11 @@ export function AddLetter({ season }: { season: Season }) {
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
+    // A [?] is a word Claude couldn't read: it never goes up as one.
+    if (fields.body.includes("[?]")) {
+      setError("The letter still has a [?] in it, where Claude couldn’t read a word. Check the photo and fix it first.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setAdded(null);
@@ -60,6 +68,7 @@ export function AddLetter({ season }: { season: Season }) {
       );
       setFields(BLANK);
       setPhoto(null);
+      setReading(null);
       // Ready for the next one in the stack.
       document.querySelector<HTMLInputElement>(".add-letter input[name=first_name]")?.focus();
     } catch (err) {
@@ -104,16 +113,29 @@ export function AddLetter({ season }: { season: Season }) {
 
       <fieldset>
         <legend>The letter</legend>
-        <LetterFields
-          words={fields}
-          onChange={(words) => setFields((current) => ({ ...current, ...words }))}
-        />
+        {/* The photo first: Claude can read it into the boxes below. */}
         <PhotoField
           photo={photo}
-          onChange={setPhoto}
+          onChange={(next) => {
+            setPhoto(next);
+            // A new photo needs a new reading; removing the photo keeps the one already made.
+            if (next) setReading(null);
+          }}
           onPreparing={setPreparing}
           label="Add a photo or scan of the letter (optional)"
           hint="It shows with the letter. Leave it out if it shows a last name, an address or a face."
+        />
+        <ReadLetter
+          photo={photo}
+          mailed={source === "mail"}
+          fields={fields}
+          onFill={(fill) => setFields((current) => ({ ...current, ...fill }))}
+          reading={reading}
+          onReading={setReading}
+        />
+        <LetterFields
+          words={fields}
+          onChange={(words) => setFields((current) => ({ ...current, ...words }))}
         />
       </fieldset>
 

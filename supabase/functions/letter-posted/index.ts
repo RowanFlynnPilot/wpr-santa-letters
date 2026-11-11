@@ -14,6 +14,7 @@ import { createMailer } from "../_shared/email.ts";
 import { optionalEnv, requireEnv, requireNamedKey } from "../_shared/env.ts";
 import { corsHeaders, json } from "../_shared/http.ts";
 import { postedEmail, type PostedNotice } from "../_shared/letter_emails.ts";
+import { requireStaff } from "../_shared/staff.ts";
 
 const supabase = createClient(requireEnv("SUPABASE_URL"), requireNamedKey("SUPABASE_SECRET_KEYS", "default"), {
   auth: { persistSession: false },
@@ -36,16 +37,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
   try {
-    const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
-    const { data: auth } = token ? await supabase.auth.getUser(token) : { data: { user: null } };
-    if (!auth.user) return json({ error: "Sign in again." }, 401);
-    const { data: staff, error: staffError } = await supabase
-      .from("staff")
-      .select("user_id")
-      .eq("user_id", auth.user.id)
-      .maybeSingle();
-    if (staffError) throw staffError;
-    if (!staff) return json({ error: "Staff only." }, 403);
+    const refused = await requireStaff(supabase, req);
+    if (refused) return refused;
 
     const body = await req.json().catch(() => ({}));
     const letterId = typeof body.letter_id === "string" ? body.letter_id.toLowerCase() : "";

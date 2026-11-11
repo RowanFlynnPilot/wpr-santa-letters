@@ -45,6 +45,8 @@ Production (live as of Nov. 10, 2026) is Supabase project `vhimfuaproejbxahjgpr`
    It sends `supabase/templates/magic_link.html` with the subject "Your Letters to Santa sign-in code", code length 6 and expiry 900 seconds, then reads the project back and exits non-zero unless all three stuck. In PowerShell, set the token first with `$env:SUPABASE_ACCESS_TOKEN = '<token>'`.
    Then sign in once at `#/admin` and check the email is WPR's, with a 6-digit code.
 6. **Function secrets.** `supabase secrets set ALLOWED_ORIGIN=https://rowanflynnpilot.github.io TURNSTILE_SECRET_KEY=<the step 2 secret>`
+
+   **Optional: reading mailed letters.** Once Shereen agrees (CLAUDE.md, invariant 24): an API key from https://platform.claude.com/ (WPR's own Anthropic organization; Settings > API Keys, one key named for this project, with a monthly spend limit), then `supabase secrets set ANTHROPIC_API_KEY=sk-ant-...`. Without it, Add a letter says reading is off and staff type letters in. See Reading a mailed letter.
 7. **Emails: a new Resend key.** Resend > API Keys > Create, named for this project ("Sending access" is all it needs), then `supabase secrets set RESEND_API_KEY=re_...`. The emails: a confirmation to the parent when a form letter arrives; when a letter with an email goes up, a note to the parent that links to it and to Santa's reply; and each morning at 7, a digest to the editor of the letters waiting for review, none when nothing waits; replies to the first two reach the editor. Defaults, each overridable with a secret of the same name: `EMAIL_FROM` "Wausau Pilot & Review <santa@wausaupilotandreview.com>", `EMAIL_REPLY_TO` editor@, `STAFF_EMAILS` editor@ (comma-separated, the digest's recipients), `STAFF_PAGE_URL` the `#/admin` page, `MAILBAG_PAGE_URL` the WordPress page, `APP_URL` https://rowanflynnpilot.github.io/wpr-santa-letters/ (where Santa's reply opens). Without the key, letters save and nothing is sent. Each form letter sends two emails over its life (one when it arrives, one when it's posted), plus one digest a morning; a separate key doesn't separate the quota, so the Buck Board still shares the Resend plan's daily limit (100 on the free plan). All three functions read the same secrets.
 8. **Deploy.** Merge to `main` through a PR (never a direct push; CLAUDE.md). CI tests, pushes migrations, deploys the functions and publishes the web app, but each deploy runs only when its own files changed, so for a first deploy run Supabase and Pages by hand from the Actions tab (from `main`). From here on, migrations 0001–0008 are applied and never edited (CLAUDE.md, invariant 23).
 9. **The season and the digest's Vault secrets.** In the SQL editor, run `supabase/seasons/2026.sql` once. Then give the morning digest's job the project's address and secret key through the dashboard's **Vault screen** (Integrations > Vault > Secrets > Add new secret), not with `vault.create_secret` in the SQL editor as migration 0008's comment says. The names must be exact; the job looks them up by name:
@@ -58,6 +60,23 @@ Production (live as of Nov. 10, 2026) is Supabase project `vhimfuaproejbxahjgpr`
    ```
 10. **Staff.** Authentication > Users > Add user (auto-confirm, any long password): `editor@wausaupilotandreview.com` for Shereen and `rowan.flynn@wausaupilotandreview.com`, then insert both into `staff` (CLAUDE.md, Operations). Shereen signs in at https://rowanflynnpilot.github.io/wpr-santa-letters/#/admin with editor@; the 6-digit code arrives in that inbox, so anyone who reads editor@ can sign in, and the morning digest lands there too, with a link to the same page. Sponsors and prizes go in as Chris closes them (CLAUDE.md, Operations).
 11. **Before Nov. 27**, with the season's dates moved to open (CLAUDE.md, Operations): one real letter from an iPhone, photo included, through the WordPress page; check the confirmation arrives, and the next morning, the digest naming it; post it in `#/admin` and check the family's note arrives, its link opens the letter and its Santa's reply link opens a reply that prints on one page; then take it down and put the dates back. A digest can be sent sooner by running the job's command (`select command from cron.job where jobname = 'santa-letters-staff-digest';`) in the SQL editor.
+
+## Reading a mailed letter
+
+`#/admin` > Add a letter: add the photo or scan first, then **Read the letter for me**. Claude (`claude-opus-5-5`, through the `transcribe-letter` function) reads the child's handwriting and fills in the boxes that are still blank: first name, age and town if the letter says them, the letter in the child's own spelling, and, for a mailed letter, a return address it can see (private, for the prize drawing). Then:
+
+- Check every word against the photo. A word Claude couldn't read is marked `[?]`; the letter can't be added until each one is fixed.
+- **Not for the mailbag** lists any last name, address, phone, email, school or teacher Claude found in the letter, each with **Take it out**. The usual privacy check still runs under the letter box.
+- If the photo itself shows an address, a full name or a face (an envelope in the shot, say), the page says so: remove the photo, or take a new one that leaves it out.
+- Nothing is saved until Add to the mailbag, exactly as for a typed letter.
+
+**Trying it first.** `scripts/read-letters.ts` reads every photo in `samples/` (gitignored: children's letters never go in the repo) with the same request staff will make, prints each reading with its cost, and saves `samples/readings.json`. Put the key in `supabase/functions/.env` as `ANTHROPIC_API_KEY=...`, then:
+
+```sh
+deno run --env-file=supabase/functions/.env --allow-env --allow-read=samples --allow-write=samples --allow-run=ffmpeg --allow-net=api.anthropic.com scripts/read-letters.ts samples
+```
+
+What it sends: the 1600px JPEG the browser already made (upright, no location or other metadata) to Anthropic's API, nothing else; the function keeps no copy and logs only how many tokens the reading used. Each reading takes 10 to 20 seconds and costs 3 to 5 cents (measured on four sample letters, Nov. 10). If Claude declines or can't read a page, staff type it in as before.
 
 ## WordPress embed
 

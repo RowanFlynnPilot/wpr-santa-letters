@@ -1441,3 +1441,29 @@ body:has(main.strip) {
     margin: 0.6in;
   }
 }
+
+/* Add a letter: Claude's reading of the photo, and what to take out of it. */
+.read-letter,
+.reading {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.reading p {
+  margin: 0;
+}
+
+.take-out {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.take-out li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}

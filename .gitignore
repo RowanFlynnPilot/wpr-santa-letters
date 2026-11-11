@@ -5,3 +5,6 @@ dist/
 supabase/.temp/
 supabase/.branches/
 supabase/functions/.env
+
+# Sample letters for scripts/read-letters.ts: children's letters never go in the repo.
+samples/
