@@ -73,7 +73,7 @@ web/src/views/admin/   Review, Add a letter, Newsletter, Prize drawing, Dec. 23 
 
 ```sh
 supabase start && supabase test db          # 266 pgTAP tests
-deno test supabase/functions/_shared web/src   # 28 tests: JPEG metadata, Resend sender, the three emails (confirmation, posted, digest), the privacy check and Take it out, Claude's reading
+deno test supabase/functions/_shared web/src   # 32 tests: JPEG metadata, Resend sender, the three emails (confirmation, posted, digest), the privacy check and Take it out, Claude's reading, the letters' paper and the stamp's fit
 deno check supabase/functions/submit-letter/index.ts supabase/functions/letter-posted/index.ts supabase/functions/staff-digest/index.ts supabase/functions/transcribe-letter/index.ts
 deno fmt --check --line-width=120 supabase/functions && deno lint supabase/functions
 cd web && npm run build                     # tsc + vite; needs the six VITE_ vars
