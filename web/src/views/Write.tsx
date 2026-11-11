@@ -5,6 +5,7 @@
 // nothing, and ends on the letter as it would look in the mailbag.
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { track } from "../analytics";
+import { clearDraft, loadDraft, saveDraft } from "../letterDraft";
 import { LetterCard } from "../components/LetterCard";
 import { PhotoField, type ChosenPhoto } from "../components/PhotoField";
 import { Stamp } from "../components/Stamp";
@@ -62,9 +63,31 @@ function charactersLeft(left: number): string {
   return `Fewer than ${Math.ceil(left / 50) * 50} characters left.`;
 }
 
+// What a kept letter (letterDraft.ts) puts back in the boxes: strings where the form has strings, the
+// newsletter box as it was, and the consent box always unticked.
+function fromDraft(words: Record<string, string | boolean>): LetterSubmission {
+  const text = (field: keyof LetterSubmission) => (typeof words[field] === "string" ? (words[field] as string) : "");
+  return {
+    first_name: text("first_name"),
+    age: text("age"),
+    town: text("town"),
+    body: text("body"),
+    parent_name: text("parent_name"),
+    email: text("email"),
+    consent: false,
+    newsletter_opt_in: words.newsletter_opt_in === true,
+  };
+}
+
+// Something of the child's letter is typed in: worth keeping, and worth saying so when it's put back.
+const hasWords = (letter: LetterSubmission) => Boolean(letter.first_name.trim() || letter.town.trim() || letter.body.trim());
+
 export function Write() {
   const page = useLoad(loadWritePage);
-  const [letter, setLetter] = useState<LetterSubmission>(BLANK);
+  // Read once, as the page opens: the letter this tab was in the middle of, if there is one.
+  const [kept] = useState(loadDraft);
+  const [letter, setLetter] = useState<LetterSubmission>(() => (kept ? fromDraft(kept.words) : BLANK));
+  const [restored, setRestored] = useState(() => Boolean(kept && hasWords(fromDraft(kept.words))));
   const [photo, setPhoto] = useState<ChosenPhoto | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -72,7 +95,7 @@ export function Write() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<Letter | null>(null);
   // One key per letter, kept across retries; a new letter gets a new one.
-  const [submissionKey, setSubmissionKey] = useState(() => crypto.randomUUID());
+  const [submissionKey, setSubmissionKey] = useState(() => kept?.submissionKey ?? crypto.randomUUID());
   const [error, setError] = useState<string | null>(null);
   // The spam check's own trouble, shown under it and cleared when a token arrives. Kept apart from
   // `error`, so a refused letter's message survives the fresh widget's new token.
@@ -89,6 +112,14 @@ export function Write() {
     }
     wasSent.current = sent;
   }, [sent]);
+
+  // Keep the letter as it's typed, for the life of the tab; a sent letter, or an empty form, keeps nothing.
+  useEffect(() => {
+    if (sent) return;
+    const typed = hasWords(letter) || letter.parent_name.trim() || letter.email.trim();
+    if (typed) saveDraft({ words: { ...letter, consent: false }, submissionKey });
+    else clearDraft();
+  }, [letter, submissionKey, sent]);
 
   if (page.status === "loading") return <p className="status">Loading the letter form…</p>;
   if (page.status === "failed") return <p className="status">The letter form isn’t loading right now. Try again in a few minutes.</p>;
@@ -144,15 +175,28 @@ export function Write() {
     try {
       await submitLetter(letter, photo, token, submissionKey);
       track("Letter Sent", { photo: photo ? "yes" : "no" });
+      clearDraft();
+      setRestored(false);
       setSent(preview);
     } catch (err) {
       setError((err as Error).message);
+      // Counted, so a form that keeps failing shows up in the numbers; nothing about the letter goes along.
+      track("Letter Send Failed");
       // The token was spent on that attempt; a fresh widget fetches a new one.
       setToken(null);
       setAttempt((n) => n + 1);
     } finally {
       setSending(false);
     }
+  };
+
+  // Clear a kept letter and begin again, with a new key: it's a different letter now.
+  const startOver = () => {
+    clearDraft();
+    setLetter(BLANK);
+    setSubmissionKey(crypto.randomUUID());
+    setRestored(false);
+    setError(null);
   };
 
   // Another child's letter: the parent's own answers stay.
@@ -211,6 +255,15 @@ export function Write() {
           age and town.
         </p>
       </header>
+
+      {restored && (
+        <p className="done kept-letter" role="status">
+          We kept what you’d typed. Tick the consent box again before you send it.{" "}
+          <button type="button" className="link-button" onClick={startOver}>
+            Start over
+          </button>
+        </p>
+      )}
 
       <form onSubmit={send}>
         <fieldset>

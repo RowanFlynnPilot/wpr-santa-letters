@@ -160,6 +160,32 @@ test("Santa’s reply", async ({ page }) => {
 });
 
 
+test("a half-written letter is kept across a reload, without the consent tick, and Start over clears it", async ({ page }) => {
+  await open(page, "#/write", PHONE);
+  const firstName = page.getByRole("textbox", { name: /^First name/ });
+  const words = page.locator("textarea.ruled");
+  await firstName.fill("Emma");
+  await words.fill("Dear Santa, I wud like a pupy.");
+  await page.getByRole("checkbox", { name: /parent or/ }).check();
+  await expect(page.locator(".kept-letter")).toHaveCount(0);
+
+  // The browser reloads the page (a phone does this when a parent comes back from another app).
+  await page.reload();
+  await expect(firstName).toHaveValue("Emma");
+  await expect(words).toHaveValue("Dear Santa, I wud like a pupy.");
+  await expect(page.locator(".kept-letter")).toContainText("We kept what you’d typed.");
+  // Saying yes is done fresh each time.
+  await expect(page.getByRole("checkbox", { name: /parent or/ })).not.toBeChecked();
+  await expectAccessible(page);
+
+  await page.getByRole("button", { name: "Start over" }).click();
+  await expect(firstName).toHaveValue("");
+  await expect(words).toHaveValue("");
+  await expect(page.locator(".kept-letter")).toHaveCount(0);
+  await page.reload();
+  await expect(firstName).toHaveValue("");
+});
+
 // While the first request is in flight ----------------------------------------------------------
 
 test("the envelope and its title are there before the mailbag loads, and don't move when it does", async ({ page }) => {

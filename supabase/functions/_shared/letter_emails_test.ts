@@ -171,3 +171,32 @@ Deno.test("the posted email links to the letter and Santa's reply, and mentions 
   assertStringIncludes(late.text, "Hi there,");
   assert(!late.text.includes("drawing") && !late.text.includes("More children"));
 });
+
+Deno.test("the digest reports the form's trouble, in plain words, and leads with it when no letters wait", () => {
+  const links = { to: ["editor@example.com"], queue: "https://example.com/#/admin", today: "2026-12-05" };
+  const quiet = digestEmail([], links, { "spam-check": 3, email: 1 });
+  assertEquals(quiet.subject, "Letters to Santa: the letter form had trouble yesterday");
+  assertStringIncludes(quiet.text, "No letters are waiting for review.");
+  assertStringIncludes(quiet.text, "The spam check couldn’t be reached three times.");
+  assertStringIncludes(quiet.text, "A confirmation email didn’t send once.");
+  assert(!quiet.text.includes("couldn’t be saved"));
+  // Same day, same key: a second call that morning still sends nothing more.
+  assertEquals(quiet.idempotencyKey, "santa-letters-digest-2026-12-05");
+
+  const waiting = [{
+    first_name: "Mia",
+    age: 6,
+    town: "Weston",
+    body: "Dear Santa",
+    photo_id: null,
+    created_at: "2026-12-04T15:00:00Z",
+  }];
+  const busy = digestEmail(waiting, links, { limit: 2, save: 12 });
+  assertEquals(busy.subject, "One letter to Santa waiting for review, and the form had trouble");
+  assertStringIncludes(busy.text, "reached the daily limit of 30 letters twice");
+  assertStringIncludes(busy.text, "A letter couldn’t be saved 12 times.");
+  assertStringIncludes(busy.html, "Since yesterday morning, the letter form had trouble:");
+  // With no trouble, the digest is exactly what it was.
+  assertEquals(digestEmail(waiting, links, {}).subject, "One letter to Santa waiting for review");
+  assert(!digestEmail(waiting, links).text.includes("trouble"));
+});

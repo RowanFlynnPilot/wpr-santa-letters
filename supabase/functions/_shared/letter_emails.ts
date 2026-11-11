@@ -128,9 +128,52 @@ export const DIGEST_LISTED = 25;
 
 // The staff's morning digest, in place of an email per letter: the form letters waiting for review,
 // oldest first, each with the start of its words. One a day: the key is the day.
-export function digestEmail(waiting: WaitingLetter[], links: { to: string[]; queue: string; today: string }): Email {
+// How often each kind of trouble happened on the letter form (form_problems, migration 0010).
+export type FormProblems = Partial<Record<"spam-check" | "save" | "email" | "limit", number>>;
+
+// One plain sentence for each kind, with what it meant for the parent and what to do about it.
+function problemLines(problems: FormProblems): string[] {
+  const times = (n: number) => (n === 1 ? "once" : n === 2 ? "twice" : apCount(n, "time", "times"));
+  const lines: string[] = [];
+  if (problems["spam-check"]) {
+    lines.push(
+      `The spam check couldn’t be reached ${times(problems["spam-check"])}. Each time, a parent was asked to try ` +
+        "again in a few minutes; no letter was lost unless they gave up.",
+    );
+  }
+  if (problems.save) {
+    lines.push(
+      `A letter couldn’t be saved ${times(problems.save)}. The parent saw a message to try again. If this keeps ` +
+        "happening, tell Rowan.",
+    );
+  }
+  if (problems.email) {
+    lines.push(
+      `A confirmation email didn’t send ${times(problems.email)}. Those letters were saved and are in the queue; ` +
+        "the usual cause is the day’s email limit, shared with the Buck Board.",
+    );
+  }
+  if (problems.limit) {
+    lines.push(
+      `One internet connection reached the daily limit of 30 letters ${times(problems.limit)}. Look through ` +
+        "Waiting for review for junk; it can be declined all at once.",
+    );
+  }
+  return lines;
+}
+
+export function digestEmail(
+  waiting: WaitingLetter[],
+  links: { to: string[]; queue: string; today: string },
+  problems: FormProblems = {},
+): Email {
+  const trouble = problemLines(problems);
   const count = apCount(waiting.length, "letter", "letters");
-  const subject = `${count[0].toUpperCase()}${count.slice(1)} to Santa waiting for review`;
+  // The trouble leads the subject when it's all there is to say.
+  const subject = waiting.length > 0
+    ? `${count[0].toUpperCase()}${count.slice(1)} to Santa waiting for review` +
+      (trouble.length > 0 ? ", and the form had trouble" : "")
+    : "Letters to Santa: the letter form had trouble yesterday";
   const unlisted = waiting.length - DIGEST_LISTED;
   const rest = unlisted > 0 ? [`…and ${apCount(unlisted, "more", "more")}.`] : [];
   const lines = waiting.slice(0, DIGEST_LISTED).map((letter) => {
@@ -139,7 +182,11 @@ export function digestEmail(waiting: WaitingLetter[], links: { to: string[]; que
     const sent = `sent ${apDate(letter.created_at)}${letter.photo_id ? ", with a photo" : ""}`;
     return { head: `${byline(letter)} (${sent})`, excerpt };
   });
-  const intro = "Good morning. These letters came in through the form and are waiting for review, oldest first.";
+  const intro = waiting.length > 0
+    ? "Good morning. These letters came in through the form and are waiting for review, oldest first."
+    : "Good morning. No letters are waiting for review.";
+  const troubleIntro = "Since yesterday morning, the letter form had trouble:";
+  const link = waiting.length > 0 ? "Review them on the staff page" : "The staff page";
 
   return {
     to: links.to,
@@ -149,13 +196,17 @@ export function digestEmail(waiting: WaitingLetter[], links: { to: string[]; que
       intro,
       ...lines.map((line) => `${line.head}: ${line.excerpt}`),
       ...rest,
-      `Review them on the staff page: ${links.queue}`,
+      ...(trouble.length > 0 ? [troubleIntro, ...trouble.map((line) => `- ${line}`)] : []),
+      `${link}: ${links.queue}`,
     ].join("\n\n"),
     html: page([
       p(escape(intro)),
       ...lines.map((line) => p(`<strong>${escape(line.head)}</strong><br>${escape(line.excerpt)}`)),
       ...rest.map((line) => p(escape(line))),
-      p(`<a href="${escape(links.queue)}" style="color:#2c6a62;font-weight:bold">Review them on the staff page</a>`),
+      ...(trouble.length > 0
+        ? [p(`<strong>${escape(troubleIntro)}</strong>`), ...trouble.map((line) => p(escape(line)))]
+        : []),
+      p(`<a href="${escape(links.queue)}" style="color:#2c6a62;font-weight:bold">${link}</a>`),
     ]),
   };
 }
