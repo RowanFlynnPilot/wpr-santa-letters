@@ -70,6 +70,12 @@ Production (live as of Nov. 10, 2026) is Supabase project `vhimfuaproejbxahjgpr`
 - If the photo itself shows an address, a full name or a face (an envelope in the shot, say), the page says so: remove the photo, or take a new one that leaves it out.
 - Nothing is saved until Add to the mailbag, exactly as for a typed letter.
 
+**Trying it first.** `scripts/read-letters.ts` reads every photo in `samples/` (gitignored: children's letters never go in the repo) with the same request staff will make, prints each reading with its cost, and saves `samples/readings.json`. Put the key in `supabase/functions/.env` as `ANTHROPIC_API_KEY=...`, then:
+
+```sh
+deno run --env-file=supabase/functions/.env --allow-env --allow-read=samples --allow-write=samples --allow-run=ffmpeg --allow-net=api.anthropic.com scripts/read-letters.ts samples
+```
+
 What it sends: the 1600px JPEG the browser already made (upright, no location or other metadata) to Anthropic's API, nothing else; the function keeps no copy and logs only how many tokens the reading used. Each reading costs a few cents to about a dime. If Claude declines or can't read a page, staff type it in as before.
 
 ## WordPress embed

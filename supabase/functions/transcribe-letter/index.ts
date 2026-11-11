@@ -8,27 +8,18 @@
 // the letter in. The photo goes to Anthropic's API and nowhere else; it isn't stored by this function, and
 // neither the photo nor the reading is logged (invariant 11).
 
-import Anthropic from "npm:@anthropic-ai/sdk@1.3.0";
-import { betaJSONSchemaOutputFormat } from "npm:@anthropic-ai/sdk@1.3.0/helpers/beta/json-schema";
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 import { optionalEnv, requireEnv, requireNamedKey } from "../_shared/env.ts";
 import { corsHeaders, json } from "../_shared/http.ts";
+import { Anthropic, readingClient, readLetter } from "../_shared/read_letter.ts";
 import { requireStaff } from "../_shared/staff.ts";
-import { checkPhoto, type Reading, READING_PROMPT, READING_SCHEMA, tidyReading } from "../_shared/transcription.ts";
+import { checkPhoto } from "../_shared/transcription.ts";
 
 const supabase = createClient(requireEnv("SUPABASE_URL"), requireNamedKey("SUPABASE_SECRET_KEYS", "default"), {
   auth: { persistSession: false },
 });
 const apiKey = optionalEnv("ANTHROPIC_API_KEY");
-const claude = apiKey
-  ? new Anthropic({
-    apiKey,
-    baseURL: optionalEnv("ANTHROPIC_BASE_URL") ?? undefined,
-    // A child's handwriting at high effort can take most of a minute; the function's own limit is longer.
-    timeout: 120_000,
-    maxRetries: 1,
-  })
-  : null;
+const claude = apiKey ? readingClient(apiKey, optionalEnv("ANTHROPIC_BASE_URL") ?? undefined) : null;
 if (!claude) console.warn("Reading letters is off: set ANTHROPIC_API_KEY to let staff read a mailed letter's photo.");
 
 const OFF = "Reading letters from a photo isn’t switched on. Type this one in.";
@@ -47,32 +38,14 @@ Deno.serve(async (req) => {
     const problem = checkPhoto(body.photo);
     if (problem) return json({ error: problem }, 400);
 
-    const message = await claude.beta.messages.parse({
-      model: "claude-opus-5-5",
-      max_tokens: 16000,
-      // Handwriting is the hard part, and a letter is one call: worth the thought.
-      output_config: { effort: "high", format: betaJSONSchemaOutputFormat(READING_SCHEMA) },
-      // A declined reading is retried on Anthropic's recommended fallback model rather than returned.
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      system: READING_PROMPT,
-      messages: [{
-        role: "user",
-        content: [
-          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: body.photo } },
-          { type: "text", text: "Read this letter." },
-        ],
-      }],
-    });
-
-    if (message.stop_reason !== "end_turn" || !message.parsed_output) {
+    const result = await readLetter(claude, body.photo);
+    if (!result.ok) {
       // The stop reason and the refusal's category only: never the words.
-      console.error("transcribe-letter: no reading,", message.stop_reason, message.stop_details?.category ?? "");
+      console.error("transcribe-letter: no reading,", result.stopReason ?? "", result.category ?? "");
       return json({ error: FAILED }, 502);
     }
-    const { input_tokens, output_tokens } = message.usage;
-    console.log(`transcribe-letter: read by ${message.model}, ${input_tokens} in, ${output_tokens} out`);
-    return json({ reading: tidyReading(message.parsed_output as Reading) }, 200);
+    console.log(`transcribe-letter: read by ${result.model}, ${result.inputTokens} in, ${result.outputTokens} out`);
+    return json({ reading: result.reading }, 200);
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
       return json({ error: "Claude is busy. Try again in a minute." }, 503);
