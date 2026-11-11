@@ -76,7 +76,7 @@ Production (live as of Nov. 10, 2026) is Supabase project `vhimfuaproejbxahjgpr`
 deno run --env-file=supabase/functions/.env --allow-env --allow-read=samples --allow-write=samples --allow-run=ffmpeg --allow-net=api.anthropic.com scripts/read-letters.ts samples
 ```
 
-What it sends: the 1600px JPEG the browser already made (upright, no location or other metadata) to Anthropic's API, nothing else; the function keeps no copy and logs only how many tokens the reading used. Each reading costs a few cents to about a dime. If Claude declines or can't read a page, staff type it in as before.
+What it sends: the 1600px JPEG the browser already made (upright, no location or other metadata) to Anthropic's API, nothing else; the function keeps no copy and logs only how many tokens the reading used. Each reading takes 10 to 20 seconds and costs 3 to 5 cents (measured on four sample letters, Nov. 10). If Claude declines or can't read a page, staff type it in as before.
 
 ## WordPress embed
 

@@ -60,7 +60,10 @@ and all ("Dear Santa, I wud like a pupy"): the newsroom publishes children's spe
 summarize or add anything. Keep the greeting and the sign-off. Where you can't read a word, write [?] in its place; \
 where you're unsure, write your best reading followed by [?]. Separate paragraphs with a blank line. Leave out drawings \
 and decorations, and leave out anything a grown-up wrote rather than the child (a parent's note, an envelope, a return \
-label); mention those in notes. Keep to the letter itself: if the page is not a letter, return an empty letter and say \
+label); mention those in notes. If the child filled in a class worksheet or traced a printed template, the letter is \
+the child's words with the template's own greeting and sign-off ("Dear Santa", "Love from") where the child's words fit \
+them, so it reads as one letter ending in the child's name; leave out a heading the worksheet asks for or the child \
+copied from it (a school, a room or class, a date) and say so in notes. Keep to the letter itself: if the page is not a letter, return an empty letter and say \
 what it is in notes.
 
 first_name: the child's first name, from the signature or "My name is ...". The first name only, never a last name. \
@@ -78,8 +81,10 @@ teacher's name ("Mrs. Olson"). Copy text exactly as it appears in your letter te
 alone, the school's name alone), so staff can find and take it out. Leave them in the letter: staff decide.
 
 photo_concerns: things visible anywhere in the image, not just in the letter, that shouldn't be published if the photo \
-goes up beside the letter: a full name, an address, a phone number, a school's name, a person's face. One short phrase \
-each ("the envelope shows a street address"). Empty if none.
+goes up beside the letter: a full name, an address, a phone number, a school's name, a person's face. At most three \
+short phrases, one per place in the image: what the letter itself shows goes in one phrase ("the letter shows a last \
+name, a street address and a phone number"), an envelope in another ("the envelope shows the family's address"). \
+Empty if none.
 
 return_address: a mailing address visible in the image (an envelope, a return label, a parent's note), as one line, \
 for the newsroom's private records so a prize can reach the family. null if none.
@@ -87,7 +92,7 @@ for the newsroom's private records so a prize can reach the family. null if none
 legibility: "clear" if you read every word with confidence, "some guesses" if you marked a few, "hard to read" if \
 much of it is uncertain.
 
-notes: one or two short sentences for the staff member, only if something needs their attention (two children signed, \
+notes: at most two short sentences (under 250 characters) for the staff member, only if something needs their attention (two children signed, \
 a page seems missing, a grown-up's note is attached). Otherwise an empty string.`;
 
 export type PrivacyKind = (typeof READING_SCHEMA.properties.privacy.items.properties.what.enum)[number];
@@ -106,7 +111,7 @@ export interface Reading {
 
 // The same limits as Add a letter's boxes and letter_words() (first name 30, town 40, letter 2,000, age 0–17),
 // so a reading never fills in something the database would refuse.
-const LIMITS = { first_name: 30, town: 40, letter: 2000, return_address: 300, note: 300 };
+const LIMITS = { first_name: 30, town: 40, letter: 2000, return_address: 300, note: 400 };
 
 // One line, no control characters, as letter_words' one_line() keeps a name or a town.
 function oneLine(text: string | null, max: number): string | null {
@@ -114,6 +119,16 @@ function oneLine(text: string | null, max: number): string | null {
   // deno-lint-ignore no-control-regex
   const line = text.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
   return line ? line.slice(0, max) : null;
+}
+
+// A note to staff that runs long ends at its last whole sentence (or word, with an ellipsis), never mid-word.
+function shortNote(text: string | null): string | null {
+  const line = oneLine(text, Infinity);
+  if (!line || line.length <= LIMITS.note) return line;
+  const cut = line.slice(0, LIMITS.note);
+  const sentence = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+  if (sentence > LIMITS.note / 2) return cut.slice(0, sentence + 1);
+  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:]$/, "") + "…";
 }
 
 export function tidyReading(raw: Reading): Reading {
@@ -143,10 +158,10 @@ export function tidyReading(raw: Reading): Reading {
     town: oneLine(raw.town, LIMITS.town),
     letter,
     privacy,
-    photo_concerns: raw.photo_concerns.map((c) => oneLine(c, LIMITS.note)).filter((c): c is string => !!c).slice(0, 8),
+    photo_concerns: raw.photo_concerns.map(shortNote).filter((c): c is string => !!c).slice(0, 4),
     return_address: oneLine(raw.return_address, LIMITS.return_address),
     legibility: raw.legibility,
-    notes: oneLine(raw.notes, LIMITS.note) ?? "",
+    notes: shortNote(raw.notes) ?? "",
   };
 }
 

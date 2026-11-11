@@ -82,3 +82,11 @@ Deno.test("the schema asks for every field, so a reading is never missing one", 
   assertEquals([...READING_SCHEMA.required].sort(), Object.keys(READING_SCHEMA.properties).sort());
   assertEquals(READING_SCHEMA.additionalProperties, false);
 });
+
+Deno.test("a long note to staff ends at a whole sentence or word, never mid-word", () => {
+  const sentences = "The purple writing is a teacher's template. " + "The child signed only Richard. ".repeat(20);
+  const note = tidyReading({ ...base, notes: sentences }).notes;
+  assertEquals(note.length <= 400 && note.endsWith("Richard."), true);
+  assertEquals(tidyReading({ ...base, notes: "word ".repeat(120) }).notes.endsWith("word…"), true);
+  assertEquals(tidyReading({ ...base, photo_concerns: ["a", "b", "c", "d", "e"] }).photo_concerns.length, 4);
+});

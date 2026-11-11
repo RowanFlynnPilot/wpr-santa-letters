@@ -82,7 +82,7 @@ export function ReadLetter({
           <button type="button" className="button" onClick={read} disabled={busy}>
             {busy ? "Reading the letter…" : result ? "Read it again" : "Read the letter for me"}
           </button>
-          {busy && <span className="hint">This takes up to a minute.</span>}
+          {busy && <span className="hint">This takes about 15 seconds.</span>}
         </div>
       )}
       {!result && !busy && (
