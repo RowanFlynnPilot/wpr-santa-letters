@@ -2,7 +2,7 @@
 // mailbag's reads live in reads.ts and the form's send in send.ts, neither of which loads the client;
 // where this module is loaded the reads carry the signed-in session's token, which the client keeps
 // fresh, so staff read as themselves.
-import type { PostgrestError } from "@supabase/supabase-js";
+import { FunctionsHttpError, type PostgrestError } from "@supabase/supabase-js";
 import type { PreparedPhoto } from "./photo";
 import { LETTER_COLUMNS, readAsSignedIn } from "./reads";
 import { photoPaths } from "./storage";
@@ -168,6 +168,40 @@ export async function setPrizeEligible(letterId: string, eligible: boolean) {
 // An hour, not a year: a photo taken down must stop showing soon. Supabase Pro's Smart CDN drops it within
 // a minute, but a browser that already loaded it keeps it for as long as this says. Same as the submit-letter function.
 const PHOTO_CACHE_SECONDS = "3600";
+
+// Claude's reading of a mailed letter's photo (transcribe-letter; supabase/functions/_shared/transcription.ts
+// has the same shape and the rules it passed). Words to check against the photo, never saved as they are.
+export interface Reading {
+  first_name: string | null;
+  age: number | null;
+  town: string | null;
+  letter: string;
+  privacy: { what: string; text: string }[];
+  photo_concerns: string[];
+  return_address: string | null;
+  legibility: "clear" | "some guesses" | "hard to read";
+  notes: string;
+}
+
+function base64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]*,/, ""));
+    reader.onerror = () => reject(new Error("The photo couldn't be read. Choose it again."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Sends the photo's full-size JPEG (already upright, 1600px, no metadata) to be read. The function's own
+// message ("isn't switched on", "Claude is busy") is shown as it is.
+export async function transcribeLetter(photo: Blob): Promise<Reading> {
+  const { data, error } = await supabase.functions.invoke("transcribe-letter", { body: { photo: await base64(photo) } });
+  if (error) {
+    const answer = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
+    throw new Error(answer?.error ?? "Claude couldn’t read this one. Type it in, or try again.");
+  }
+  return (data as { reading: Reading }).reading;
+}
 
 export interface TypedLetter extends LetterWords {
   source: Exclude<LetterSource, "form">;

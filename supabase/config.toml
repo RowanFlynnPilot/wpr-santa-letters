@@ -55,3 +55,8 @@ verify_jwt = false
 # header; the function checks it itself. Emails the editor the letters waiting for review.
 [functions.staff-digest]
 verify_jwt = false
+
+# Staff only, like letter-posted: it checks the caller's sign-in and staff row itself. Reads the photo of a
+# mailed letter with Claude and returns the words for Add a letter; saves nothing. Off without ANTHROPIC_API_KEY.
+[functions.transcribe-letter]
+verify_jwt = false
