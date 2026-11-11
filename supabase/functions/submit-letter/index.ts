@@ -17,7 +17,8 @@ import { BadRequest } from "../_shared/errors.ts";
 import { corsHeaders, json } from "../_shared/http.ts";
 import { stripLocationMetadata } from "../_shared/jpeg.ts";
 import { confirmationEmail, type StoredLetter } from "../_shared/letter_emails.ts";
-import { verifyTurnstile } from "../_shared/turnstile.ts";
+import { senderAddress, senderKey } from "../_shared/sender.ts";
+import { SpamCheckDown, verifyTurnstile } from "../_shared/turnstile.ts";
 
 const BUCKET = "letter-photos";
 const MAX_BYTES = { full: 3 * 1024 * 1024, thumb: 512 * 1024 };
@@ -28,7 +29,8 @@ const CACHE_SECONDS = "3600";
 const TURNSTILE_SECRET = requireEnv("TURNSTILE_SECRET_KEY");
 const SUPABASE_URL = requireEnv("SUPABASE_URL");
 
-const supabase = createClient(SUPABASE_URL, requireNamedKey("SUPABASE_SECRET_KEYS", "default"), {
+const SECRET_KEY = requireNamedKey("SUPABASE_SECRET_KEYS", "default");
+const supabase = createClient(SUPABASE_URL, SECRET_KEY, {
   auth: { persistSession: false },
 });
 
@@ -53,6 +55,7 @@ Deno.serve(async (req) => {
     const form = await req.formData();
     const fields = readFields(form);
     await verifyTurnstile(TURNSTILE_SECRET, text(form, "turnstile_token"));
+    await checkSenderLimit(req, fields.p_submission_key);
     const photos = await readPhotos(form);
     const photoId = photos ? crypto.randomUUID() : null;
     const paths = photoId ? [`${photoId}/full.jpg`, `${photoId}/thumb.jpg`] : [];
@@ -86,9 +89,46 @@ Deno.serve(async (req) => {
     // The code and message only: a database error's details repeat the row, the family's words with it.
     const { code, message } = err as { code?: string; message?: string };
     console.error("submit-letter failed:", code ?? "", message ?? String(err));
+    // A letter that should have gone through didn't: the editor hears about it in the morning.
+    await noteProblem(err instanceof SpamCheckDown ? "spam-check" : "save");
     return json({ error: "Your letter couldn't be sent. Check it and try again in a few minutes." }, 500);
   }
 });
+
+// The daily limit by where a letter came from (migration 0010): 30 in a rolling day from one network
+// address, counted by a keyed scramble of it, never the address. It backs up the limit per email address,
+// which someone rotating addresses walks around. If the count can't be made (no address on the request,
+// or the database function isn't there yet), the letter goes through: the form never depends on this.
+async function checkSenderLimit(req: Request, submissionKey: string): Promise<void> {
+  const address = senderAddress(req.headers);
+  if (!address) return;
+  const { data: allowed, error } = await supabase.rpc("allow_sender", {
+    p_sender_key: await senderKey(address, SECRET_KEY),
+    p_submission_key: submissionKey,
+  });
+  if (error) {
+    console.error("The sender limit couldn't be checked:", error.code ?? "", error.message);
+    return;
+  }
+  if (allowed === false) {
+    await noteProblem("limit");
+    throw new BadRequest(
+      "A lot of letters have come from this internet connection today, so we've paused it until tomorrow. " +
+        "You can also email your child's letter to editor@wausaupilotandreview.com.",
+    );
+  }
+}
+
+// One line in the editor's morning digest: the kind of trouble and when, nothing about the letter. Never
+// throws, and never holds a parent's answer up for long.
+async function noteProblem(kind: "spam-check" | "save" | "email" | "limit"): Promise<void> {
+  try {
+    const { error } = await supabase.rpc("note_form_problem", { p_kind: kind }).abortSignal(AbortSignal.timeout(3_000));
+    if (error) console.error("A form problem wasn't noted:", kind, error.code ?? "", error.message);
+  } catch (err) {
+    console.error("A form problem wasn't noted:", kind, (err as Error).message);
+  }
+}
 
 // Never throws: every failure is logged, and the letter is already safe in the queue.
 async function sendLetterEmails(letterId: string): Promise<void> {
@@ -118,8 +158,10 @@ async function sendLetterEmails(letterId: string): Promise<void> {
     results.forEach((result, i) => {
       if (!result.ok) console.error(`Email "${emails[i].subject}" for letter ${letterId} didn't send:`, result.error);
     });
+    if (results.some((result) => !result.ok)) await noteProblem("email");
   } catch (err) {
     console.error(`Emails for letter ${letterId} didn't send:`, err);
+    await noteProblem("email");
   }
 }
 

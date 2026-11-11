@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(79);
+select plan(83);
 
 -- The privilege map, asserted in both directions, so a missing grant fails CI as loudly as an
 -- extra one. The suite passes with and without Supabase's permissive default grants.
@@ -69,6 +69,14 @@ select ok(not has_function_privilege('anon', 'public.add_letter(public.letter_so
   'anon can''t add letters');
 select ok(not has_function_privilege('anon', 'public.run_prize_drawing(uuid)', 'execute'), 'anon can''t run the drawing');
 
+-- The form's safeguards: the function that takes letters calls them, nobody else.
+select ok(has_function_privilege('service_role', f, 'execute') and not has_function_privilege('anon', f, 'execute')
+    and not has_function_privilege('authenticated', f, 'execute'),
+  'only the form''s function: ' || f)
+from unnest(array['public.allow_sender(text, uuid)', 'public.note_form_problem(text)']) as f;
+select ok(not has_table_privilege(r, 'public.form_senders', 'select,insert,update,delete'), r || ' cannot touch who sent what')
+from unnest(array['anon', 'authenticated']) as r;
+
 -- Internal helpers: nobody calls them directly.
 select ok(not has_function_privilege('authenticated', f, 'execute') and not has_function_privilege('anon', f, 'execute')
     and not has_function_privilege('service_role', f, 'execute'),
@@ -99,7 +107,7 @@ from (values
   ('authenticated', array['add_letter', 'decline_letters', 'edit_letter', 'feature_letter', 'is_staff', 'moderate_letter', 'phase_at',
     'redraw_prize', 'remove_letter_photo', 'run_prize_drawing', 'save_newsletter_section', 'set_prize_eligible',
     'unfeature_letter']),
-  ('service_role', array['mark_posted_notice', 'posted_notice', 'submit_letter'])
+  ('service_role', array['allow_sender', 'mark_posted_notice', 'note_form_problem', 'posted_notice', 'submit_letter'])
 ) as v (r, expected);
 select is(
   array(select c.relname || ':' || lower(priv)
@@ -116,7 +124,7 @@ from (values
     'prize_draws:select', 'prize_winners:select', 'prizes:select', 'seasons:select', 'sponsors:select']),
   ('authenticated', array['current_season:select', 'featured_letters:select', 'letter_private:select', 'letters:select', 'mailbag:select',
     'newsletter_sections:select', 'photo_deletions:delete', 'photo_deletions:select', 'prize_draws:select', 'prize_winners:select', 'prizes:select', 'seasons:select', 'sponsors:select']),
-  ('service_role', array['letter_private:select', 'letters:select', 'prizes:select', 'seasons:select', 'sponsors:select',
+  ('service_role', array['form_problems:select', 'letter_private:select', 'letters:select', 'prizes:select', 'seasons:select', 'sponsors:select',
     'staff:select'])
 ) as v (r, expected);
 
