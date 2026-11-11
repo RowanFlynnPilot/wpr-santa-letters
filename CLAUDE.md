@@ -4,7 +4,7 @@ Wausau Pilot & Review's holiday mailbag, a revival of the feature WPR ran in 202
 
 **2026 calendar** (America/Chicago, stored in `seasons`): letters open Nov. 27 (the day after Thanksgiving) · close at the end of Dec. 18 · staff finish the mail, review and run the drawing Dec. 19–22 · delivered Dec. 23 at 6 a.m.: the article runs and winners are public. Shereen can move any of these in `supabase/seasons/2026.sql` before it's run, or with an `update` after.
 
-**How letters arrive** (as in past years): the form (`#/write`, a parent or guardian fills it in for the child), email to editor@, and the mail (Santa, care of WPR, 602 Ruder Street; `web/src/contact.ts`). Staff type in emailed and mailed letters at `#/admin` > Add a letter.
+**How letters arrive** (as in past years): the form (`#/write`, a parent or guardian fills it in for the child), email to editor@, and the mail (Santa, care of WPR, PO Box 117, Wausau, WI 54402; `web/src/contact.ts`). Staff type in emailed and mailed letters at `#/admin` > Add a letter.
 
 **Sponsors:** one presenting sponsor (its logo is the stamp on the mailbag's envelope; "Presented by …" under it; Chris's sales plan lists the slot) and any number of supporting sponsors (thanked at the foot). Prizes are their own rows, one per prize to win.
 

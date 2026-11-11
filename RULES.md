@@ -11,7 +11,7 @@ A starting point for the rules page the form links to (`VITE_RULES_URL`). Bracke
 **How to send a letter.** From 12 a.m. Nov. 27 through 11:59 p.m. Dec. 18, 2026, Central time:
 - on the form at wausaupilotandreview.com/letters-to-santa,
 - by email to editor@wausaupilotandreview.com, or
-- by mail to Santa, care of Wausau Pilot & Review, 602 Ruder Street, Wausau, WI 54403. Mailed letters must arrive by Dec. 18.
+- by mail to Santa, care of Wausau Pilot & Review, PO Box 117, Wausau, WI 54402. Mailed letters must arrive by Dec. 18.
 
 Include the child's first name and age, the town if you'd like it published with the letter, and a way to reach a parent (an email address, or a return address on a mailed letter). One letter per child.
 
