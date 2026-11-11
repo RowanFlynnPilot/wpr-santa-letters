@@ -112,13 +112,30 @@ export async function loadWinners(seasonId: string): Promise<Winner[]> {
   ]);
 }
 
+// The editor's pick: the id of the one letter set at the top of the mailbag, if there is one (RLS: only
+// while that letter is up). A page without a pick is still the mailbag, so a failure here (the table is
+// newer than the rest; a deploy can reach the page before the database) reads as "no pick", not an error.
+export async function loadFeaturedId(seasonId: string): Promise<string | null> {
+  try {
+    const found = await rows<{ letter_id: string }[]>("featured_letters", [
+      ["select", "letter_id"],
+      ["season_id", `eq.${seasonId}`],
+    ]);
+    return found[0]?.letter_id ?? null;
+  } catch (err) {
+    console.warn("The editor's pick didn't load:", err);
+    return null;
+  }
+}
+
 export async function loadMailbag(): Promise<Mailbag> {
   const season = await loadSeason();
-  const [sponsors, prizes, letters, winners] = await Promise.all([
+  const [sponsors, prizes, letters, winners, featured] = await Promise.all([
     loadSponsors(season.id),
     loadPrizes(season.id),
     loadLetters(season.id),
     loadWinners(season.id),
+    loadFeaturedId(season.id),
   ]);
-  return { season, sponsors, prizes, letters, winners };
+  return { season, sponsors, prizes, letters, winners, featured };
 }

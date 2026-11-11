@@ -52,6 +52,8 @@ export interface Mailbag {
   sponsors: Sponsor[];
   prizes: Prize[];
   letters: Letter[];
+  // The editor's pick, set large at the top of the mailbag; null when there isn't one.
+  featured: string | null;
   // Empty for readers until the letters are delivered.
   winners: Winner[];
 }

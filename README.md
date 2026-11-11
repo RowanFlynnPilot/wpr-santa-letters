@@ -116,6 +116,10 @@ The height grows as the column narrows (the words stack above the letters on a p
 
 In `wpr-newsletter` (the `santa-letters-section` change): set `SANTA_LETTERS_SECTIONS` to `https://<project-ref>.supabase.co/rest/v1/newsletter_sections` and `SANTA_LETTERS_KEY` to the publishable key in `build_newsletter.py`. Until they're set, the build leaves the section out and sends as usual.
 
+## Editor's pick
+
+`#/admin` > Review letters > In the mailbag: **Make it the editor's pick** sets that letter large at the top of the mailbag, under the envelope, with its full-size photo. Picking another letter replaces it, so change it as often as you like (each morning, say); **Stop featuring it** leaves the mailbag without one. A letter that's taken down stops being the pick.
+
 ## Santa's reply
 
 The family's note when a letter goes up links to a reply from Santa: one page of North Pole stationery, addressed to the child by first name and town, postmarked the day it's printed, with the presenting sponsor's stamp. It promises nothing (no gifts) and, for children 4 and under, thanks the grown-up who helped. Staff open the same page from any letter In the mailbag (Santa's reply to print): for a mailed letter, print it and mail it back. Plausible counts `Santa Reply Opened` and `Santa Reply Printed`, by where the link came from, never which letter.

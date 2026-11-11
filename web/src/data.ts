@@ -10,7 +10,7 @@ import { supabase } from "./supabase";
 import type { Draw, LetterSource, LetterStatus, SavedNewsletterSection, StaffLetter } from "./types";
 
 readAsSignedIn(async () => (await supabase.auth.getSession()).data.session?.access_token ?? null);
-export { loadMailbag, loadPrizes, loadSeason, loadSponsors, loadWinners } from "./reads";
+export { loadFeaturedId, loadMailbag, loadPrizes, loadSeason, loadSponsors, loadWinners } from "./reads";
 
 type Result = { data: unknown; error: PostgrestError | null };
 
@@ -104,6 +104,16 @@ export async function moderate(
     supabase.rpc("moderate_letter", { p_letter_id: letterId, p_from: from, p_decision: decision, p_reason: reason }),
   );
   await deleteQueuedPhotos();
+}
+
+// The editor's pick: one posted letter set large at the top of the mailbag. Picking another replaces it.
+export async function featureLetter(letterId: string) {
+  await rows<null>(supabase.rpc("feature_letter", { p_letter_id: letterId }));
+}
+
+// Stops featuring that letter; if another has been picked since this page loaded, nothing changes.
+export async function unfeatureLetter(letterId: string) {
+  await rows<boolean>(supabase.rpc("unfeature_letter", { p_letter_id: letterId }));
 }
 
 // Declines several waiting letters at once (a flood of junk), each still waiting as this page showed it.

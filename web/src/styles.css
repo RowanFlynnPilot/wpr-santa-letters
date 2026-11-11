@@ -672,6 +672,18 @@ textarea.ruled {
   font-family: var(--body);
 }
 
+/* The editor's pick: one letter set large, ahead of the rest. */
+.featured-letter {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 2rem;
+}
+
+.featured-card {
+  max-width: 34rem;
+  margin-top: 0.5rem;
+}
+
 /* The letter a link opened, under the envelope, before the rest. */
 .linked-letter {
   display: grid;
