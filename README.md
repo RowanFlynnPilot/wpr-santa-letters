@@ -88,7 +88,7 @@ The mailbag lives on one WordPress page, https://wausaupilotandreview.com/letter
 <iframe src="https://rowanflynnpilot.github.io/wpr-santa-letters/#/mailbag" title="Letters to Santa" style="width:100%;height:88vh;min-height:640px;border:0;display:block" allow="clipboard-write; web-share" data-no-lazy="1"></iframe>
 ```
 
-The frame scrolls inside itself, and the mailbag's Write a letter to Santa button opens the form inside the frame, so the page needs nothing else. `data-no-lazy="1"` keeps LiteSpeed from blanking the frame until the reader scrolls. `allow` lets a letter's Share button open the phone's share sheet or copy the link.
+The frame scrolls inside itself, and the mailbag's Write a letter to Santa button opens the form inside the frame, so the page needs nothing else. `data-no-lazy="1"` keeps LiteSpeed from blanking the frame until the reader scrolls. `allow` lets a letter's Share button open the phone's share sheet or copy the link, and lets Save it as a picture hand the letter's picture to the phone's apps (on a computer it's saved instead).
 
 **Site-wide: `embed.js`.** Install it before the first letter goes up. The Buck Board's host script is already in the site's header or footer code; this one sits beside it, added once by an administrator:
 

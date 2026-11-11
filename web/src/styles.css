@@ -277,6 +277,12 @@ img {
   cursor: pointer;
 }
 
+.link-button:disabled {
+  color: var(--bark);
+  text-decoration: none;
+  cursor: progress;
+}
+
 @media (pointer: coarse) {
   .link-button {
     display: inline-flex;
@@ -363,6 +369,12 @@ img {
 .count {
   color: var(--teal-deep);
   font-weight: 700;
+}
+
+/* How long until the next date on the calendar: the last day to write, or delivery. */
+.countdown {
+  color: var(--bark);
+  font-weight: 600;
 }
 
 /* The stamp: the presenting sponsor's logo on a perforated white stamp, or WPR's badge until it sells. */
