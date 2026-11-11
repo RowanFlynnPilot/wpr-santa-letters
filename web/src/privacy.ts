@@ -63,3 +63,15 @@ export function describeFlags(flags: PrivacyFlag[]): string {
     items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
   return series(flags.map((flag) => `${flag.what} (“${flag.sample.length > 40 ? `${flag.sample.slice(0, 40)}…` : flag.sample}”)`));
 }
+
+// Add a letter's Take it out (ReadLetter.tsx): takes one exact phrase out of the letter and closes the gap it
+// leaves ("love Emma Johnson." becomes "love Emma."), touching nothing else the child wrote.
+export function takeOut(body: string, text: string): string {
+  const at = text ? body.indexOf(text) : -1;
+  if (at < 0) return body;
+  let before = body.slice(0, at);
+  let after = body.slice(at + text.length);
+  if (!before.trim()) after = after.replace(/^[ \t]+/, "");
+  else if (after === "" || /^[ \t.,!?;:\n]/.test(after)) before = before.replace(/[ \t]+$/, "");
+  return before + after;
+}

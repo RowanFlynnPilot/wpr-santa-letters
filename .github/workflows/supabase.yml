@@ -18,7 +18,7 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno test supabase/functions/_shared web/src
-      - run: deno check supabase/functions/submit-letter/index.ts supabase/functions/letter-posted/index.ts supabase/functions/staff-digest/index.ts
+      - run: deno check supabase/functions/submit-letter/index.ts supabase/functions/letter-posted/index.ts supabase/functions/staff-digest/index.ts supabase/functions/transcribe-letter/index.ts
       - uses: supabase/setup-cli@v1
         with:
           version: 2.118.0
@@ -49,3 +49,4 @@ jobs:
       - run: supabase functions deploy submit-letter --project-ref "$SUPABASE_PROJECT_REF"
       - run: supabase functions deploy letter-posted --project-ref "$SUPABASE_PROJECT_REF"
       - run: supabase functions deploy staff-digest --project-ref "$SUPABASE_PROJECT_REF"
+      - run: supabase functions deploy transcribe-letter --project-ref "$SUPABASE_PROJECT_REF"

@@ -1,6 +1,6 @@
 // Run with Deno (CI's database job: `deno test web/src`); the web build leaves *_test.ts out.
 import { assertEquals } from "jsr:@std/assert@1";
-import { describeFlags, privacyFlags } from "./privacy.ts";
+import { describeFlags, privacyFlags, takeOut } from "./privacy.ts";
 
 const what = (body: string, name: string) => privacyFlags(body, name).map((flag) => flag.what);
 
@@ -30,4 +30,14 @@ Deno.test("describes them with what was written", () => {
     describeFlags(privacyFlags("Call 715-555-0199. Mrs. Olson says hi.", "Ava")),
     "a phone number (“715-555-0199”) and a teacher’s name (“Mrs. Olson”)",
   );
+});
+
+Deno.test("Take it out removes the phrase and closes its gap, and leaves the rest as the child wrote it", () => {
+  assertEquals(takeOut("Love,  Emma Johnson.", "Johnson"), "Love,  Emma.");
+  assertEquals(takeOut("Emma Johnson wants a sled", "Johnson"), "Emma wants a sled");
+  assertEquals(takeOut("Johnson family says hi", "Johnson"), "family says hi");
+  assertEquals(takeOut("I live at 12 Elm St\nin Wausau", "12 Elm St"), "I live at\nin Wausau");
+  assertEquals(takeOut("love Emma Johnson", "Johnson"), "love Emma");
+  assertEquals(takeOut("Dear Santa", "Olson"), "Dear Santa");
+  assertEquals(takeOut("Dear Santa", ""), "Dear Santa");
 });
