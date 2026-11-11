@@ -10,6 +10,8 @@ Wausau Pilot & Review's holiday mailbag, a revival of the feature WPR ran in 202
 
 The repo is `wpr-santa-letters`; it must match `base` in `web/vite.config.ts` (`/wpr-santa-letters/`).
 
+**Live in production (as of Nov. 10, 2026):** Supabase project `vhimfuaproejbxahjgpr` (WPR's Pro organization), the app at https://rowanflynnpilot.github.io/wpr-santa-letters/. Every change goes on a branch and through a PR; never push straight to `main`, since a push to `main` deploys (migrations, functions and the web app).
+
 ## Layout
 
 ```
@@ -19,6 +21,7 @@ supabase/migrations/   0001 schema · 0002 functions + views · 0003 grants + RL
 supabase/seasons/      one file per season; local seed, run once in prod
 supabase/tests/        pgTAP (supabase test db): calendar, letters, drawing, privileges, posted email, clearing and
                        the digest's job, newsletter sections
+scripts/               push-auth-config.mjs: the sign-in email and code settings, through the Management API
 supabase/functions/    submit-letter (the form) · letter-posted (the family's note when a letter goes up) ·
                        staff-digest (the editor's morning email) · _shared (Deno)
 web/                   React/Vite, hash routes: #/mailbag #/write #/embed (front-page strip) #/reply (Santa's reply) #/admin
@@ -60,6 +63,7 @@ web/src/views/admin/   Review, Add a letter, Newsletter, Prize drawing, Dec. 23 
 20. **The editor hears about waiting letters once a morning.** No email per letter: at 13:00 UTC (7 a.m. in Wausau all season) a pg_cron job (migration 0008) has `pg_net` call `staff-digest` with the project's secret key, both read from Vault (README, First deploy). The key goes in the `apikey` header: a secret key isn't a JWT, and Supabase's gateway rejects one sent as a bearer token. The call waits up to 30 seconds (pg_net's default is 5, short for a cold start plus Resend). The function accepts only that key, lists the active season's waiting letters, oldest first (first name, age, town, when, whether there's a photo, the first 140 characters; the first 25, then a count of the rest), and emails `STAFF_EMAILS` with a link to Review; when nothing waits, it sends nothing. Its Resend key is the date (`santa-letters-digest-<date>`), so a repeat call that day sends nothing more. It needs no browser origin: it's called by the database, never a page.
 21. **The newsletter section is saved, not pasted.** Staff save the Letters to Santa section for a morning (`save_newsletter_section`: one to three posted letters, a morning in the season, before 6:45 a.m. that day since the edition is built at 6:58, at most 13,000 characters); `newsletter_sections` holds it by season and date. Readers (the publishable key) see a section only from its own morning in Wausau and only while every letter in it is still up, so wpr-newsletter's build, which reads it at about 7 a.m., never carries a letter that came down. A saved section is a copy of its letters' words, so editing one of them withdraws every section holding it that hasn't gone out (a trigger); the edit form says so, and staff save that morning again. Without a saved section, the build leaves it out.
 22. **Santa's reply promises nothing.** `#/reply` reads one letter from the public `mailbag` view (`loadLetter`), so it exists only while the letter is up, and speaks to the child by first name and town (and thanks the grown-up for children 4 and under). It never mentions gifts or what the child asked for: no family is promised anything by a newsroom page. The postmark carries the day it's printed. It prints on one letter-size sheet (print styles hide the button and the page background). The presenting sponsor's stamp sits in the corner, `santa-reply` placement.
+23. **Applied migrations are history, never edited.** Migrations 0001–0008 (`20261107000001` through `20261107000008`) are applied in production, so `supabase db push` will never run them again: an edit to one changes nothing live and leaves the repo describing a database that doesn't exist. Every schema change, however small (a grant, a comment, a fixed function body), goes in a new migration file with a later timestamp (`supabase migration new <name>`), which redefines what it changes (`create or replace function`, `alter table`, `revoke`/`grant`) and revokes any new function from public (invariant 6). A comment in an applied migration that has gone stale (0008's Vault SQL) is corrected in the README or here, not in the migration. The same goes for `supabase/seasons/2026.sql`, already run: change the season with an `update` (Operations).
 
 ## Commands
 
@@ -120,8 +124,11 @@ select status_code, content, created from net._http_response order by created de
 -- Send this morning's digest now (it sends once a day; a second call that day is dropped by Resend).
 -- Paste the command from cron.job where jobname = 'santa-letters-staff-digest'.
 
--- Replacing a Vault secret (a rotated secret key, a new project URL).
-select vault.update_secret((select id from vault.secrets where name = 'santa_secret_key'), '<the new secret key>');
+-- Replacing a Vault secret (a rotated secret key, a new project URL): not here. Use the dashboard's Vault
+-- screen (Integrations > Vault > Secrets) and edit `santa_secret_key` or `santa_project_url` in place,
+-- keeping the name. Production's were set there, not with vault.create_secret from the SQL editor.
+-- Check the digest's job still reads them (both rows, no values shown):
+select name, updated_at from vault.secrets where name in ('santa_project_url', 'santa_secret_key');
 
 -- Moving a date (here, opening a week earlier).
 update public.seasons set entries_open_at = timestamptz '2026-11-20 00:00 America/Chicago' where year = 2026;
