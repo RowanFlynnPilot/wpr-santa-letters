@@ -27,7 +27,7 @@ export function Mailbag() {
     if (ready && linkedRef.current) void scrollIntoView(linkedRef.current);
   }, [ready]);
 
-  if (mailbag.status === "loading") return <p className="status">Opening Santa’s mailbag…</p>;
+  if (mailbag.status === "loading") return <MailbagOpening />;
   if (mailbag.status === "failed") {
     return <p className="status">Santa’s mailbag isn’t loading right now. Try again in a few minutes.</p>;
   }
@@ -118,6 +118,35 @@ export function Mailbag() {
       </footer>
       </main>
     </PresentingSponsor.Provider>
+  );
+}
+
+// While the mailbag loads: the envelope with its title, already where it will be, and blank sheets where
+// the letters will land, so the page keeps its shape (inside WPR's page, a frame that jumps is the worst of it).
+function MailbagOpening() {
+  return (
+    <main className="mailbag" aria-busy="true">
+      <header className="envelope">
+        <div className="stamp" aria-hidden="true">
+          <span className="stamp-face" />
+        </div>
+        <div className="envelope-address">
+          <h1>Letters to Santa</h1>
+          <p className="address">
+            <span>To Santa Claus, at the North Pole</span>
+            <span>From the kids of the Wausau area</span>
+          </p>
+          <p className="lede" role="status">
+            Opening Santa’s mailbag…
+          </p>
+        </div>
+      </header>
+      <div className="letters-opening" aria-hidden="true">
+        <div className="letter" />
+        <div className="letter" />
+        <div className="letter" />
+      </div>
+    </main>
   );
 }
 

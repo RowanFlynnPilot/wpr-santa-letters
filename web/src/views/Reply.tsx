@@ -6,9 +6,11 @@ import { track } from "../analytics";
 import { Postmark } from "../components/Postmark";
 import { Stamp } from "../components/Stamp";
 import { apDate } from "../format";
+import { hashOf } from "../looks";
 import { LINKED_FROM, LINKED_LETTER } from "../linked";
 import { loadLetter, loadSeason, loadSponsors } from "../reads";
 import { presentingSponsor } from "../sales";
+import { santaReply } from "../santaReply";
 import type { Letter } from "../types";
 import { useLoad } from "../useLoad";
 
@@ -34,20 +36,10 @@ function ReplyFor({ letterId }: { letterId: string }) {
   return <SantasReply letter={letter} sponsor={presentingSponsor(sponsors)} />;
 }
 
-// Santa's words. The youngest letters were written with a grown-up's help, and Santa thanks them too.
-export function replyParagraphs(letter: Pick<Letter, "first_name" | "age" | "town">): string[] {
-  return [
-    `Thank you for your letter! It came all the way ${letter.town ? `from ${letter.town} ` : ""}to the North Pole, ` +
-    "and Mrs. Claus read it out loud to the elves at breakfast." +
-    (letter.age <= 4 ? " Thank you to the grown-up who helped you write it, too." : ""),
-    "The elves are busy in the workshop, the reindeer are practicing their landings, and your letter is pinned to " +
-    "the wall where I can see it every day.",
-    "Keep being kind, helping out at home and being a good friend. Those are the things I notice most.",
-  ];
-}
-
 function SantasReply({ letter, sponsor }: { letter: Letter; sponsor: ReturnType<typeof presentingSponsor> }) {
   const today = apDate(new Date().toISOString());
+  // One of 256 wordings, by the letter: the same each time it's opened, different for a brother or sister.
+  const reply = santaReply(letter, hashOf(letter.id));
   const print = () => {
     track("Santa Reply Printed", { from: LINKED_FROM });
     window.print();
@@ -73,12 +65,12 @@ function SantasReply({ letter, sponsor }: { letter: Letter; sponsor: ReturnType<
           </div>
         </header>
         <p className="reply-dear">Dear {letter.first_name},</p>
-        {replyParagraphs(letter).map((text) => (
+        {reply.paragraphs.map((text) => (
           <p key={text}>{text}</p>
         ))}
         <p className="reply-close">Merry Christmas,</p>
         <p className="reply-sign">Santa</p>
-        <p className="reply-ps">P.S. Mrs. Claus says to leave a little room for cookies.</p>
+        <p className="reply-ps">P.S. {reply.postscript}</p>
         <footer className="reply-foot">
           From Letters to Santa, Wausau Pilot &amp; Review{sponsor ? `, presented by ${sponsor.name}` : ""}
         </footer>

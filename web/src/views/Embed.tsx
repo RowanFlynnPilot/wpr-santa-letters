@@ -53,7 +53,19 @@ function line(season: Season, total: number, winners: number): string {
 
 export function Embed() {
   const strip = useLoad(loadStrip);
-  if (strip.status === "loading") return <p className="status">Opening Santa’s mailbag…</p>;
+  if (strip.status === "loading") {
+    // The band and its title at once, so the front page doesn't show a blank frame while it loads.
+    return (
+      <main className="strip" aria-busy="true">
+        <div className="strip-head">
+          <h1 className="strip-title">Letters to Santa</h1>
+          <p className="strip-line" role="status">
+            Opening Santa’s mailbag…
+          </p>
+        </div>
+      </main>
+    );
+  }
   if (strip.status === "failed") return <p className="status">Letters to Santa isn’t loading right now.</p>;
 
   const { season, sponsors, letters, total, winners, pickId } = strip.data;

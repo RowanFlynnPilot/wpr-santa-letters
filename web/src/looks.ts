@@ -7,14 +7,19 @@
 export const PAPERS = ["primary", "notebook", "pad"] as const;
 export type Paper = (typeof PAPERS)[number];
 
-export function paperFor(letterId: string): Paper {
-  // FNV-1a over the id: spreads consecutive and similar ids evenly across the papers.
+// A whole number from a letter's id, the same every time: what picks its paper here and the wording of
+// Santa's reply (santaReply.ts). FNV-1a, which spreads consecutive and similar ids evenly.
+export function hashOf(text: string): number {
   let hash = 0x811c9dc5;
-  for (let i = 0; i < letterId.length; i++) {
-    hash ^= letterId.charCodeAt(i);
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
     hash = Math.imul(hash, 0x01000193);
   }
-  return PAPERS[(hash >>> 0) % PAPERS.length];
+  return hash >>> 0;
+}
+
+export function paperFor(letterId: string): Paper {
+  return PAPERS[hashOf(letterId) % PAPERS.length];
 }
 
 // How wide a sponsor's longest word sets, in units of an average lowercase letter, so the stamp can size
