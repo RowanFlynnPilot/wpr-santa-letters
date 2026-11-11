@@ -1106,6 +1106,63 @@ textarea.ruled {
   max-width: 42rem;
 }
 
+.add-letter-fields {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* The letter's photo, to check the words against: zoomed in steps, scrolled inside its own frame. */
+.photo-viewer {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.photo-viewer-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.photo-viewer-tools .button {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+.photo-viewer-pane {
+  max-height: 24rem;
+  overflow: auto;
+  /* Room kept for the scrollbar, so the photo doesn't shift when zooming brings one in. */
+  scrollbar-gutter: stable;
+  border: 1px solid var(--line);
+  background: var(--sheet);
+}
+
+.photo-viewer-pane img {
+  display: block;
+  max-width: none;
+}
+
+/* Wide enough for both: the photo stays in view on the left while the boxes scroll past on the right. */
+@media (min-width: 62rem) {
+  .add-letter-with-photo {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 42rem);
+    align-items: start;
+    gap: 1.5rem;
+    max-width: none;
+  }
+
+  .add-letter-photo {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .photo-viewer-pane {
+    max-height: calc(100vh - 6rem);
+  }
+}
+
 .prizes-desk {
   display: grid;
   gap: 1.5rem;
@@ -1331,9 +1388,36 @@ body:has(main.strip) {
   mask-image: linear-gradient(to bottom, #000 75%, transparent);
 }
 
+/* The same three papers as the mailbag's letters (looks.ts), by color alone at this size. */
+.strip-letter[data-paper="notebook"] {
+  background-color: #fdfdfb;
+}
+
+.strip-letter[data-paper="pad"] {
+  border-top: 0.4rem solid #8a4a3f;
+  background-color: #fcf7d6;
+}
+
+.strip-pick {
+  color: var(--airmail);
+  font: 700 0.6875rem / 1.4 var(--body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .strip-byline {
   color: var(--bark);
   font: 600 0.8125rem / 1.6 var(--body);
+}
+
+/* The top of the handwritten page, across the letter. */
+.strip-photo {
+  width: 100%;
+  height: 6.5rem;
+  margin-bottom: 0.15rem;
+  border: 1px solid var(--line);
+  object-fit: cover;
+  object-position: top;
 }
 
 .strip-text {

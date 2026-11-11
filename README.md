@@ -65,6 +65,7 @@ Production (live as of Nov. 10, 2026) is Supabase project `vhimfuaproejbxahjgpr`
 
 `#/admin` > Add a letter: add the photo or scan first, then **Read the letter for me**. Claude (`claude-opus-5-5`, through the `transcribe-letter` function) reads the child's handwriting and fills in the boxes that are still blank: first name, age and town if the letter says them, the letter in the child's own spelling, and, for a mailed letter, a return address it can see (private, for the prize drawing). Then:
 
+- The photo stays beside the boxes (above them on a narrow screen), with Zoom in and Zoom out, so you never scroll between the two.
 - Check every word against the photo. A word Claude couldn't read is marked `[?]`; the letter can't be added until each one is fixed.
 - **Not for the mailbag** lists any last name, address, phone, email, school or teacher Claude found in the letter, each with **Take it out**. The usual privacy check still runs under the letter box.
 - If the photo itself shows an address, a full name or a face (an envelope in the shot, say), the page says so: remove the photo, or take a new one that leaves it out.
@@ -102,7 +103,7 @@ For the sales pitch, `https://rowanflynnpilot.github.io/wpr-santa-letters/?demo#
 
 ## Front-page strip
 
-A band for the front page, beside the Buck Board's: the title, a line for the season (when letters open; how many so far and the deadline; when they go to the North Pole; on delivery day, read them all and see who won), the stamp, two buttons and as many of the newest four letters as fit whole (two across a typical front-page column, one on a phone). Each letter opens itself in the mailbag; every link leaves for the Letters to Santa page. Where it goes on the front page is Shereen's call. Paste into a Custom HTML block, then purge the page:
+A band for the front page, beside the Buck Board's: the title, a line for the season (when letters open; how many so far and the deadline; when they go to the North Pole; on delivery day, read them all and see who won), the stamp, two buttons and as many of four letters as fit whole (two across a typical front-page column, one on a phone): the editor's pick first, marked as such, then the newest. A letter with a photo shows the top of the handwritten page. Each letter opens itself in the mailbag; every link leaves for the Letters to Santa page. Where it goes on the front page is Shereen's call. Paste into a Custom HTML block, then purge the page:
 
 ```html
 <iframe src="https://rowanflynnpilot.github.io/wpr-santa-letters/#/embed" title="Letters to Santa" style="width:100%;height:max(340px,calc(620px - 40vw));border:0;display:block" loading="lazy"></iframe>

@@ -1,13 +1,15 @@
 // The front-page strip: a band on WPR's front page, in a frame whose height the page sets (README).
 // The envelope again, small: the title, a line for the season, the stamp, and the newest letters on
-// ruled paper, each linking to itself in the mailbag. Every link leaves the front page for WPR's
+// ruled paper, each linking to itself in the mailbag. The editor's pick, when there is one, leads them. Every link leaves the front page for WPR's
 // Letters to Santa page (target _top); the strip never switches views inside itself.
 import { Stamp } from "../components/Stamp";
 import { letterLink } from "../components/ShareButton";
 import { env } from "../env";
 import { apDate, apLastDay, byline, capitalize, count } from "../format";
-import { loadNewest, loadSeason, loadSponsors, loadWinners } from "../reads";
+import { paperFor } from "../looks";
+import { loadFeaturedId, loadLetter, loadNewest, loadSeason, loadSponsors, loadWinners } from "../reads";
 import { DEMO, presentingSponsor } from "../sales";
+import { photoUrl } from "../storage";
 import type { Season } from "../types";
 import { useLoad } from "../useLoad";
 
@@ -15,13 +17,20 @@ const NEWEST = 4;
 
 async function loadStrip() {
   const season = await loadSeason();
-  const [sponsors, newest, winners] = await Promise.all([
+  const [sponsors, newest, winners, pickId] = await Promise.all([
     loadSponsors(season.id),
     loadNewest(season.id, NEWEST),
     // Public from delivery day only; before then the answer is always none.
     season.phase === "delivered" ? loadWinners(season.id) : Promise.resolve([]),
+    // Null when there's no pick, or it can't be read (reads.ts): the strip is then the newest letters.
+    loadFeaturedId(season.id),
   ]);
-  return { season, sponsors, ...newest, winners: winners.length };
+  // The pick leads, ahead of the newest; it may be older than the newest few, so it's fetched on its own.
+  const pick = pickId
+    ? (newest.letters.find((l) => l.id === pickId) ?? (await loadLetter(pickId).catch(() => null)))
+    : null;
+  const letters = pick ? [pick, ...newest.letters.filter((l) => l.id !== pick.id)].slice(0, NEWEST) : newest.letters;
+  return { season, sponsors, letters, total: newest.total, winners: winners.length, pickId: pick?.id ?? null };
 }
 
 function line(season: Season, total: number, winners: number): string {
@@ -47,7 +56,7 @@ export function Embed() {
   if (strip.status === "loading") return <p className="status">Opening Santa’s mailbag…</p>;
   if (strip.status === "failed") return <p className="status">Letters to Santa isn’t loading right now.</p>;
 
-  const { season, sponsors, letters, total, winners } = strip.data;
+  const { season, sponsors, letters, total, winners, pickId } = strip.data;
   const open = season.phase === "open" || DEMO;
   return (
     <main className="strip">
@@ -73,11 +82,20 @@ export function Embed() {
         </div>
       </div>
       {letters.length > 0 && (
-        <ol className="strip-letters" aria-label="The newest letters">
+        <ol className="strip-letters" aria-label="Letters from the mailbag">
           {letters.map((letter) => (
             <li key={letter.id}>
-              <a className="strip-letter" href={letterLink(letter.id, "front-page")} target="_top">
+              <a
+                className="strip-letter"
+                data-paper={paperFor(letter.id)}
+                href={letterLink(letter.id, "front-page")}
+                target="_top"
+              >
+                {letter.id === pickId && <span className="strip-pick">Editor’s pick</span>}
                 <span className="strip-byline">{byline(letter)}</span>
+                {/* The child's own hand, when there's a photo: the top of the page, as in the mailbag. The
+                    link's words already say whose letter it is, so the picture needs none of its own. */}
+                {letter.photo_id && <img className="strip-photo" src={photoUrl(letter.photo_id, "thumb")} alt="" />}
                 <span className="strip-text">{letter.body}</span>
               </a>
             </li>

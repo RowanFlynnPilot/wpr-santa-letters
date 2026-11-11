@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { LetterFields } from "../../components/LetterFields";
 import { PhotoField, type ChosenPhoto } from "../../components/PhotoField";
+import { PhotoViewer } from "../../components/PhotoViewer";
 import { ReadLetter } from "../../components/ReadLetter";
 import { addLetter, loadDraws, notifyPosted, type Reading, type TypedLetter } from "../../data";
 import { apLastDay, possessive } from "../../format";
@@ -79,7 +80,15 @@ export function AddLetter({ season }: { season: Season }) {
   };
 
   return (
-    <form className="add-letter" onSubmit={save}>
+    <form className={photo ? "add-letter add-letter-with-photo" : "add-letter"} onSubmit={save}>
+      {/* The photo stays beside the boxes on a wide screen (above them on a narrow one), so a reading or a
+          typed letter can be checked against it word by word without scrolling between the two. */}
+      {photo && (
+        <aside className="add-letter-photo" aria-label="The letter’s photo">
+          <PhotoViewer src={photo.preview} />
+        </aside>
+      )}
+      <div className="add-letter-fields">
       <p className="hint">
         For letters that came by email or mail by {apLastDay(season.entries_close_at)} (the rules). They go straight
         into the mailbag, so check for last names, addresses and schools as you type. Letters can be added until the
@@ -124,6 +133,7 @@ export function AddLetter({ season }: { season: Season }) {
           onPreparing={setPreparing}
           label="Add a photo or scan of the letter (optional)"
           hint="It shows with the letter. Leave it out if it shows a last name, an address or a face."
+          showPreview={false}
         />
         <ReadLetter
           photo={photo}
@@ -190,6 +200,7 @@ export function AddLetter({ season }: { season: Season }) {
         <button type="submit" className="button button-airmail" disabled={busy || preparing}>
           {busy ? "Adding…" : "Add to the mailbag"}
         </button>
+      </div>
       </div>
     </form>
   );

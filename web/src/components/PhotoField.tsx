@@ -12,12 +12,15 @@ export function PhotoField({
   onPreparing,
   label,
   hint,
+  showPreview = true,
 }: {
   photo: ChosenPhoto | null;
   onChange: (photo: ChosenPhoto | null) => void;
   onPreparing: (preparing: boolean) => void;
   label: string;
   hint: string;
+  // Off where the photo is shown elsewhere on the page (Add a letter sets it beside the boxes).
+  showPreview?: boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
@@ -49,7 +52,7 @@ export function PhotoField({
     <div className="photo-field">
       <label className="photo-picker">
         <span className="photo-picker-label">{preparing ? "Getting the photo ready…" : photo ? "Choose a different photo" : label}</span>
-        {photo && <img src={photo.preview} alt="The photo you chose" />}
+        {photo && showPreview && <img src={photo.preview} alt="The photo you chose" />}
         <input
           type="file"
           accept="image/*"
