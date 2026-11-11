@@ -8,3 +8,7 @@ supabase/functions/.env
 
 # Sample letters for scripts/read-letters.ts: children's letters never go in the repo.
 samples/
+
+# Browser test output (web/tests); the approved screenshots in web/tests/__screenshots__ are committed.
+test-results/
+playwright-report/
