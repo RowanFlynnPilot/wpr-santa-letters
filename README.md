@@ -25,6 +25,17 @@ npm run dev                          # http://localhost:5173/wpr-santa-letters/#
 
 Views: `#/mailbag`, `#/write` (the form), `#/embed` (the front-page strip), `#/reply` (Santa's reply to one letter, `?letter=<id>#/reply`, to print) and `#/admin` (staff, opened directly). The season seed opens letters Nov. 27; to try the form locally before then, run in the SQL editor `update public.seasons set entries_open_at = now() where year = 2026;`.
 
+## Browser tests
+
+```sh
+scripts/browser-tests.sh           # run them as CI does (needs Docker)
+scripts/browser-tests.sh update    # after a change meant to alter a page: re-approve its screenshot
+```
+
+Ten tests load the built app in a headless browser against a made-up mailbag (no Supabase project, no network): the mailbag and the front-page strip at a desk's and a phone's width, the form, Santa's reply, a tall photo opening, a link to one letter, and Save it as a picture. Each page is checked for what's on it, for sideways scroll, for the sponsor's name sitting whole on the stamp, by an accessibility scan, and against its approved screenshot in `web/tests/__screenshots__`. CI runs them on every PR and won't publish a site that fails them; when one fails there, the run's `browser-tests` artifact has the screenshots side by side (expected, actual, difference).
+
+The script runs in the same Playwright image as CI, because text renders a little differently on every system and a screenshot approved on a laptop would fail there. After `update`, look at the changed pictures before committing them: approving a screenshot is saying the page looks right. When `@playwright/test` is upgraded, change the image tag in `.github/workflows/pages.yml` to match and run `update`.
+
 ## First deploy
 
 Production (live as of Nov. 10, 2026) is Supabase project `vhimfuaproejbxahjgpr` and https://rowanflynnpilot.github.io/wpr-santa-letters/. These are the steps as they actually went, for next year's project or a rebuild. Nothing is shared with the Buck Board but the Resend account and its verified domain: this project has its own Turnstile widget and its own Resend key, so either can be rotated or revoked without touching the other.

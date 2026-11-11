@@ -43,8 +43,34 @@ jobs:
         with:
           path: web/dist
 
+  # The reader's pages in a real browser against a made-up mailbag (web/tests): what's on them, no sideways
+  # scroll, the stamp, an accessibility scan, and each page's screenshot against the approved one. Runs in
+  # Playwright's own image so a pixel means the same thing as where the screenshots were approved
+  # (scripts/browser-tests.sh); keep the tag in step with @playwright/test in web/package.json.
+  browser:
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --user 1001 --ipc=host
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - run: npm ci
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: browser-tests
+          path: |
+            web/playwright-report
+            web/test-results
+          retention-days: 7
+
   deploy:
-    needs: web
+    # A page that fails its browser tests isn't published.
+    needs: [web, browser]
     # Main only, even when run by hand: a feature branch must never deploy to production.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
