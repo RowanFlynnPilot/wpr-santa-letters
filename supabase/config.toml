@@ -1,0 +1,57 @@
+# Local development config. Match [db].major_version to the hosted project
+# (Dashboard > Settings > Infrastructure) before the first `supabase link`.
+project_id = "wpr-santa-letters"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seasons/2026.sql"]
+
+[storage]
+enabled = true
+file_size_limit = "3MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["https://rowanflynnpilot.github.io/wpr-santa-letters/"]
+# Staff accounts are created in the dashboard; nobody signs up from the app.
+enable_signup = false
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
+otp_length = 6
+otp_expiry = 900
+
+# Staff sign in with a 6-digit code rather than a link, because links don't survive the WordPress
+# iframe. The hosted project needs the same template pasted into Dashboard > Authentication >
+# Email Templates > Magic Link.
+[auth.email.template.magic_link]
+subject = "Your Letters to Santa sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
+# Public endpoint: the anonymous letter form calls it. It uses the secret key internally.
+[functions.submit-letter]
+verify_jwt = false
+
+# Staff only: it checks the caller's sign-in and staff row itself (the project's new API keys aren't
+# the legacy JWT secret the gateway would check). Emails the parent once a letter is posted.
+[functions.letter-posted]
+verify_jwt = false
+
+# Called only by the morning cron job (migration 0008), which sends the secret key in the apikey
+# header; the function checks it itself. Emails the editor the letters waiting for review.
+[functions.staff-digest]
+verify_jwt = false

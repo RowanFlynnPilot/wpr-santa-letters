@@ -1,0 +1,51 @@
+name: Supabase
+
+on:
+  # Every PR, whatever it touches: main requires this job (CLAUDE.md, Commands).
+  pull_request:
+  push:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/supabase.yml"]
+  workflow_dispatch:
+
+jobs:
+  database:
+    # Pinned for the season. Revisit after Dec. 23.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test supabase/functions/_shared web/src
+      - run: deno check supabase/functions/submit-letter/index.ts supabase/functions/letter-posted/index.ts supabase/functions/staff-digest/index.ts
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      # Full stack, not `db start`: the storage service creates the storage.buckets
+      # columns (file_size_limit, allowed_mime_types) that migration 0004 writes.
+      - run: supabase start
+      - run: supabase test db
+
+  deploy:
+    needs: database
+    # Main only, even when run by hand: a feature branch must never deploy to production.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: supabase-deploy
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      - run: supabase db push
+      - run: supabase functions deploy submit-letter --project-ref "$SUPABASE_PROJECT_REF"
+      - run: supabase functions deploy letter-posted --project-ref "$SUPABASE_PROJECT_REF"
+      - run: supabase functions deploy staff-digest --project-ref "$SUPABASE_PROJECT_REF"

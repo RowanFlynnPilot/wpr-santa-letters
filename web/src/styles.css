@@ -1,0 +1,1443 @@
+/* Letters to Santa. WPR's cream, ink and teal. The page is mail bound for the North Pole: the title
+   sits on an airmail envelope (red and teal stripes) whose stamp is the presenting sponsor, and every
+   letter is set on the ruled paper children learn to print on (a solid baseline, a dashed midline,
+   a red margin), with its name, age and town filled into the blanks across the top. The envelope is
+   the one loud thing; the letters stay quiet so the children's words carry the page. */
+
+:root {
+  --paper: #f6f2e9; /* WPR cream */
+  --sheet: #fffdf8; /* writing paper */
+  --ink: #1e2622;
+  --teal: #3a867c;
+  --teal-deep: #2c6a62;
+  --airmail: #b3261e; /* white on it is 6.5:1 */
+  --airmail-deep: #8f1e18;
+  --bark: #6e6353;
+  --line: #dcd3c1;
+  --slate: #32373c; /* WPR's masthead rule and tagline */
+  --rule: #a9cdc7; /* ruled paper: the baseline */
+  --rule-faint: #c9e0dc; /* and the dashed midline */
+  --margin-red: #eba59e;
+  --display: "Fraunces", Georgia, serif;
+  --body: "Public Sans", system-ui, sans-serif;
+  --gap: 1rem;
+  /* One ruled row. The letters' line height is the row, so every line sits on a rule. */
+  --row: 2rem;
+  --margin: 2.75rem;
+  /* One row of the paper: the dashed midline, then the baseline the text sits on. */
+  --ruled: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='32' viewBox='0 0 12 32' preserveAspectRatio='none'%3E%3Cpath d='M0 14.5h6' stroke='%23c9e0dc' stroke-width='1'/%3E%3Cpath d='M0 23.5h12' stroke='%23a9cdc7' stroke-width='1'/%3E%3C/svg%3E");
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 1rem/1.55 var(--body);
+  -webkit-font-smoothing: antialiased;
+  /* A word longer than its space (an email address at large text, a pasted link, a long one-word
+     name) breaks instead of widening the page. Unlike break-word, this lets grids and flex rows shrink. */
+  overflow-wrap: anywhere;
+}
+
+button,
+.button,
+.link-button {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 650;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 1.375rem;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--teal-deep);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.status,
+.empty {
+  padding: 1.5rem var(--gap);
+  color: var(--bark);
+}
+
+/* WPR's flag and footer (reader pages), as on the rest of WPR's tools. ---------- */
+
+.wpr-masthead {
+  padding: 14px var(--gap) 10px;
+  border-top: 4px solid var(--slate);
+  border-bottom: 1px solid var(--slate);
+  background: #fff;
+  text-align: center;
+}
+
+.wpr-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 94%;
+  text-decoration: none;
+}
+
+.wpr-badge {
+  width: 52px;
+  height: 52px;
+  flex: none;
+}
+
+.wpr-wordmark {
+  min-width: 0;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: 44px;
+  object-fit: contain;
+}
+
+.wpr-tagline {
+  margin-top: 8px;
+  color: var(--slate);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase; /* WPR's own tagline */
+}
+
+.wpr-dateline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+  max-width: 880px;
+  margin: 6px auto 0;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+  color: var(--bark);
+  font-size: 10.5px;
+}
+
+.wpr-footer {
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.wpr-footer-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 22px var(--gap) 32px;
+}
+
+.wpr-footer-inner img {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  margin-top: 2px;
+}
+
+.wpr-footer-text {
+  display: grid;
+  gap: 6px;
+  max-width: 72ch;
+  color: var(--bark);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.wpr-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-weight: 700;
+}
+
+.demo-ribbon {
+  padding: 0.6rem var(--gap);
+  background: #f5d77a;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.demo-ribbon a {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.demo-note {
+  padding: 0.6rem 0.8rem;
+  border-radius: 4px;
+  background: #fbeccb;
+}
+
+/* Buttons ------------------------------------------------------------------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.7rem 1.25rem;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: 600 1rem var(--body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 80ms ease-out;
+}
+
+.button:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+}
+
+.button-airmail {
+  border-color: var(--airmail);
+  background: var(--airmail);
+  color: #fff;
+  font-weight: 700;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button-airmail:hover {
+    border-color: var(--airmail-deep);
+    background: var(--airmail-deep);
+    color: #fff;
+  }
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--teal-deep);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .link-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+/* The envelope: the mailbag's title, address and stamp. ----------------------- */
+
+.mailbag {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--gap) var(--gap) 3rem;
+}
+
+.envelope {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem 2.5rem;
+  align-items: start;
+  padding: clamp(1.25rem, 4vw, 2.75rem);
+  border: 12px solid transparent;
+  border-image: repeating-linear-gradient(
+      -45deg,
+      var(--airmail) 0 16px,
+      var(--sheet) 16px 24px,
+      var(--teal-deep) 24px 40px,
+      var(--sheet) 40px 48px
+    )
+    12;
+  background: var(--sheet);
+}
+
+.envelope-address {
+  display: grid;
+  grid-column: 1;
+  grid-row: 1;
+  gap: 1rem;
+  max-width: 44rem;
+}
+
+.envelope > .stamp {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.envelope h1 {
+  font-size: clamp(2.6rem, 9vw, 5rem);
+  /* At very large text sizes "Letters" alone can outgrow a phone; it hyphenates instead. */
+  hyphens: auto;
+  overflow-wrap: break-word;
+  font-variation-settings: "SOFT" 100, "opsz" 144;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+/* Addressed like an envelope: who it's to, who it's from. */
+.address {
+  display: grid;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--airmail);
+  font: 500 clamp(1.125rem, 2.6vw, 1.375rem) / 1.45 var(--display);
+  font-variation-settings: "SOFT" 100;
+}
+
+.address span {
+  text-wrap: balance;
+}
+
+.lede {
+  max-width: 60ch;
+  font-size: 1.0625rem;
+}
+
+.envelope-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.count {
+  color: var(--teal-deep);
+  font-weight: 700;
+}
+
+/* The stamp: the presenting sponsor's logo on a perforated white stamp, or WPR's badge until it sells. */
+.stamp {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  width: 9.5rem;
+  filter: drop-shadow(0 1px 1px rgba(30, 38, 34, 0.25));
+}
+
+.stamp-face {
+  display: grid;
+  place-items: center;
+  width: 8.5rem;
+  aspect-ratio: 4 / 5;
+  padding: 0.85rem;
+  background: #fff;
+  /* The stamp's printed frame, inside the perforations. */
+  box-shadow: inset 0 0 0 7px #fff, inset 0 0 0 8px var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  rotate: 3deg;
+  /* Perforations: holes on a 10px grid, kept only in the outer 5px. */
+  -webkit-mask:
+    radial-gradient(circle, transparent 3px, #000 3.5px) -5px -5px / 10px 10px round,
+    linear-gradient(#000 0 0) 5px 5px / calc(100% - 10px) calc(100% - 10px) no-repeat;
+  mask:
+    radial-gradient(circle, transparent 3px, #000 3.5px) -5px -5px / 10px 10px round,
+    linear-gradient(#000 0 0) 5px 5px / calc(100% - 10px) calc(100% - 10px) no-repeat;
+}
+
+.stamp-face img {
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.stamp-name {
+  max-width: 100%;
+  font: 650 0.9375rem / 1.15 var(--display);
+  text-align: center;
+}
+
+/* A name with a long word ("IncredibleBank") is set a step down so the word fits whole. */
+.stamp-name-long {
+  font-size: 0.75rem;
+}
+
+.stamp-demo {
+  padding: 0.5rem;
+  border: 2px dashed var(--bark);
+  color: var(--bark);
+}
+
+.stamp-house .stamp-face {
+  background: var(--teal);
+}
+
+.stamp-house img {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.stamp-caption {
+  color: var(--bark);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  /* The stamp floats in the corner and the title wraps around it, at any text size. */
+  .envelope,
+  .envelope-address,
+  .sent {
+    display: block;
+  }
+
+  .envelope-address > * + *,
+  .sent > * + * {
+    margin-top: 1rem;
+  }
+
+  .envelope > .stamp,
+  .sent > .stamp {
+    float: right;
+    width: 5.5rem;
+    margin: 0 0 0.75rem 0.75rem;
+  }
+
+  .stamp-face {
+    width: 5rem;
+    padding: 0.5rem;
+  }
+
+  .stamp-name {
+    font-size: 0.75rem;
+  }
+
+  .stamp-name-long {
+    font-size: 0.5rem;
+  }
+
+  .stamp-caption {
+    font-size: 0.6875rem;
+  }
+
+  .stamp-house img {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .sent .stamp {
+    margin-top: 0;
+  }
+}
+
+/* A posted stamp lands with a small thunk: the one moment of motion, answering a sent letter. */
+@media (prefers-reduced-motion: no-preference) {
+  .sent .stamp-face {
+    animation: thunk 380ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  }
+
+  @keyframes thunk {
+    from {
+      opacity: 0;
+      scale: 1.35;
+      rotate: -6deg;
+    }
+  }
+}
+
+/* The letters: ruled writing paper. ------------------------------------------ */
+
+/* Columns of letters, filled row by row (LetterWall sets how many fit). */
+.letter-wall {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1.5rem;
+}
+
+.letter-column {
+  display: grid;
+  align-content: start;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.letter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.25rem;
+  padding: 1rem 1.25rem 1.25rem 0;
+  border: 1px solid var(--line);
+  background: var(--sheet);
+}
+
+/* The blanks across the top of the page, filled in. */
+.letter-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  padding-left: var(--margin);
+  color: var(--bark);
+  font: 600 0.8125rem / 1.9 var(--body);
+}
+
+.blank-fill {
+  display: inline-block;
+  min-width: 2.75rem;
+  padding: 0 0.35rem;
+  border-bottom: 1px solid var(--ink);
+  color: var(--ink);
+  font: 600 1.125rem / 1.5 var(--display);
+  font-variation-settings: "SOFT" 100;
+}
+
+/* Every line on a rule. The red margin runs the height of the page. */
+.letter-body,
+textarea.ruled {
+  padding-left: var(--margin);
+  font: 400 1.1875rem / var(--row) var(--display);
+  font-variation-settings: "SOFT" 100;
+  background-image:
+    linear-gradient(
+      to right,
+      transparent calc(var(--margin) - 0.75rem),
+      var(--margin-red) calc(var(--margin) - 0.75rem) calc(var(--margin) - 0.75rem + 1px),
+      transparent calc(var(--margin) - 0.75rem + 1px)
+    ),
+    var(--ruled);
+  background-size: 100% 100%, 12px var(--row);
+  background-repeat: no-repeat, repeat;
+}
+
+.letter-body {
+  padding-top: 0.25rem;
+  background-position: 0 0, 0 0.25rem;
+}
+
+/* A paragraph's line breaks are the child's; a blank row separates paragraphs, still on the rules. */
+.letter-body p {
+  white-space: pre-line;
+}
+
+.letter-body p + p {
+  margin-top: var(--row);
+}
+
+.letter-photo {
+  display: grid;
+  justify-items: start;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0 var(--margin);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--teal-deep);
+  font: 600 0.875rem var(--body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.letter-photo img {
+  max-height: 12rem;
+  border: 1px solid var(--line);
+}
+
+.letter-photo[aria-expanded="true"] img {
+  max-height: none;
+}
+
+.letter-photo-label {
+  text-decoration: underline;
+}
+
+/* The letter a link opened, under the envelope, before the rest. */
+.linked-letter {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  scroll-margin-top: 1rem;
+}
+
+.linked-card {
+  max-width: 34rem;
+}
+
+.linked-card .letter {
+  outline: 3px solid var(--airmail);
+  outline-offset: 4px;
+}
+
+.share {
+  display: grid;
+  justify-items: start;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0 var(--margin);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.share-note {
+  color: var(--bark);
+  font-weight: 400;
+}
+
+.find {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 24rem;
+  margin-top: 2rem;
+}
+
+.more {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+/* The privacy check: what to take out before a letter is published. */
+.privacy-note {
+  padding: 0.6rem 0.8rem;
+  border-left: 4px solid #c99a1c;
+  background: #fbf1d6;
+}
+
+.empty-mailbag {
+  margin: 2.5rem 0;
+  font: 500 1.375rem / 1.4 var(--display);
+  font-variation-settings: "SOFT" 100;
+  text-align: center;
+}
+
+/* The foot of the mailbag: other ways to send, prizes, sponsors. ------------------- */
+
+.mailbag-foot {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 2rem;
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line);
+}
+
+.mailbag-foot section {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+}
+
+.mailbag-foot ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.mailing-address {
+  font: 500 1.0625rem / 1.5 var(--display);
+}
+
+.sponsor-list ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.sponsor-list img {
+  max-width: 9rem;
+  max-height: 3.5rem;
+  object-fit: contain;
+}
+
+.sponsor-list span {
+  font: 650 1.0625rem var(--display);
+}
+
+/* Delivery day: the winners lead. */
+.winners {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  border-left: 6px solid var(--airmail);
+  background: var(--sheet);
+}
+
+.winners ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+/* The letter form. -------------------------------------------------------------------- */
+
+.write {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.5rem var(--gap) 3rem;
+}
+
+.write > *,
+.write form > * {
+  min-width: 0;
+}
+
+.write h1 {
+  font-size: clamp(2.25rem, 7vw, 3.5rem);
+  font-variation-settings: "SOFT" 100, "opsz" 144;
+  letter-spacing: -0.015em;
+}
+
+.write-head {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.write form,
+.admin form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+fieldset {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin: 0;
+  padding: 1.25rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+legend {
+  padding: 0 0 0.25rem;
+  font: 650 1.375rem var(--display);
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 1rem;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--bark);
+  border-radius: 6px;
+  background: var(--sheet);
+  color: var(--ink);
+  font: 400 1rem var(--body);
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* The parent types onto the same ruled paper the mailbag shows. */
+textarea.ruled {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-color: var(--line);
+  border-radius: 2px;
+  background-attachment: local;
+  background-position: 0 0, 0 0.5rem;
+}
+
+.optional,
+.hint {
+  color: var(--bark);
+  font-weight: 400;
+}
+
+.counter-near {
+  color: var(--airmail);
+  font-weight: 600;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-weight: 400;
+}
+
+.check input,
+.choice input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0.15rem 0 0;
+  flex: none;
+  accent-color: var(--teal);
+}
+
+.photo-field {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+}
+
+.photo-picker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 7rem;
+  padding: 1rem;
+  border: 2px dashed var(--bark);
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.photo-picker img {
+  max-height: 22rem;
+  object-fit: contain;
+}
+
+.photo-picker input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.photo-picker:focus-within {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--bark);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--airmail);
+  background: #fbe9e7;
+}
+
+.done {
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--teal);
+  background: #e6f1ef;
+}
+
+.turnstile {
+  min-height: 65px;
+}
+
+/* After sending: the envelope again, small, with its stamp landing. */
+.sent {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem 1.5rem;
+  align-items: start;
+  padding: 1.5rem;
+  border: 10px solid transparent;
+  border-image: repeating-linear-gradient(
+      -45deg,
+      var(--airmail) 0 14px,
+      var(--sheet) 14px 21px,
+      var(--teal-deep) 21px 35px,
+      var(--sheet) 35px 42px
+    )
+    10;
+  background: var(--sheet);
+}
+
+.sent .stamp {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.sent h1,
+.sent p {
+  grid-column: 1;
+}
+
+.letter-preview {
+  max-width: 24rem;
+}
+
+/* Staff ----------------------------------------------------------------------- */
+
+.admin {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem var(--gap) 3rem;
+}
+
+.admin h1 {
+  font-size: 2rem;
+}
+
+.admin-head {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tools,
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tools button,
+.filters button {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--bark);
+  border-radius: 6px;
+  background: var(--sheet);
+  color: var(--ink);
+  font: 600 0.9375rem var(--body);
+  cursor: pointer;
+}
+
+.tools button[aria-pressed="true"] {
+  border-color: var(--teal-deep);
+  background: var(--teal-deep);
+  color: #fff;
+}
+
+.filters button {
+  border-radius: 999px;
+}
+
+.filters button[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  gap: 1.5rem;
+}
+
+.review-item {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+}
+
+.review-item .letter {
+  margin: 0;
+}
+
+.review-item .actions label {
+  flex: 1 1 12rem;
+}
+
+.add-letter {
+  max-width: 42rem;
+}
+
+.prizes-desk {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 48rem;
+}
+
+.prizes-desk section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Declining many waiting letters at once. */
+.bulk-decline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 1.25rem;
+}
+
+.bulk-decline label {
+  display: flex;
+  flex: 1 1 18rem;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+/* A checkbox (.check) above each waiting letter, for declining several at once. */
+.pick {
+  align-items: center;
+  font-size: 0.9375rem;
+}
+
+.pick input {
+  margin: 0;
+}
+
+/* A mailed letter's return address, line by line, ready for an envelope. */
+.return-address {
+  display: block;
+  white-space: pre-line;
+}
+
+.prize-rows {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prize-row {
+  display: grid;
+  justify-items: start;
+  gap: 0.4rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  background: var(--sheet);
+}
+
+.prize-row h3 {
+  font-size: 1.125rem;
+}
+
+.article-desk {
+  display: grid;
+  gap: 1rem;
+  max-width: 48rem;
+}
+
+.article-desk details textarea {
+  margin-top: 0.5rem;
+  font: 400 0.8125rem / 1.5 ui-monospace, monospace;
+}
+
+.article-preview {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  background: #fff;
+  font: 400 1.0625rem / 1.6 Georgia, serif;
+}
+
+.article-preview hr {
+  width: 100%;
+  margin: 0.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* The front-page strip. ------------------------------------------------------------------ */
+
+/* It fills the frame WordPress gives it, inside an airmail border; the letters take what's left.
+   Never sideways; at very large text, what doesn't fit scrolls rather than being cut off. */
+body:has(main.strip) {
+  overflow-x: hidden;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+  height: 100vh;
+  padding: 1rem 1.25rem;
+  border: 10px solid transparent;
+  border-image: repeating-linear-gradient(
+      -45deg,
+      var(--airmail) 0 14px,
+      var(--sheet) 14px 21px,
+      var(--teal-deep) 21px 35px,
+      var(--sheet) 35px 42px
+    )
+    10;
+  background: var(--sheet);
+}
+
+.strip-head {
+  display: block;
+}
+
+.strip-head > * + * {
+  margin-top: 0.6rem;
+}
+
+.strip-head > .stamp {
+  float: right;
+  width: 5.5rem;
+  margin: 0 0 0.5rem 0.75rem;
+}
+
+.strip .stamp-face {
+  width: 5rem;
+  padding: 0.5rem;
+}
+
+.strip .stamp-caption {
+  font-size: 0.6875rem;
+}
+
+.strip .stamp-house img {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.strip-title {
+  font: 650 clamp(1.75rem, 4vw, 2.5rem) / 1 var(--display);
+  font-variation-settings: "SOFT" 100, "opsz" 144;
+  letter-spacing: -0.015em;
+}
+
+.strip-title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.strip-line {
+  max-width: 52ch;
+}
+
+.strip-letters {
+  container-type: inline-size;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.strip-letters li {
+  min-height: 0;
+}
+
+/* As many of the newest letters as fit whole, at least 13rem each; the rest wait in the mailbag. No
+   sideways row, so no scrollbar across the front page (Windows draws one for any sideways scroll). */
+.strip-letters li:nth-child(n + 2) {
+  display: none;
+}
+
+@container (min-width: 27rem) {
+  .strip-letters li:nth-child(2) {
+    display: block;
+  }
+}
+
+@container (min-width: 41rem) {
+  .strip-letters li:nth-child(3) {
+    display: block;
+  }
+}
+
+@container (min-width: 55rem) {
+  .strip-letters li:nth-child(4) {
+    display: block;
+  }
+}
+
+/* A letter on ruled paper, cut off where the strip ends. */
+.strip-letter {
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+  height: 100%;
+  padding: 0.6rem 0.9rem 0 var(--margin);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background-color: #fff;
+  background-image:
+    linear-gradient(
+      to right,
+      transparent calc(var(--margin) - 0.75rem),
+      var(--margin-red) calc(var(--margin) - 0.75rem) calc(var(--margin) - 0.75rem + 1px),
+      transparent calc(var(--margin) - 0.75rem + 1px)
+    );
+  color: var(--ink);
+  text-decoration: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent);
+  mask-image: linear-gradient(to bottom, #000 75%, transparent);
+}
+
+.strip-byline {
+  color: var(--bark);
+  font: 600 0.8125rem / 1.6 var(--body);
+}
+
+.strip-text {
+  font: 400 1.0625rem / 1.6 var(--display);
+  font-variation-settings: "SOFT" 100;
+  white-space: pre-line;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .strip-letter:hover .strip-byline {
+    color: var(--teal-deep);
+    text-decoration: underline;
+  }
+}
+
+/* Wide: the words on the left, the letters across the rest. */
+@media (min-width: 760px) {
+  .strip {
+    grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.newsletter-desk {
+  display: grid;
+  gap: 1rem;
+  max-width: 48rem;
+}
+
+.newsletter-desk .since {
+  max-width: 20rem;
+}
+
+.newsletter-desk details textarea {
+  margin-top: 0.5rem;
+  font: 400 0.8125rem / 1.5 ui-monospace, monospace;
+}
+
+.newsletter-preview {
+  padding: 1rem 0;
+  border: 1px solid var(--line);
+  background: #f4f4f4;
+  /* The email is 600px wide; on a phone it scrolls inside its box, not the whole page. */
+  overflow-x: auto;
+}
+
+/* What the privacy check found in a letter offered for the newsletter (the Review note's marker). */
+.privacy-flag {
+  display: block;
+  margin-top: 0.2rem;
+  padding-left: 0.5rem;
+  border-left: 3px solid #c99a1c;
+  font-size: 0.875rem;
+}
+
+/* Santa's reply: North Pole stationery to print at home. Its one flourish is the red postmark. */
+.reply {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.reply-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  color: var(--bark);
+}
+
+.reply-sheet {
+  position: relative;
+  padding: 2.5rem clamp(1.25rem, 5vw, 3.5rem) 2rem;
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 0 0 6px var(--sheet), inset 0 0 0 7px var(--margin-red);
+  font-family: var(--display);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.reply-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* The postmark and stamp stay together, top right; on a phone they drop below Santa's name. */
+.reply-marks {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.reply-from {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 2.25rem;
+  font-style: italic;
+  font-variation-settings: "SOFT" 100;
+  line-height: 1.1;
+}
+
+.reply-place {
+  margin: 0.25rem 0 0;
+  font-family: var(--body);
+  font-size: 0.9375rem;
+  letter-spacing: 0.04em;
+  color: var(--bark);
+}
+
+/* The cancellation's wavy lines run onto the stamp, as the post office's would. */
+.reply .postmark {
+  position: relative;
+  z-index: 1;
+  flex: 0 1 10.5rem;
+  min-width: 7rem;
+  margin-right: -2.75rem;
+  margin-top: 1.25rem;
+  color: var(--airmail);
+  opacity: 0.85;
+  mix-blend-mode: multiply;
+  transform: rotate(-8deg);
+  font-family: var(--body);
+}
+
+.reply-sheet p {
+  margin: 0 0 1rem;
+}
+
+.reply-dear {
+  font-weight: 600;
+}
+
+.reply-close {
+  margin-top: 1.75rem !important;
+}
+
+.reply-sign {
+  font-size: 2.75rem;
+  font-style: italic;
+  font-variation-settings: "SOFT" 100;
+  line-height: 1;
+}
+
+.reply-ps {
+  font-size: 1.0625rem;
+  color: var(--bark);
+}
+
+.reply-foot {
+  margin-top: 2rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--body);
+  font-size: 0.8125rem;
+  color: var(--bark);
+}
+
+@media print {
+  .reply-tools {
+    display: none;
+  }
+
+  body {
+    background: none;
+  }
+
+  .reply {
+    max-width: none;
+    padding: 0;
+  }
+
+  .reply-sheet {
+    border: 0;
+    padding-top: 3rem;
+    font-size: 1.4rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    size: letter;
+    margin: 0.6in;
+  }
+}
