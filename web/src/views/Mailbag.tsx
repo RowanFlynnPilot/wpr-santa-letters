@@ -35,6 +35,8 @@ export function Mailbag() {
   const { season, sponsors, prizes, letters, winners } = mailbag.data;
   const open = season.phase === "open" || DEMO;
   const linked = LINKED_LETTER ? letters.find((l) => l.id === LINKED_LETTER) : undefined;
+  // The editor's pick leads the letters, unless it's the letter the reader followed a link to (shown above).
+  const featured = letters.find((l) => l.id === mailbag.data.featured && l !== linked);
   // How long until the next date on the calendar; a sales preview counts as open, like the rest of the page.
   const daysLeft = countdown(DEMO && season.phase === "upcoming" ? { ...season, phase: "open" } : season);
   return (
@@ -90,8 +92,18 @@ export function Mailbag() {
         <Winners data={mailbag.data} />
       )}
 
+      {featured && (
+        <section className="featured-letter" aria-labelledby="featured-heading">
+          <h2 id="featured-heading">Editor’s pick</h2>
+          <p className="hint">Chosen from Santa’s mailbag by our editors.</p>
+          <div className="featured-card">
+            <LetterCard letter={featured} share large />
+          </div>
+        </section>
+      )}
+
       {letters.length > 0 ? (
-        <LetterWall letters={linked ? letters.filter((l) => l !== linked) : letters} />
+        <LetterWall letters={letters.filter((l) => l !== linked && l !== featured)} />
       ) : (
         <p className="empty-mailbag">{emptyLine(season)}</p>
       )}

@@ -8,11 +8,14 @@ import {
   declineLetters,
   deleteQueuedPhotos,
   editLetter,
+  featureLetter,
+  loadFeaturedId,
   loadReview,
   moderate,
   notifyPosted,
   removePhoto,
   setPrizeEligible,
+  unfeatureLetter,
   type LetterWords,
 } from "../../data";
 import { apDate, byline, count } from "../../format";
@@ -95,6 +98,8 @@ function ReviewList({
   onUnsent: (byline: string) => void;
 }) {
   const list = useLoad(() => loadReview(seasonId, status));
+  // The editor's pick, to mark it and offer the button on the others (In the mailbag only).
+  const featured = useLoad(() => (status === "approved" ? loadFeaturedId(seasonId) : Promise.resolve(null)));
   const [find, setFind] = useState("");
   // Letters picked for declining at once (Waiting for review only).
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -107,6 +112,7 @@ function ReviewList({
   const shown = words.length > 0 ? list.data.filter((letter) => staffMatch(letter, words)) : list.data;
   const done = () => {
     list.reload();
+    featured.reload();
     onChange();
   };
   return (
@@ -131,6 +137,7 @@ function ReviewList({
             letter={letter}
             onDone={done}
             onUnsent={onUnsent}
+            featured={featured.status === "ready" && featured.data === letter.id}
             picked={status === "pending" ? picked.has(letter.id) : undefined}
             onPick={(on) =>
               setPicked((current) => {
@@ -236,12 +243,15 @@ function ReviewItem({
   letter,
   onDone,
   onUnsent,
+  featured,
   picked,
   onPick,
 }: {
   letter: StaffLetter;
   onDone: () => void;
   onUnsent: (byline: string) => void;
+  // This letter is the editor's pick, set large at the top of the mailbag.
+  featured: boolean;
   // Set on Waiting for review, where letters can be picked for declining at once.
   picked?: boolean;
   onPick: (picked: boolean) => void;
@@ -278,6 +288,7 @@ function ReviewItem({
         </label>
       )}
       <LetterCard letter={letter} />
+      {featured && <p className="done">The editor’s pick: it leads the mailbag, set large, until another letter is picked.</p>}
       {flags.length > 0 && <p className="privacy-note">Check before {letter.status === "approved" ? "leaving it up" : "posting"}: {describeFlags(flags)}. Fix it with Edit.</p>}
       <p className="hint">{provenance(letter)}</p>
       {mode === "editing" ? (
@@ -376,6 +387,16 @@ function ReviewItem({
                 })}
             >
               Email the family the link
+            </button>
+          )}
+          {letter.status === "approved" && (
+            <button
+              type="button"
+              className="link-button"
+              disabled={busy}
+              onClick={() => act(() => (featured ? unfeatureLetter(letter.id) : featureLetter(letter.id)))}
+            >
+              {featured ? "Stop featuring it" : "Make it the editor’s pick"}
             </button>
           )}
           {letter.status === "approved" && (

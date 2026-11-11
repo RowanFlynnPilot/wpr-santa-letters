@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(72);
+select plan(79);
 
 -- The privilege map, asserted in both directions, so a missing grant fails CI as loudly as an
 -- extra one. The suite passes with and without Supabase's permissive default grants.
@@ -12,6 +12,8 @@ select ok(has_table_privilege('anon', 'public.prizes', 'select'), 'anon reads pr
 select ok(has_table_privilege('anon', 'public.letters', 'select'), 'anon reads letters (RLS: posted only)');
 select ok(has_column_privilege('anon', 'public.prize_draws', 'letter_id', 'select'), 'anon reads draws (RLS: current winners, once delivered)');
 select ok(not has_column_privilege('anon', 'public.prize_draws', 'drawn_by', 'select'), 'but not which staff member drew them');
+select ok(has_column_privilege('anon', 'public.featured_letters', 'letter_id', 'select'), 'anon reads the editor''s pick (RLS: while the letter is up)');
+select ok(not has_column_privilege('anon', 'public.featured_letters', 'featured_by', 'select'), 'but not which staff member picked it');
 select ok(has_table_privilege('anon', 'public.current_season', 'select'), 'anon reads current_season');
 select ok(has_table_privilege('anon', 'public.mailbag', 'select'), 'anon reads the mailbag');
 select ok(has_table_privilege('anon', 'public.prize_winners', 'select'), 'anon reads prize winners');
@@ -37,6 +39,8 @@ select ok(not has_table_privilege('authenticated', 'public.staff', 'select'), 'a
 select ok(not has_table_privilege(r, 'public.' || t, 'insert'), r || ' cannot insert into ' || t)
 from unnest(array['anon', 'authenticated', 'service_role']) as r,
   unnest(array['letters', 'letter_private', 'prize_draws']) as t;
+select ok(not has_table_privilege(r, 'public.featured_letters', 'insert,update,delete'), r || ' cannot write the editor''s pick')
+from unnest(array['anon', 'authenticated', 'service_role']) as r;
 select ok(not has_table_privilege(r, 'public.' || t, 'update,delete'), r || ' cannot change ' || t)
 from unnest(array['anon', 'authenticated', 'service_role']) as r,
   unnest(array['letters', 'seasons', 'sponsors', 'prizes']) as t;
@@ -57,7 +61,9 @@ from unnest(array[
   'public.remove_letter_photo(uuid)',
   'public.set_prize_eligible(uuid, boolean)',
   'public.run_prize_drawing(uuid)',
-  'public.redraw_prize(uuid)'
+  'public.redraw_prize(uuid)',
+  'public.feature_letter(uuid)',
+  'public.unfeature_letter(uuid)'
 ]) as f;
 select ok(not has_function_privilege('anon', 'public.add_letter(public.letter_source, text, smallint, text, text, uuid, text, text, text)', 'execute'),
   'anon can''t add letters');
@@ -90,8 +96,9 @@ select is(
 )
 from (values
   ('anon', array['phase_at']),
-  ('authenticated', array['add_letter', 'decline_letters', 'edit_letter', 'is_staff', 'moderate_letter', 'phase_at',
-    'redraw_prize', 'remove_letter_photo', 'run_prize_drawing', 'save_newsletter_section', 'set_prize_eligible']),
+  ('authenticated', array['add_letter', 'decline_letters', 'edit_letter', 'feature_letter', 'is_staff', 'moderate_letter', 'phase_at',
+    'redraw_prize', 'remove_letter_photo', 'run_prize_drawing', 'save_newsletter_section', 'set_prize_eligible',
+    'unfeature_letter']),
   ('service_role', array['mark_posted_notice', 'posted_notice', 'submit_letter'])
 ) as v (r, expected);
 select is(
@@ -105,9 +112,9 @@ select is(
   r || ' has exactly these table privileges'
 )
 from (values
-  ('anon', array['current_season:select', 'letters:select', 'mailbag:select', 'newsletter_sections:select',
+  ('anon', array['current_season:select', 'featured_letters:select', 'letters:select', 'mailbag:select', 'newsletter_sections:select',
     'prize_draws:select', 'prize_winners:select', 'prizes:select', 'seasons:select', 'sponsors:select']),
-  ('authenticated', array['current_season:select', 'letter_private:select', 'letters:select', 'mailbag:select',
+  ('authenticated', array['current_season:select', 'featured_letters:select', 'letter_private:select', 'letters:select', 'mailbag:select',
     'newsletter_sections:select', 'photo_deletions:delete', 'photo_deletions:select', 'prize_draws:select', 'prize_winners:select', 'prizes:select', 'seasons:select', 'sponsors:select']),
   ('service_role', array['letter_private:select', 'letters:select', 'prizes:select', 'seasons:select', 'sponsors:select',
     'staff:select'])
