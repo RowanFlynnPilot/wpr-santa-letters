@@ -1,4 +1,5 @@
 // Everything the page does for selling and reporting the sponsorship.
+import { createContext } from "react";
 import type { Sponsor } from "./types";
 
 export const SALES_EMAIL = "weber.chris@wausaupilotandreview.com";
@@ -43,3 +44,6 @@ export function withDemoSponsor(sponsors: Sponsor[]): Sponsor[] {
 export function presentingSponsor(sponsors: Sponsor[]): Sponsor | undefined {
   return sponsors.find((s) => s.tier === "presenting");
 }
+
+// The presenting sponsor, for whatever sits deep in the page and carries its stamp (a letter's picture).
+export const PresentingSponsor = createContext<Sponsor | undefined>(undefined);

@@ -6,11 +6,12 @@ import { LetterCard } from "../components/LetterCard";
 import { LetterWall } from "../components/LetterWall";
 import { Stamp } from "../components/Stamp";
 import { EDITOR_EMAIL, MAIL_TO } from "../contact";
+import { countdown } from "../countdown";
 import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive } from "../format";
 import { scrollIntoView, viewLink } from "../host";
 import { LINKED_LETTER } from "../linked";
 import { loadMailbag } from "../reads";
-import { DEMO, presentingSponsor, sponsorHref } from "../sales";
+import { DEMO, PresentingSponsor, presentingSponsor, sponsorHref } from "../sales";
 import { track } from "../analytics";
 import { logoUrl } from "../storage";
 import type { Letter, Mailbag as MailbagData, Prize, Season, Sponsor } from "../types";
@@ -34,8 +35,11 @@ export function Mailbag() {
   const { season, sponsors, prizes, letters, winners } = mailbag.data;
   const open = season.phase === "open" || DEMO;
   const linked = LINKED_LETTER ? letters.find((l) => l.id === LINKED_LETTER) : undefined;
+  // How long until the next date on the calendar; a sales preview counts as open, like the rest of the page.
+  const daysLeft = countdown(DEMO && season.phase === "upcoming" ? { ...season, phase: "open" } : season);
   return (
-    <main className="mailbag">
+    <PresentingSponsor.Provider value={presentingSponsor(sponsors)}>
+      <main className="mailbag">
       <header className="envelope">
         {/* First in the page, so on a phone it floats in the corner and the title wraps around it. */}
         <Stamp sponsor={presentingSponsor(sponsors)} placement="mailbag-title" />
@@ -60,6 +64,7 @@ export function Mailbag() {
               )}
             </div>
           )}
+          {daysLeft && <p className="countdown">{daysLeft}</p>}
         </div>
       </header>
 
@@ -99,7 +104,8 @@ export function Mailbag() {
           <SponsorList sponsors={sponsors.filter((s) => !s.demo).sort((a, b) => Number(b.tier === "presenting") - Number(a.tier === "presenting"))} />
         )}
       </footer>
-    </main>
+      </main>
+    </PresentingSponsor.Provider>
   );
 }
 
