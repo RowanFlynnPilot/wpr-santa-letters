@@ -6,8 +6,11 @@
 Everything on it is true of the site as built (CLAUDE.md): the placements are the ones the code has, and the
 pictures are screenshots of the real pages in preview mode with made-up letters (docs/media, retaken with
 `scripts/browser-tests.sh shots`). The four audience figures are the ones WPR's 2026-27 media kit features;
-use no others. Prices are blanks on purpose: the rate card publishes none for this promotion, so Chris
-writes them in. The page is self-contained (fonts and pictures inside it), so it opens anywhere.
+use no others. The prices and what the presenting sponsor gets beyond the site (the banner ad, a mention in
+every post promoting the mailbag, a prize of its own for the drawing) are the ones Shereen and Chris set by
+email on Nov. 11, 2026, on the model of the last season's offer; change them only on their word. The banner ad is
+WPR's own ad space on the homepage and on the WordPress page that holds the mailbag, not part of this app.
+The page is self-contained (fonts and pictures inside it), so it opens anywhere.
 """
 import base64
 import io
@@ -104,8 +107,9 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
 .level li { padding-left: 13px; position: relative; }
 .level li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 6px; height: 6px; background: var(--teal); border-radius: 50%%; }
 .level.presenting li::before { background: var(--airmail); }
-.price { display: flex; align-items: baseline; gap: 6px; margin-top: auto; padding-top: 7px; border-top: 1px solid var(--line); font: 600 12.5px var(--body); }
-.price i { flex: 1; min-width: 3.5rem; border-bottom: 1.5px solid var(--ink); height: 1.1em; }
+.price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-top: auto; padding-top: 7px; border-top: 1px solid var(--line); font: 600 12.5px var(--body); }
+.price b { font: 650 21px/1.1 var(--display); font-variation-settings: "SOFT" 100; font-variant-numeric: tabular-nums; }
+.level.presenting .price b { color: var(--airmail); font-size: 24px; }
 
 .places { display: grid; grid-template-columns: minmax(0, 0.78fr) minmax(0, 0.78fr) minmax(0, 1.44fr); gap: 14px; align-items: start; }
 .places img { max-height: 1.8in; width: auto; }
@@ -173,23 +177,23 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
     <section class="levels">
       <div class="level presenting">
         <h2>Presenting sponsor</h2>
-        <p class="only">One business only. Your logo, linked to your site, all season:</p>
+        <p class="only">One business only, all season.</p>
         <ul>
-          <li>The stamp on the mailbag&rsquo;s envelope, with &ldquo;Presented by&rdquo; under it</li>
-          <li>On the Letters to Santa band on WPR&rsquo;s front page</li>
-          <li>On every letter a family saves as a picture to post</li>
-          <li>On Santa&rsquo;s printable reply to each child</li>
-          <li>On the thank-you page parents see after sending a letter</li>
-          <li>Named in the mailbag&rsquo;s section of the Morning Update newsletter and in the Dec. 23 story with all the letters</li>
+          <li>Your logo is the stamp on the mailbag&rsquo;s envelope, linked to your site, with &ldquo;Presented by&rdquo; under it</li>
+          <li>Your stamp on the Letters to Santa band on WPR&rsquo;s front page</li>
+          <li>Your stamp on every letter a family saves as a picture to post, and on Santa&rsquo;s printable reply to each child</li>
+          <li>Your stamp on the thank-you page parents see after sending a letter</li>
+          <li>A banner ad on WPR&rsquo;s homepage and on the Letters to Santa page through the season. We design it at no extra cost, or send your own</li>
+          <li>Named as the sponsor in every story, newsletter and social post promoting the mailbag, and in the Dec. 23 story with all the letters</li>
         </ul>
-        <p class="price">Presenting sponsorship: $<i></i></p>
+        <p class="price"><b>$500</b> plus a prize from your business for the drawing</p>
       </div>
       <div class="level">
         <h2>Supporting sponsor</h2>
         <ul>
           <li>Your name or logo, linked to your site, under &ldquo;Thanks to our sponsors&rdquo; on the mailbag all season</li>
         </ul>
-        <p class="price">$<i></i></p>
+        <p class="price"><b>$300</b></p>
       </div>
       <div class="level">
         <h2>Prize donor</h2>
@@ -198,7 +202,7 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
           <li>Named again with its winner on Dec. 23</li>
           <li>Listed with our sponsors</li>
         </ul>
-        <p class="price">Your prize: <i></i></p>
+        <p class="price"><b>A prize worth $75 to $100</b> No fee: a pizza party, say, or a gift card to your store</p>
       </div>
     </section>
 
@@ -225,7 +229,7 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
       <div>
         <h3>See it with your name on it</h3>
         <p>The live preview: <span class="url">%(preview)s</span></p>
-        <p class="who"><b>Chris Weber</b><br><span class="mail">weber.chris@wausaupilotandreview.com</span><br>715-301-5539</p>
+        <p class="who"><b>Christine Weber</b><br><span class="mail">weber.chris@wausaupilotandreview.com</span><br>715-218-5079</p>
       </div>
     </section>
 
