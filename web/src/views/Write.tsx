@@ -2,16 +2,19 @@
 // the letter (typed onto ruled paper, in the child's words), an optional photo of the handwritten
 // letter or a drawing, the parent, then consent. In a `?demo` preview (/wpr-santa-letters/?demo#/write)
 // the form is open whatever the date and works as it does for readers, photo included, but sends
-// nothing, and ends on the letter as it would look in the mailbag.
-import { useEffect, useRef, useState, type FormEvent } from "react";
+// nothing, and ends on the letter as it would look in the mailbag. The page's head is a short band of
+// the mailbag's winter night (Night.tsx) with the heading and the countdown on it; the words under it,
+// and every box of the form, stay on plain paper.
+import { useEffect, useRef, useState, type FormEvent, type RefObject } from "react";
 import { track } from "../analytics";
 import { clearDraft, loadDraft, saveDraft } from "../letterDraft";
 import { LetterCard } from "../components/LetterCard";
 import { PhotoField, type ChosenPhoto } from "../components/PhotoField";
-import { Horizon } from "../components/Night";
+import { Horizon, NightSky } from "../components/Night";
 import { Stamps } from "../components/Stamp";
 import { Turnstile } from "../components/Turnstile";
 import { EDITOR_EMAIL } from "../contact";
+import { countdown } from "../countdown";
 import { loadSeason, loadSponsors } from "../reads";
 import { submitLetter, type LetterSubmission } from "../send";
 import { env } from "../env";
@@ -80,6 +83,24 @@ function fromDraft(words: Record<string, string | boolean>): LetterSubmission {
   };
 }
 
+// The head of the page, whatever the season: the heading and, under it, the countdown's sentence
+// ("13 days left to send a letter."), on the night, with the horizon at its foot. The two sit on a patch
+// of the night's own color, so the snow passes behind the words and not through them.
+function WriteNight({ sentence, headingRef }: { sentence: string | null; headingRef?: RefObject<HTMLHeadingElement | null> }) {
+  return (
+    <header className="night sent-night write-night">
+      <NightSky />
+      <div className="write-night-words">
+        <h1 ref={headingRef} tabIndex={headingRef ? -1 : undefined}>
+          Write to Santa
+        </h1>
+        {sentence && <p className="countdown">{sentence}</p>}
+      </div>
+      <Horizon />
+    </header>
+  );
+}
+
 // Something of the child's letter is typed in: worth keeping, and worth saying so when it's put back.
 const hasWords = (letter: LetterSubmission) => Boolean(letter.first_name.trim() || letter.town.trim() || letter.body.trim());
 
@@ -127,6 +148,8 @@ export function Write() {
 
   const { season, sponsors } = page.data;
   const presenting = presentingSponsors(sponsors);
+  // A sales preview counts as open, like the rest of the page.
+  const sentence = countdown(DEMO && season.phase === "upcoming" ? { ...season, phase: "open" as const } : season);
   const flags = privacyFlags(letter.body, letter.first_name);
   const set = <K extends keyof LetterSubmission>(field: K, value: LetterSubmission[K]) =>
     setLetter((current) => ({ ...current, [field]: value }));
@@ -134,7 +157,7 @@ export function Write() {
   if (season.phase !== "open" && !DEMO) {
     return (
       <main className="write">
-        <h1>Write to Santa</h1>
+        <WriteNight sentence={sentence} />
         <p>
           {season.phase === "upcoming"
             ? `Santa’s mailbag opens ${apDate(season.entries_open_at)}. Come back then to send your child’s letter.`
@@ -250,16 +273,12 @@ export function Write() {
 
   return (
     <main className="write">
-      <header className="write-head">
-        <h1 ref={headingRef} tabIndex={-1}>
-          Write to Santa
-        </h1>
-        <p>
-          Parents and guardians: type your child’s letter here, in their own words, through{" "}
-          {apLastDay(season.entries_close_at)}. We’ll put it in Santa’s mailbag on our site with your child’s first name,
-          age and town.
-        </p>
-      </header>
+      <WriteNight sentence={sentence} headingRef={headingRef} />
+      <p className="write-intro">
+        Parents and guardians: type your child’s letter here, in their own words, through{" "}
+        {apLastDay(season.entries_close_at)}. We’ll put it in Santa’s mailbag on our site with your child’s first name,
+        age and town.
+      </p>
 
       {restored && (
         <p className="done kept-letter" role="status">

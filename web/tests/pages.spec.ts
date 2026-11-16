@@ -150,6 +150,14 @@ for (const [name, size] of [["wide", { width: 1100, height: 340 }], ["phone", { 
 test("the letter form, phone", async ({ page }) => {
   await open(page, "#/write", PHONE);
   await expect(page.getByRole("heading", { level: 1, name: "Write to Santa" })).toBeVisible();
+  // Its head is a short band of the mailbag's night, with the countdown under the heading; the first box
+  // to fill in is still on the first screen.
+  const band = page.locator(".write-night");
+  await expect(band.locator(".countdown")).toHaveText("13 days left to send a letter.");
+  await expect(band.locator(".night-horizon")).toBeVisible();
+  expect(await band.evaluate((night) => getComputedStyle(night).backgroundColor)).toBe("rgb(16, 40, 58)");
+  expect((await band.boundingBox())!.height).toBeLessThan(220);
+  await expect(page.getByRole("textbox", { name: /^First name/ })).toBeInViewport();
   const firstName = page.getByRole("textbox", { name: /^First name/ });
   await expect(firstName).toBeVisible();
   // The privacy check speaks up as a parent types, and never blocks (invariant 15).
@@ -168,6 +176,12 @@ test("the letter form, phone", async ({ page }) => {
     window.scrollTo(0, 0);
   });
   await shot(page, "write-phone.png");
+
+  // Where the band has a corner to spare, the moon is in it.
+  await page.setViewportSize(DESK);
+  await expect(band.locator(".night-moon")).toBeVisible();
+  expect(await scrollsSideways(page)).toBe(false);
+  if (test.info().project.name === "chromium") await expect(page.locator(".write-night")).toHaveScreenshot("write-night-desk.png");
 });
 
 test("Santa’s reply", async ({ page }) => {
@@ -805,18 +819,39 @@ test("before letters open: a countdown to opening day, no form yet", async ({ pa
   await open(page, "#/mailbag", PHONE, { phase: "upcoming" });
   await expect(page.locator(".countdown")).toHaveText("Santa’s mailbag opens in seven days.");
   await expect(page.locator(".lede")).toContainText(/opens Nov\.\s27/);
-  await expect(page.locator(".empty-mailbag")).toHaveText(/The first letters come in Nov\.\s27\./);
   await expect(page.getByRole("link", { name: "Write a letter to Santa" })).toHaveCount(0);
+  // Where the letters will be: how the mailbag works, in three steps. No prizes are promised beyond the
+  // drawing the envelope already names.
+  const how = page.locator(".how");
+  await expect(how.getByRole("heading", { level: 2 })).toHaveText("How Santa’s mailbag works");
+  await expect(how.getByRole("listitem")).toHaveCount(3);
+  await expect(how.getByRole("listitem").nth(0)).toContainText(/From Nov\.\s27 through Dec\.\s18, a parent or guardian sends/);
+  await expect(how.getByRole("listitem").nth(1)).toContainText("first name, age and town only");
+  await expect(how.getByRole("listitem").nth(2)).toHaveText(/On Dec\.\s23, we deliver every letter to the North Pole and name the winners of the prize drawing\./);
+  await expect(page.locator(".empty-mailbag")).toHaveCount(0);
   await settled(page);
   await expectStampWhole(page);
   expect(await scrollsSideways(page)).toBe(false);
   await expectAccessible(page);
+  if (test.info().project.name === "chromium") await expect(how).toHaveScreenshot("how-phone.png");
 
-  // The form's page says when to come back, and offers no boxes to fill in.
+  // Side by side on a wide screen, on a line that ends in the route's star.
+  await page.setViewportSize(DESK);
+  await expect(page.locator(".how-star")).toBeVisible();
+  const tops = await how.getByRole("listitem").evaluateAll((steps) => steps.map((step) => Math.round(step.getBoundingClientRect().top)));
+  expect(new Set(tops).size).toBe(1);
+  expect(await scrollsSideways(page)).toBe(false);
+  if (test.info().project.name === "chromium") await expect(how).toHaveScreenshot("how-desk.png");
+  await page.setViewportSize(PHONE);
+
+  // The form's page says when to come back, on the same night, and offers no boxes to fill in.
   await page.goto("#/write");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.locator(".write-night .countdown")).toHaveText("Santa’s mailbag opens in seven days.");
   await expect(page.getByRole("textbox")).toHaveCount(0);
   await expectAccessible(page);
+  await settled(page);
+  await shot(page, "write-upcoming-phone.png");
 
   // The strip says the same, with no button to write and no letters.
   await page.goto("#/embed");
