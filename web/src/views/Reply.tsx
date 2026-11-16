@@ -10,7 +10,7 @@ import { apDate, series } from "../format";
 import { hashOf } from "../looks";
 import { LINKED_FROM, LINKED_LETTER } from "../linked";
 import { loadLetter, loadSeason, loadSponsors } from "../reads";
-import { presentingFor, presentingSponsors } from "../sales";
+import { presentingFor, presentingSponsors, stampedBy } from "../sales";
 import { santaReply } from "../santaReply";
 import type { Letter, Sponsor } from "../types";
 import { useLoad } from "../useLoad";
@@ -46,7 +46,7 @@ function SantasReply({ letter, sponsors }: { letter: Letter; sponsors: Sponsor[]
   // One of 256 wordings, by the letter: the same each time it's opened, different for a brother or sister.
   const reply = santaReply(letter, hashOf(letter.id));
   const print = () => {
-    track("Santa Reply Printed", { from: LINKED_FROM });
+    track("Santa Reply Printed", { from: LINKED_FROM, ...stampedBy(sponsor) });
     window.print();
   };
   return (

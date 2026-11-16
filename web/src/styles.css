@@ -467,7 +467,10 @@ img {
 }
 
 .stamp-face img {
-  max-height: 100%;
+  /* As large as the stamp allows, whatever the file: a wide logo meets the sides, a tall one the top and
+     bottom, and a small file (one saved off a Facebook page) is scaled up to fit. */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -588,6 +591,11 @@ img {
   filter: drop-shadow(0 1px 1px rgba(30, 38, 34, 0.25));
 }
 
+/* While the mailbag loads: the stamps' places, blank, and the room their line of names will take. */
+.stamps-opening .stamp-caption {
+  visibility: hidden;
+}
+
 /* Three: the third sits under the second, toward the corner. */
 .stamps[data-count="3"] li:nth-child(3) {
   grid-column: 2;
@@ -615,6 +623,18 @@ img {
 
 .stamps li:nth-child(4n) .stamp-face {
   rotate: -3deg;
+}
+
+/* A wordmark (a logo twice as wide as it's tall, or wider) is a sliver on a small upright stamp, so the
+   sponsor's name is set in type under it (Stamp.tsx): the logo across the stamp, the name where it reads. */
+.stamps li .stamp-wordmark {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: 0.3rem;
+}
+
+.stamps li .stamp-wordmark img {
+  height: auto;
 }
 
 /* A name in type on a small stamp may set smaller than on the single one, so its widest word still fits

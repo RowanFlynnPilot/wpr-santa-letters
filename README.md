@@ -32,7 +32,7 @@ scripts/browser-tests.sh           # run them as CI does (needs Docker)
 scripts/browser-tests.sh update    # after a change meant to alter a page: re-approve its screenshot
 ```
 
-Twenty-five tests load the built app in a headless browser against a made-up mailbag (no Supabase project, no network), each in Chrome's engine and in Safari's: the mailbag and the front-page strip at a desk's and a phone's width, the form, Santa's reply, a tall photo opening, a link to one letter, Save it as a picture, the envelope shown while the mailbag loads, a half-written letter kept across a reload, four presenting sponsors at once (the envelope, the strip, the thank-you page, Santa's reply and the sales preview), and the season's other phases (before letters open, after they close, delivery day with the winners). Each page is checked for what's on it, for sideways scroll, for the sponsor's name sitting whole on the stamp, by an accessibility scan, and against its approved screenshot in `web/tests/__screenshots__`. CI runs them on every PR and won't publish a site that fails them; when one fails there, the run's `browser-tests` artifact has the screenshots side by side (expected, actual, difference).
+Thirty-one tests load the built app in a headless browser against a made-up mailbag (no Supabase project, no network), each in Chrome's engine and in Safari's: the mailbag and the front-page strip at a desk's and a phone's width, the form, Santa's reply, a tall photo opening, a link to one letter, Save it as a picture, the envelope shown while the mailbag loads, a half-written letter kept across a reload, four presenting sponsors at once (the envelope, the strip, the thank-you page, Santa's reply and the sales preview), sponsors' logos in four shapes, what's counted for a sponsor's report, and the season's other phases (before letters open, after they close, delivery day with the winners). Each page is checked for what's on it, for sideways scroll, for the sponsor's name sitting whole on the stamp, by an accessibility scan, and against its approved screenshot in `web/tests/__screenshots__`. CI runs them on every PR and won't publish a site that fails them; when one fails there, the run's `browser-tests` artifact has the screenshots side by side (expected, actual, difference).
 
 The script runs in the same Playwright image as CI, because text renders a little differently on every system and a screenshot approved on a laptop would fail there. After `update`, look at the changed pictures before committing them: approving a screenshot is saying the page looks right. When `@playwright/test` is upgraded, change the image tag in `.github/workflows/pages.yml` to match and run `update`.
 
@@ -45,6 +45,22 @@ scripts/browser-tests.sh shots      # only if the site's look changed: retake th
 python docs/sponsor-sheet/build.py  # the page, with its fonts and pictures inside it
 scripts/browser-tests.sh sheet      # the one-page PDF
 ```
+
+### When a sponsor signs on
+
+What Chris asks a new sponsor for, and what happens to it:
+
+- **The business's name** as it should read, up to 80 characters.
+- **A logo**, for presenting and supporting sponsors. A square or stacked version works best, the kind used as a Facebook profile picture: the stamp is upright, and a wide one-line logo comes out small (where several stamps share the corner, the page sets the business's name in type under a wide logo so it can still be read). PNG, JPEG, WebP or SVG, under 1 MB, at least 600 pixels on its shorter side, and readable on white, since the stamp is white. Until it arrives, the stamp sets the name in type.
+- **A web address** (`https://…`) for the stamp and the sponsor list to link to. A Facebook page is fine.
+- **The prize**, for presenting sponsors and prize donors: what it is, worth $75 to $100 for a prize donor, and how many. It's written to follow "wins", lowercase: "a family pizza night", "a $50 gift card".
+- **The banner ad**, for presenting sponsors: their own artwork at 970 by 500 pixels and where it links, or word that WPR should design it. This goes to whoever places ads in WordPress, not into this app.
+
+The logo is uploaded to the `sponsor-logos` bucket (Storage in the Supabase dashboard) and the sponsor and its prize are rows added in the SQL editor (CLAUDE.md, Operations). Presenting sponsors' stamps sit in the order their rows were added, and a fifth presenting sponsor is refused.
+
+### What a sponsor's report can say
+
+Plausible counts, per sponsor: clicks on its stamp or name, by where (`Sponsor Click`, with `sponsor` and `placement`); letters saved or sent as a picture carrying its stamp (`Letter Shared`, with `sponsor`); and Santa's replies printed with its stamp (`Santa Reply Printed`, with `sponsor`). None of them says which letter. For these to break down by sponsor in Plausible's dashboard, `sponsor` has to be among the site's custom properties (Site settings > Custom properties); check that it is before letters open, since a property Plausible isn't told about doesn't show.
 
 ## First deploy
 

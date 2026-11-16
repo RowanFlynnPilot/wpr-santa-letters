@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { track } from "../analytics";
 import { env } from "../env";
 import { possessive } from "../format";
-import { presentingFor, Sponsors } from "../sales";
+import { presentingFor, Sponsors, stampedBy } from "../sales";
 import type { Letter } from "../types";
 
 // A link that opens the mailbag at one letter, on WPR's page (embed.js routes #letter=).
@@ -50,7 +50,7 @@ export function ShareButton({ letter }: { letter: Letter }) {
       // anywhere useful to send a picture.
       if (matchMedia("(pointer: coarse)").matches && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title });
-        track("Letter Shared", { method: "picture, share sheet" });
+        track("Letter Shared", { method: "picture, share sheet", ...stampedBy(sponsor) });
       } else {
         const link = document.createElement("a");
         link.href = URL.createObjectURL(file);
@@ -58,7 +58,7 @@ export function ShareButton({ letter }: { letter: Letter }) {
         link.click();
         setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
         setNote("Picture saved. It’s ready to post.");
-        track("Letter Shared", { method: "picture, saved" });
+        track("Letter Shared", { method: "picture, saved", ...stampedBy(sponsor) });
       }
     } catch (err) {
       if ((err as Error).name === "AbortError") return;

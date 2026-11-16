@@ -4,7 +4,7 @@
 import { useEffect, useRef } from "react";
 import { LetterCard } from "../components/LetterCard";
 import { LetterWall } from "../components/LetterWall";
-import { Stamps } from "../components/Stamp";
+import { Stamps, StampsOpening } from "../components/Stamp";
 import { EDITOR_EMAIL, MAIL_TO } from "../contact";
 import { countdown } from "../countdown";
 import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive } from "../format";
@@ -13,6 +13,7 @@ import { LINKED_LETTER } from "../linked";
 import { loadMailbag } from "../reads";
 import { DEMO, presentingSponsors, sponsorHref, Sponsors } from "../sales";
 import { track } from "../analytics";
+import { keepStamps, keptStamps } from "../stampsKept";
 import { logoUrl } from "../storage";
 import type { Letter, Mailbag as MailbagData, Prize, Season, Sponsor } from "../types";
 import { useLoad } from "../useLoad";
@@ -26,6 +27,12 @@ export function Mailbag() {
   useEffect(() => {
     if (ready && linkedRef.current) void scrollIntoView(linkedRef.current);
   }, [ready]);
+
+  // Whose stamps are on the envelope, for the next time it loads (a preview's placeholders aren't kept).
+  const data = ready ? mailbag.data : null;
+  useEffect(() => {
+    if (data && !DEMO) keepStamps(presentingSponsors(data.sponsors).map((s) => s.name));
+  }, [data]);
 
   if (mailbag.status === "loading") return <MailbagOpening />;
   if (mailbag.status === "failed") {
@@ -128,9 +135,8 @@ function MailbagOpening() {
   return (
     <main className="mailbag" aria-busy="true">
       <header className="envelope">
-        <div className="stamp" aria-hidden="true">
-          <span className="stamp-face" />
-        </div>
+        {/* One blank stamp, or the place of the several this browser saw here last time. */}
+        <StampsOpening names={DEMO ? [] : keptStamps()} />
         <div className="envelope-address">
           <h1>Letters to Santa</h1>
           <p className="address">
