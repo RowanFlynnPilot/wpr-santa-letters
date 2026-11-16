@@ -1713,6 +1713,11 @@ textarea.ruled {
   color: var(--moon);
 }
 
+/* While the form loads, or when it can't. */
+.write-status {
+  color: var(--bark);
+}
+
 .write-night .countdown {
   font: italic 500 1.1875rem / 1.35 var(--display);
   font-variation-settings: "SOFT" 100;

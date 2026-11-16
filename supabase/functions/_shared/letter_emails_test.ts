@@ -200,3 +200,32 @@ Deno.test("the digest reports the form's trouble, in plain words, and leads with
   assertEquals(digestEmail(waiting, links, {}).subject, "One letter to Santa waiting for review");
   assert(!digestEmail(waiting, links).text.includes("trouble"));
 });
+
+Deno.test("every email wears the mailbag’s look in a form every email program draws", () => {
+  const notice = {
+    first_name: "Mia",
+    age: 6,
+    town: "Weston",
+    parent_name: "Pat Parent",
+    email: "pat@example.com",
+    entries_close_at: "2026-12-19T06:00:00Z",
+    delivered_at: "2026-12-23T12:00:00Z",
+    open: true,
+    drawing: true,
+  };
+  const emails = [
+    confirmationEmail(LETTER, "id-1", { mailbag: "https://example.com/mailbag", drawing: true }),
+    postedEmail(notice, "id-1", { letter: "https://example.com/letter", reply: "https://example.com/reply" }),
+    digestEmail([], { to: ["editor@example.com"], queue: "https://example.com/#/admin", today: "2026-12-05" }, {
+      save: 1,
+    }),
+  ];
+  for (const { html } of emails) {
+    // The night's band with the title, and the airmail edge above and below the words.
+    assertStringIncludes(html, 'bgcolor="#10283a"');
+    assertStringIncludes(html, ">Letters to Santa</div>");
+    assertEquals(html.split('bgcolor="#b3261e"').length - 1, 10);
+    // Colors are cells' own, never a striped or gradient background; and there is no picture to block.
+    assert(!html.includes("gradient") && !html.includes("<img"));
+  }
+});
