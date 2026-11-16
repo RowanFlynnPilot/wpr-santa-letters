@@ -511,6 +511,34 @@ test("the night scene: the route, the envelope’s postmark, the pick as a sprea
   expect(await scrollsSideways(page)).toBe(false);
 });
 
+for (const [name, size] of [["wide", { width: 1100, height: 340 }], ["phone", { width: 375, height: 620 }]] as const) {
+  test(`before the first letter, the front-page strip holds the countdown and the horizon, ${name}`, async ({ page }) => {
+    await open(page, "#/embed", size, { phase: "upcoming" });
+    await expect(page.locator(".strip-line")).toContainText(/opens Nov\.\s27/);
+    await expect(page.locator(".strip-letters")).toHaveCount(0);
+    // Where the letters will be: the countdown, on its route, with the sleigh waiting in Wausau.
+    await expect(page.locator(".strip-scene .countdown")).toHaveText("Santa’s mailbag opens in seven days.");
+    expect(await sleighAt(page)).toBe(0);
+    await expect(page.locator(".strip > .night-horizon")).toBeVisible();
+    // The scene fits the frame WordPress gives the band: nothing is cut off and nothing scrolls.
+    await settled(page);
+    const [frame, route, horizon] = await Promise.all([".strip", ".strip-scene .route", ".strip > .night-horizon"].map((s) => page.locator(s).boundingBox()));
+    expect(route!.y + route!.height).toBeLessThanOrEqual(horizon!.y + 8);
+    expect(frame!.height).toBeLessThanOrEqual(size.height);
+    expect(await scrollsSideways(page)).toBe(false);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
+    await expectAccessible(page);
+    await shot(page, `strip-upcoming-${name}.png`);
+  });
+}
+
+test("once letters are in, the strip shows them and not the scene", async ({ page }) => {
+  await open(page, "#/embed", { width: 1100, height: 340 });
+  await expect(page.locator(".strip-letters li:visible").first()).toBeVisible();
+  await expect(page.locator(".strip-scene")).toHaveCount(0);
+  await expect(page.locator(".strip > .night-horizon")).toHaveCount(0);
+});
+
 test("the sleigh waits in Wausau before letters open and is at the North Pole once they’re delivered", async ({ page }) => {
   await open(page, "#/mailbag", DESK, { phase: "upcoming" });
   await expect(page.locator(".route .countdown")).toHaveText("Santa’s mailbag opens in seven days.");

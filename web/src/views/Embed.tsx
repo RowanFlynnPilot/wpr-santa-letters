@@ -1,7 +1,10 @@
 // The front-page strip: a band on WPR's front page, in a frame whose height the page sets (README).
 // The envelope again, small: the title, a line for the season, the stamps, and the newest letters on
 // ruled paper, each linking to itself in the mailbag. The editor's pick, when there is one, leads them. Every link leaves the front page for WPR's
-// Letters to Santa page (target _top); the strip never switches views inside itself.
+// Letters to Santa page (target _top); the strip never switches views inside itself. Until the first letter
+// is in, the letters' place holds the countdown on its route and the night's horizon (Night.tsx), so the
+// band isn't a block of empty night for the days before letters open.
+import { Horizon, NightSky, Route } from "../components/Night";
 import { Stamps } from "../components/Stamp";
 import { letterLink } from "../components/ShareButton";
 import { env } from "../env";
@@ -70,6 +73,8 @@ export function Embed() {
 
   const { season, sponsors, letters, total, winners, pickId } = strip.data;
   const open = season.phase === "open" || DEMO;
+  // A sales preview counts as open, like the rest of the page.
+  const calendar = DEMO && season.phase === "upcoming" ? { ...season, phase: "open" as const } : season;
   return (
     <main className="strip">
       <div className="strip-head">
@@ -93,6 +98,15 @@ export function Embed() {
           )}
         </div>
       </div>
+      {letters.length === 0 && (
+        <>
+          <div className="strip-scene">
+            <Route season={calendar} />
+          </div>
+          <NightSky />
+          <Horizon />
+        </>
+      )}
       {letters.length > 0 && (
         <ol className="strip-letters" aria-label="Letters from the mailbag">
           {letters.map((letter) => (

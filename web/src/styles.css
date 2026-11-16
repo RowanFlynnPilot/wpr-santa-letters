@@ -2045,6 +2045,59 @@ body:has(main.strip) {
      flake that stands still beside a letter reads as an accent on it. */
   background: var(--night);
   color: var(--moon);
+  /* For the scene shown before the first letter: how tall its horizon stands along the foot. */
+  --horizon: clamp(4rem, 9.5vw, 7.5rem);
+  position: relative;
+  isolation: isolate;
+}
+
+/* Before the first letter is in: the countdown on its route where the letters will be, and along the foot
+   of the whole band the horizon, its snow meeting the border. */
+.strip-scene {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding-bottom: calc(var(--horizon) - 0.5rem);
+}
+
+.strip-scene .route .countdown {
+  font-size: clamp(1.1875rem, 2.4vw, 1.625rem);
+}
+
+.strip > .night-horizon {
+  position: absolute;
+  z-index: -1;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--horizon);
+  margin: 0;
+}
+
+.strip .night-snow {
+  fill: var(--sheet);
+}
+
+/* The moon, in the corner over the route; a phone's band has the stamps there. */
+.strip > .night-moon {
+  display: none;
+}
+
+@media (min-width: 760px) {
+  .strip > .night-moon {
+    display: block;
+    position: absolute;
+    z-index: -1;
+    top: 0.6rem;
+    right: 0.9rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    background:
+      radial-gradient(circle at 34% 36%, #e6dcba 0 0.25rem, transparent 0.3rem),
+      radial-gradient(circle at 66% 64%, #e6dcba 0 0.18rem, transparent 0.22rem),
+      var(--moon);
+    border-radius: 50%;
+  }
 }
 
 /* On the night, the second button and the sponsors' line are drawn in the moon's cream. */
