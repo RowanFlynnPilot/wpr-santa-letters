@@ -37,6 +37,15 @@ export const SPONSOR = {
   website_url: "https://example.com/",
 };
 
+// A full house: four presenting sponsors, none with a logo yet, so every stamp sets a name in type at
+// its smallest. "Orthodontics" is the longest word any of them has to fit whole. All made up.
+export const FOUR_SPONSORS = [
+  SPONSOR,
+  { id: "00000000-0000-4000-8000-0000000000b2", name: "Rib River Pizza", tier: "presenting", logo_path: null, website_url: "https://example.com/pizza" },
+  { id: "00000000-0000-4000-8000-0000000000b3", name: "Evergreen Orthodontics", tier: "presenting", logo_path: null, website_url: null },
+  { id: "00000000-0000-4000-8000-0000000000b4", name: "Marathon Toy Chest", tier: "presenting", logo_path: null, website_url: "https://example.com/toys" },
+];
+
 const TALL = "00000000-0000-4000-8000-0000000000c1";
 const WIDE = "00000000-0000-4000-8000-0000000000c2";
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -131,25 +140,31 @@ export async function settled(page: Page) {
 export const scrollsSideways = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
 
-// Every word of the sponsor's name on the stamp, set on one line and inside the stamp's face. A word
-// that splits across lines ("Northwoo / ds") has more than one box.
-export const stampWords = (page: Page) =>
+// Every word of each sponsor's name on its stamp, set on one line and inside the stamp's face: one list
+// of words per stamp on the page. A word that splits across lines ("Northwoo / ds") has more than one box.
+export const stampsWords = (page: Page) =>
   page.evaluate(() => {
-    const name = document.querySelector(".stamp-name");
-    const face = name?.closest(".stamp-face");
-    if (!name || !face || !name.firstChild) return [{ word: "(no name on the stamp)", lines: 0, inside: false }];
-    const text = name.textContent ?? "";
-    const box = face.getBoundingClientRect();
+    const names = [...document.querySelectorAll(".stamp-name")];
+    if (names.length === 0) return [[{ word: "(no name on a stamp)", lines: 0, inside: false }]];
     const range = document.createRange();
-    return [...text.matchAll(/\S+/g)].map((match) => {
-      range.setStart(name.firstChild!, match.index);
-      range.setEnd(name.firstChild!, match.index + match[0].length);
-      const rects = [...range.getClientRects()];
-      const bounds = range.getBoundingClientRect();
-      return {
-        word: match[0],
-        lines: new Set(rects.map((r) => Math.round(r.top))).size,
-        inside: bounds.left >= box.left - 1 && bounds.right <= box.right + 1,
-      };
+    return names.map((name) => {
+      const face = name.closest(".stamp-face");
+      if (!face || !name.firstChild) return [{ word: "(no name on the stamp)", lines: 0, inside: false }];
+      const text = name.textContent ?? "";
+      const box = face.getBoundingClientRect();
+      return [...text.matchAll(/\S+/g)].map((match) => {
+        range.setStart(name.firstChild!, match.index);
+        range.setEnd(name.firstChild!, match.index + match[0].length);
+        const rects = [...range.getClientRects()];
+        const bounds = range.getBoundingClientRect();
+        return {
+          word: match[0],
+          lines: new Set(rects.map((r) => Math.round(r.top))).size,
+          inside: bounds.left >= box.left - 1 && bounds.right <= box.right + 1,
+        };
+      });
     });
   });
+
+// The one stamp, where a page has one.
+export const stampWords = async (page: Page) => (await stampsWords(page))[0];

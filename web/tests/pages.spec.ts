@@ -1,12 +1,12 @@
 // The reader's pages in a real browser, at a desk's width and a phone's: what's on them, that nothing
-// scrolls sideways (invariant 16), that the sponsor's name sits whole on the stamp, that they pass an
+// scrolls sideways (invariant 16), that each sponsor's name sits whole on its stamp, that they pass an
 // accessibility scan, and a screenshot of each compared with the last approved one (tests/__screenshots__).
 // A screenshot that changes on purpose is re-approved with `scripts/browser-tests.sh update` (README).
 // Everything runs in Chrome's engine and in Safari's; the season's other three phases (before letters open,
 // after they close, delivery day) each get a test of their own at the foot.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { LETTERS, mockBackend, type Phase, PICK, scrollsSideways, settled, SPONSOR, stampWords } from "./fixtures";
+import { FOUR_SPONSORS, LETTERS, mockBackend, type Phase, PICK, scrollsSideways, settled, SPONSOR, stampsWords, stampWords } from "./fixtures";
 
 const DESK = { width: 1280, height: 900 };
 const PHONE = { width: 375, height: 812 };
@@ -17,7 +17,7 @@ async function shot(page: Page, name: string, options?: { fullPage?: boolean }) 
   if (test.info().project.name === "chromium") await expect(page).toHaveScreenshot(name, options);
 }
 
-async function open(page: Page, path: string, size: { width: number; height: number }, options?: { pick?: boolean; phase?: Phase }) {
+async function open(page: Page, path: string, size: { width: number; height: number }, options?: { pick?: boolean; phase?: Phase; sponsors?: unknown[] }) {
   await page.setViewportSize(size);
   await mockBackend(page, options);
   await page.goto(path);
@@ -26,8 +26,9 @@ async function open(page: Page, path: string, size: { width: number; height: num
 const card = (page: Page, firstName: string) =>
   page.locator(".letter-wall .letter").filter({ has: page.locator(".blank-fill", { hasText: new RegExp(`^${firstName}$`) }) });
 
-async function expectAccessible(page: Page) {
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"]).analyze();
+async function expectAccessible(page: Page, within?: string) {
+  const scan = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"]);
+  const results = await (within ? scan.include(within) : scan).analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
 }
 
@@ -184,6 +185,130 @@ test("a half-written letter is kept across a reload, without the consent tick, a
   await expect(page.locator(".kept-letter")).toHaveCount(0);
   await page.reload();
   await expect(firstName).toHaveValue("");
+});
+
+// Several presenting sponsors --------------------------------------------------------------------
+
+const FOUR_NAMES = "Northwoods Community Bank, Rib River Pizza, Evergreen Orthodontics and Marathon Toy Chest";
+
+// Each sponsor's stamp, in the order they signed on, with every word of its name whole.
+async function expectStampsWhole(page: Page, sponsors: { name: string }[]) {
+  const stamps = await stampsWords(page);
+  expect(stamps.map((words) => words.map((w) => w.word).join(" "))).toEqual(sponsors.map((s) => s.name));
+  for (const word of stamps.flat()) expect(word, `"${word.word}" on its stamp`).toMatchObject({ lines: 1, inside: true });
+}
+
+for (const [name, size] of [["desk", DESK], ["phone", PHONE]] as const) {
+  test(`four presenting sponsors, ${name}: every stamp is on the envelope`, async ({ page }) => {
+    await open(page, "#/mailbag", size, { sponsors: FOUR_SPONSORS });
+    const stamps = page.locator(".envelope .stamps");
+    await expect(stamps.locator("li")).toHaveCount(4);
+    await expect(stamps.locator(".stamp-caption")).toHaveText(`Presented by ${FOUR_NAMES}`);
+    // A sponsor with a site is a link to it; one without is just its stamp.
+    await expect(stamps.locator("a.stamp-face")).toHaveCount(3);
+    // All four lead the thanks at the foot.
+    await expect(page.locator(".sponsor-list li")).toHaveCount(4);
+
+    await settled(page);
+    await expectStampsWhole(page, FOUR_SPONSORS);
+    expect(await scrollsSideways(page)).toBe(false);
+    await expectAccessible(page);
+    if (test.info().project.name === "chromium") await expect(page.locator(".envelope")).toHaveScreenshot(`envelope-four-${name}.png`);
+  });
+}
+
+test("two, three and four stamps fit the narrowest phone", async ({ page }) => {
+  for (const count of [2, 3, 4]) {
+    const sponsors = FOUR_SPONSORS.slice(0, count);
+    // A fresh load each time: the same address again would leave the page as it was.
+    await page.goto("about:blank");
+    await open(page, "#/mailbag", { width: 320, height: 700 }, { sponsors });
+    await expect(page.locator(".envelope .stamps li")).toHaveCount(count);
+    await settled(page);
+    await expectStampsWhole(page, sponsors);
+    expect(await scrollsSideways(page), `${count} stamps`).toBe(false);
+  }
+});
+
+for (const [name, size] of [["wide", { width: 1100, height: 340 }], ["phone", { width: 375, height: 620 }]] as const) {
+  test(`four presenting sponsors on the front-page strip, ${name}`, async ({ page }) => {
+    await open(page, "#/embed", size, { sponsors: FOUR_SPONSORS });
+    await expect(page.locator(".strip .stamps li")).toHaveCount(4);
+    await expect(page.locator(".strip-letters li:visible").first()).toBeVisible();
+    await settled(page);
+    await expectStampsWhole(page, FOUR_SPONSORS);
+    expect(await scrollsSideways(page)).toBe(false);
+    await expectAccessible(page);
+    await shot(page, `strip-four-${name}.png`);
+  });
+}
+
+test("with four presenting sponsors, Santa’s reply carries one stamp and names all four", async ({ page }) => {
+  const seen = new Set<string>();
+  for (const letter of LETTERS) {
+    await open(page, `?letter=${letter.id}&from=email#/reply`, { width: 900, height: 1100 }, { sponsors: FOUR_SPONSORS });
+    await expect(page.getByText(`Dear ${letter.first_name},`)).toBeVisible();
+    await expect(page.locator(".reply .stamp-face")).toHaveCount(1);
+    await expect(page.locator(".reply-foot")).toHaveText(`From Letters to Santa, Wausau Pilot & Review, presented by ${FOUR_NAMES}`);
+    seen.add((await page.locator(".reply .stamp-name").textContent()) ?? "");
+  }
+  // They take turns by letter: across the mailbag's eight letters, more than one sponsor has had one.
+  expect(seen.size).toBeGreaterThan(1);
+  for (const name of seen) expect(FOUR_SPONSORS.map((s) => s.name)).toContain(name);
+});
+
+test("a sales preview shows all four places: the sponsors signed on, “Your business here”, and the rest open", async ({ page }) => {
+  await open(page, "?demo#/mailbag", DESK, { sponsors: FOUR_SPONSORS.slice(0, 2) });
+  const places = page.locator(".envelope .stamps li");
+  await expect(places).toHaveCount(4);
+  await expect(places.nth(2)).toHaveText("Your business here");
+  await expect(places.nth(3).locator(".stamp-open")).toHaveCount(1);
+  await expect(page.locator(".envelope .stamp-caption")).toHaveText("Presented by Northwoods Community Bank, Rib River Pizza and Your business here");
+  await expectAccessible(page, ".envelope");
+
+  // Before anyone has signed on: one named place and three open ones, and a letter's picture and Santa's
+  // reply carry the stamp of the business being shown the page.
+  await page.goto("about:blank");
+  await open(page, "?demo#/mailbag", DESK, { sponsors: [] });
+  await expect(places).toHaveCount(4);
+  await expect(places.first()).toHaveText("Your business here");
+  await expect(page.locator(".envelope .stamp-open")).toHaveCount(3);
+  await expect(page.locator(".envelope .stamp-caption")).toHaveText("Presented by Your business here");
+  await open(page, `?demo&letter=${LETTERS[0].id}&from=staff#/reply`, { width: 900, height: 1100 }, { sponsors: [] });
+  await expect(page.locator(".reply .stamp-name")).toHaveText("Your business here");
+  await expect(page.locator(".reply-foot")).toHaveText("From Letters to Santa, Wausau Pilot & Review, presented by Your business here");
+
+  // With all four places taken there is nothing left to offer.
+  await page.goto("about:blank");
+  await open(page, "?demo#/mailbag", DESK, { sponsors: FOUR_SPONSORS });
+  await expect(page.locator(".envelope .stamps li")).toHaveCount(4);
+  await expect(page.locator(".envelope .stamps")).not.toContainText("Your business here");
+});
+
+test("the thank-you page after a letter carries every presenting sponsor’s stamp", async ({ page }) => {
+  // A sales preview sends nothing and shows the page a parent would see: three sponsors and the open place.
+  await open(page, "?demo#/write", PHONE, { sponsors: FOUR_SPONSORS.slice(0, 3) });
+  await page.getByRole("textbox", { name: /^First name/ }).fill("Emma");
+  await page.getByRole("combobox").first().selectOption({ index: 7 });
+  await page.locator("textarea.ruled").fill("Dear Santa, I wud like a pupy.");
+  await page.getByRole("textbox", { name: /^Your name/ }).fill("Pat Example");
+  await page.getByRole("textbox", { name: /^Your email/ }).fill("pat@example.com");
+  await page.getByRole("checkbox", { name: /parent or/ }).check();
+  await page.locator("form button[type=submit]").click();
+
+  await expect(page.getByRole("heading", { level: 1, name: "Emma’s letter is on its way" })).toBeVisible();
+  await expect(page.locator(".sent .stamps li")).toHaveCount(4);
+  await expect(page.locator(".sent .stamp-caption")).toHaveText(
+    "Presented by Northwoods Community Bank, Rib River Pizza, Evergreen Orthodontics and Your business here",
+  );
+  await settled(page);
+  // The stamps land one after another; look once the last one is down.
+  await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+  await expectStampsWhole(page, [...FOUR_SPONSORS.slice(0, 3), { name: "Your business here" }]);
+  expect(await scrollsSideways(page)).toBe(false);
+  // The thank-you itself: the preview's sample letter under it is the sales page's, not a reader's.
+  await expectAccessible(page, ".sent");
+  if (test.info().project.name === "chromium") await expect(page.locator(".sent")).toHaveScreenshot("sent-four-phone.png");
 });
 
 // While the first request is in flight ----------------------------------------------------------

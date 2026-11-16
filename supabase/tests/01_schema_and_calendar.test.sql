@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(28);
 
 -- Seed ------------------------------------------------------------------------
 
@@ -49,10 +49,26 @@ cross join (values
 ) as v (id, name, tier, url)
 where s.year = 2026;
 
+-- Up to four presenting sponsors a season: the envelope holds four stamps (migration 0011).
+select lives_ok(
+  $$ insert into public.sponsors (season_id, name, tier)
+     select s.id, v.name, 'presenting' from public.seasons s
+     cross join (values ('Second Presenter'), ('Third Presenter'), ('Fourth Presenter')) as v (name)
+     where s.year = 2026 $$,
+  'a season can have four presenting sponsors'
+);
 select throws_ok(
   $$ insert into public.sponsors (season_id, name, tier)
-     select id, 'Second Presenter', 'presenting' from public.seasons where year = 2026 $$,
-  '23505', null, 'only one presenting sponsor a season'
+     select id, 'Fifth Presenter', 'presenting' from public.seasons where year = 2026 $$,
+  'P0001', 'A season has at most four presenting sponsors: the envelope holds four stamps.', 'but not a fifth'
+);
+select throws_ok(
+  $$ update public.sponsors set tier = 'presenting' where id = '00000000-0000-0000-0000-00000000c002' $$,
+  'P0001', null, 'nor a supporting sponsor moved up to be the fifth'
+);
+select lives_ok(
+  $$ update public.sponsors set name = 'Presenting Company' where id = '00000000-0000-0000-0000-00000000c001' $$,
+  'one of the four can still be changed'
 );
 select throws_ok(
   $$ insert into public.sponsors (season_id, name, tier, website_url)

@@ -1,14 +1,14 @@
 // The front-page strip: a band on WPR's front page, in a frame whose height the page sets (README).
-// The envelope again, small: the title, a line for the season, the stamp, and the newest letters on
+// The envelope again, small: the title, a line for the season, the stamps, and the newest letters on
 // ruled paper, each linking to itself in the mailbag. The editor's pick, when there is one, leads them. Every link leaves the front page for WPR's
 // Letters to Santa page (target _top); the strip never switches views inside itself.
-import { Stamp } from "../components/Stamp";
+import { Stamps } from "../components/Stamp";
 import { letterLink } from "../components/ShareButton";
 import { env } from "../env";
 import { apDate, apLastDay, byline, capitalize, count } from "../format";
 import { paperFor } from "../looks";
 import { loadFeaturedId, loadLetter, loadNewest, loadSeason, loadSponsors, loadWinners } from "../reads";
-import { DEMO, presentingSponsor } from "../sales";
+import { DEMO, presentingSponsors } from "../sales";
 import { photoUrl } from "../storage";
 import type { Season } from "../types";
 import { useLoad } from "../useLoad";
@@ -73,7 +73,7 @@ export function Embed() {
   return (
     <main className="strip">
       <div className="strip-head">
-        <Stamp sponsor={presentingSponsor(sponsors)} placement="front-page" />
+        <Stamps sponsors={presentingSponsors(sponsors)} placement="front-page" />
         <h1 className="strip-title">
           <a href={env.mailbagPageUrl} target="_top">
             Letters to Santa

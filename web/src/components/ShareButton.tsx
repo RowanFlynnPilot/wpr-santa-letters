@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { track } from "../analytics";
 import { env } from "../env";
 import { possessive } from "../format";
-import { PresentingSponsor } from "../sales";
+import { presentingFor, Sponsors } from "../sales";
 import type { Letter } from "../types";
 
 // A link that opens the mailbag at one letter, on WPR's page (embed.js routes #letter=).
@@ -16,7 +16,7 @@ export function letterLink(id: string, from: "share" | "front-page"): string {
 export function ShareButton({ letter }: { letter: Letter }) {
   const [note, setNote] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
-  const sponsor = useContext(PresentingSponsor);
+  const sponsor = presentingFor(useContext(Sponsors), letter.id);
   const url = letterLink(letter.id, "share");
   const title = `${possessive(letter.first_name)} letter to Santa`;
 

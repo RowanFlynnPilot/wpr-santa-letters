@@ -22,6 +22,14 @@ export function paperFor(letterId: string): Paper {
   return PAPERS[hashOf(letterId) % PAPERS.length];
 }
 
+// Whose turn it is where there is room for one stamp (a letter saved as a picture, Santa's reply) and
+// more than one presenting sponsor: a place in the list, from the letter's id, so a letter keeps its
+// stamp and the sponsors share the letters evenly. Hashed apart from the paper and the reply's wording,
+// so a sponsor doesn't always land on the same paper or the same reply.
+export function turnFor(letterId: string, sponsors: number): number {
+  return sponsors > 0 ? hashOf(`stamp:${letterId}`) % sponsors : 0;
+}
+
 // How wide a sponsor's longest word sets, in units of an average lowercase letter, so the stamp can size
 // its type to fit the word whole (styles.css, .stamp-name). Capitals and m/w run wide, i/l/t and
 // punctuation narrow: "KWIK" needs more room than "bank".

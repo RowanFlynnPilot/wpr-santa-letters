@@ -6,10 +6,13 @@
 Everything on it is true of the site as built (CLAUDE.md): the placements are the ones the code has, and the
 pictures are screenshots of the real pages in preview mode with made-up letters (docs/media, retaken with
 `scripts/browser-tests.sh shots`). The four audience figures are the ones WPR's 2026-27 media kit features;
-use no others. The prices and what the presenting sponsor gets beyond the site (the banner ad, a mention in
+use no others. The prices and what a presenting sponsor gets beyond the site (the banner ad, a mention in
 every post promoting the mailbag, a prize of its own for the drawing) are the ones Shereen and Chris set by
-email on Nov. 11, 2026, on the model of the last season's offer; change them only on their word. The banner ad is
-WPR's own ad space on the homepage and on the WordPress page that holds the mailbag, not part of this app.
+email on Nov. 11, 2026, on the model of the last season's offer; change them only on their word. On Nov. 15
+Rowan and Shereen settled the rest: up to four presenting sponsors, as the last season had (the envelope
+holds four stamps and the database refuses a fifth), and the ad's run and size as that offer gave them. The
+banner ad is WPR's own ad space on the homepage and on the WordPress page that holds the mailbag, not part
+of this app.
 The page is self-contained (fonts and pictures inside it), so it opens anywhere.
 """
 import base64
@@ -157,12 +160,12 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
       <div>
         <p class="eyebrow">Letters to Santa 2026</p>
         <h1>Your name on Wausau&rsquo;s holiday mailbag</h1>
-        <p>Every December, kids across the Wausau area write to Santa and Wausau Pilot &amp; Review publishes their letters. This year the mailbag is a page of its own: families send letters, read everyone else&rsquo;s, post their child&rsquo;s to Facebook and print a reply from Santa. One business presents all of it.</p>
+        <p>Every December, kids across the Wausau area write to Santa and Wausau Pilot &amp; Review publishes their letters. This year the mailbag is a page of its own: families send letters, read everyone else&rsquo;s, post their child&rsquo;s to Facebook and print a reply from Santa. No more than four businesses present it.</p>
         <p class="dates">Letters open Nov. 27<br>Last day to write: Dec. 18<br>Every letter and the prize winners: Dec. 23</p>
       </div>
       <figure>
-        <img src="%(mailbag)s" alt="The Letters to Santa mailbag: an airmail envelope with a stamp reading Your business here, above a child's handwritten letter.">
-        <figcaption>The mailbag. Your logo is the stamp. Letters shown are samples; the children are made up.</figcaption>
+        <img src="%(mailbag)s" alt="The Letters to Santa mailbag: an airmail envelope with four stamps in its corner, one reading Your business here, above a child's handwritten letter.">
+        <figcaption>The mailbag. Your logo is one of its stamps, four at most. Letters shown are samples; the children are made up.</figcaption>
       </figure>
     </section>
 
@@ -177,14 +180,14 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
     <section class="levels">
       <div class="level presenting">
         <h2>Presenting sponsor</h2>
-        <p class="only">One business only, all season.</p>
+        <p class="only">Limited to four businesses, all season.</p>
         <ul>
-          <li>Your logo is the stamp on the mailbag&rsquo;s envelope, linked to your site, with &ldquo;Presented by&rdquo; under it</li>
+          <li>Your logo is a stamp on the mailbag&rsquo;s envelope, linked to your site, and you&rsquo;re named in &ldquo;Presented by&rdquo; under it</li>
           <li>Your stamp on the Letters to Santa band on WPR&rsquo;s front page</li>
-          <li>Your stamp on every letter a family saves as a picture to post, and on Santa&rsquo;s printable reply to each child</li>
+          <li>Your stamp, in turn with the other presenting sponsors, on the letters families save as pictures to post and on Santa&rsquo;s printable replies</li>
           <li>Your stamp on the thank-you page parents see after sending a letter</li>
-          <li>A banner ad on WPR&rsquo;s homepage and on the Letters to Santa page through the season. We design it at no extra cost, or send your own</li>
-          <li>Named as the sponsor in every story, newsletter and social post promoting the mailbag, and in the Dec. 23 story with all the letters</li>
+          <li>A banner ad rotating on WPR&rsquo;s homepage and on the Letters to Santa page, Nov. 23 through Jan. 1 (970 by 500 pixels). We design it at no extra cost, or send your own</li>
+          <li>Named as a sponsor in every story, newsletter and social post promoting the mailbag, and in the Dec. 23 story with all the letters</li>
         </ul>
         <p class="price"><b>$500</b> plus a prize from your business for the drawing</p>
       </div>
@@ -209,14 +212,14 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
     <section class="places">
       <figure>
         <img src="%(shared)s" alt="A child's letter saved as a picture, with the sponsor's stamp in the corner and Wausau Pilot &amp; Review's name along the foot.">
-        <figcaption><b>Shared by families.</b> Every letter saved as a picture carries your stamp.</figcaption>
+        <figcaption><b>Shared by families.</b> Every letter saved as a picture carries a presenting sponsor&rsquo;s stamp.</figcaption>
       </figure>
       <figure>
         <img src="%(reply)s" alt="Santa's printable reply to a child, with the sponsor's stamp beside a North Pole postmark.">
         <figcaption><b>Printed at home.</b> Santa&rsquo;s reply to each child.</figcaption>
       </figure>
       <figure>
-        <img src="%(strip)s" alt="The Letters to Santa band for WPR's front page, with the sponsor's stamp beside the title and the newest letters.">
+        <img src="%(strip)s" alt="The Letters to Santa band for WPR's front page, with the presenting sponsors' stamps beside the title and the newest letters.">
         <figcaption><b>On WPR&rsquo;s front page.</b> The mailbag&rsquo;s band, with the newest letters.</figcaption>
       </figure>
     </section>

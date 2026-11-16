@@ -8,7 +8,7 @@ import { track } from "../analytics";
 import { clearDraft, loadDraft, saveDraft } from "../letterDraft";
 import { LetterCard } from "../components/LetterCard";
 import { PhotoField, type ChosenPhoto } from "../components/PhotoField";
-import { Stamp } from "../components/Stamp";
+import { Stamps } from "../components/Stamp";
 import { Turnstile } from "../components/Turnstile";
 import { EDITOR_EMAIL } from "../contact";
 import { loadSeason, loadSponsors } from "../reads";
@@ -17,7 +17,7 @@ import { env } from "../env";
 import { AGES, apDate, apLastDay, possessive } from "../format";
 import { scrollToTop, viewLink } from "../host";
 import { describeFlags, privacyFlags } from "../privacy";
-import { DEMO, presentingSponsor } from "../sales";
+import { DEMO, presentingSponsors } from "../sales";
 import type { Letter } from "../types";
 import { useLoad } from "../useLoad";
 
@@ -125,7 +125,7 @@ export function Write() {
   if (page.status === "failed") return <p className="status">The letter form isn’t loading right now. Try again in a few minutes.</p>;
 
   const { season, sponsors } = page.data;
-  const presenting = presentingSponsor(sponsors);
+  const presenting = presentingSponsors(sponsors);
   const flags = privacyFlags(letter.body, letter.first_name);
   const set = <K extends keyof LetterSubmission>(field: K, value: LetterSubmission[K]) =>
     setLetter((current) => ({ ...current, [field]: value }));
@@ -214,7 +214,7 @@ export function Write() {
     return (
       <main className="write">
         <section className="sent">
-          <Stamp sponsor={presenting} placement="write-form" />
+          <Stamps sponsors={presenting} placement="write-form" />
           <h1 ref={headingRef} tabIndex={-1}>
             {possessive(sent.first_name)} letter is on its way
           </h1>
