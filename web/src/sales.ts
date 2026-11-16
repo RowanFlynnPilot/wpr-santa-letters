@@ -10,7 +10,7 @@ export function salesMailto(subject: string): string {
 }
 
 // Where a sponsor's logo sits; it rides along as utm_content so each placement is reportable.
-export type Placement = "mailbag-title" | "write-form" | "sponsor-list" | "front-page" | "newsletter" | "santa-reply";
+export type Placement = "mailbag-title" | "write-form" | "supporters" | "sponsor-list" | "front-page" | "newsletter" | "santa-reply";
 
 // Tagged so the visit shows up in the sponsor's own analytics as coming from us.
 export function sponsorHref(sponsor: Sponsor, placement: Placement): string | null {
@@ -36,19 +36,26 @@ export const PRESENTING_LIMIT = 4;
 
 // Sales previews: `?demo` on the page's address (before the #) shows all four presenting places, so a
 // business sees its stamp at the size it would be: the sponsors already signed on, then "Your business
-// here" in the next open place, then a blank stamp for each place still open after that. The form sends
-// nothing. Readers never see it.
+// here" in the next open place, then a blank stamp for each place still open after that. A supporting
+// sponsor's place reads "Your business here" too, after the ones signed on. The form sends nothing.
+// Readers never see it.
 export const DEMO = /[?&]demo(?:[=&#]|$)/.test(window.location.search + window.location.hash);
 
 export function withDemoSponsor(sponsors: Sponsor[]): Sponsor[] {
-  const open = PRESENTING_LIMIT - presentingSponsors(sponsors).length;
-  if (!DEMO || open <= 0) return sponsors;
-  const place = { tier: "presenting", logo_path: null, website_url: null, demo: true } as const;
+  if (!DEMO) return sponsors;
+  const open = Math.max(0, PRESENTING_LIMIT - presentingSponsors(sponsors).length);
+  const place = { name: "Your business here", logo_path: null, website_url: null, demo: true } as const;
   return [
     ...sponsors,
-    { ...place, id: "demo-presenting", name: "Your business here" },
-    ...Array.from({ length: open - 1 }, (_, i) => ({ ...place, id: `demo-open-${i + 1}`, name: "", open: true })),
+    ...(open > 0 ? [{ ...place, id: "demo-presenting", tier: "presenting" as const }] : []),
+    ...Array.from({ length: open - 1 }, (_, i) => ({ ...place, id: `demo-open-${i + 1}`, tier: "presenting" as const, name: "", open: true })),
+    { ...place, id: "demo-supporting", tier: "supporting" as const },
   ];
+}
+
+// The supporting sponsors, in the order they signed on: named in a row under the envelope.
+export function supportingSponsors(sponsors: Sponsor[]): Sponsor[] {
+  return sponsors.filter((s) => s.tier === "supporting");
 }
 
 // The presenting sponsors, in the order they signed on: their stamps sit side by side on the envelope.

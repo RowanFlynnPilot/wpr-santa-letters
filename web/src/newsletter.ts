@@ -3,7 +3,8 @@
 // section rule, an Oswald eyebrow, Merriweather bylines, Source Sans 3 body, inline styles only.
 // Staff save the rows for a morning (migration 0007) and the wpr-newsletter build adds them to that
 // morning's edition. With three letters they stay well under the newsletter tool's ~13 KB block limit.
-import { apLastDay, apNumber, byline, capitalize, count, series } from "./format";
+import { EMAIL_LOGO, esc, fitLogo, presentedBy, type Size } from "./emailMarks";
+import { apLastDay, apNumber, byline, capitalize, count } from "./format";
 import { sponsorHref } from "./sales";
 import { logoUrl } from "./storage";
 import type { Letter, Season, Sponsor } from "./types";
@@ -17,17 +18,6 @@ const SERIF = "'Merriweather',Georgia,serif";
 const OSWALD = "'Oswald','Arial Narrow',Arial,sans-serif";
 const TEAL = "#3A867C";
 const RED = "#B3261E";
-
-// An opening bracket gets an invisible word joiner after it, so a letter can't form a merge tag
-// ("[[…]]") the newsletter would fill in for each subscriber.
-function esc(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/\[/g, "[&#8288;");
-}
 
 // Same convention as the newsletter pipeline, so these clicks show up beside its stories.
 function withUtm(url: string, edition: string): string {
@@ -49,14 +39,21 @@ function excerpt(body: string): { text: string; cut: boolean } {
   return { text: `${cut.slice(0, cut.lastIndexOf(" ") > 200 ? cut.lastIndexOf(" ") : EXCERPT).trimEnd()}…`, cut: true };
 }
 
-// Logos in email: PNG, JPEG or GIF only (Gmail drops SVG, Outlook drops WebP). Otherwise, the name.
-function sponsorMark(sponsor: Sponsor): string {
-  const href = sponsorHref(sponsor, "newsletter");
-  const logo = sponsor.logo_path && /\.(png|jpe?g|gif)$/i.test(sponsor.logo_path) ? sponsor.logo_path : null;
-  const mark = logo
-    ? `<img src="${esc(logoUrl(logo))}" alt="${esc(sponsor.name)}" height="32" style="height:32px; width:auto; border:0; vertical-align:middle;">`
-    : `<strong style="color:#1a1a1a;">${esc(sponsor.name)}</strong>`;
-  return href ? `<a href="${esc(href)}" style="text-decoration:none;">${mark}</a>` : mark;
+// How large each presenting sponsor's logo is, so the section can write its size on it (emailMarks.ts).
+// The staff page loads each logo once to find out; one that won't load, or that mail programs can't show,
+// is left out, and that sponsor is there by name.
+export async function logoSizes(sponsors: Sponsor[]): Promise<Record<string, Size>> {
+  const sizes: Record<string, Size> = {};
+  await Promise.all(
+    sponsors.map(async (sponsor) => {
+      if (!sponsor.logo_path || !EMAIL_LOGO.test(sponsor.logo_path)) return;
+      const img = new Image();
+      img.src = logoUrl(sponsor.logo_path);
+      await img.decode().catch(() => null);
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) sizes[sponsor.id] = { width: img.naturalWidth, height: img.naturalHeight };
+    }),
+  );
+  return sizes;
 }
 
 function letterRow(letter: Letter, href: string): string {
@@ -81,6 +78,8 @@ export interface NewsletterSection {
   season: Season;
   // The presenting sponsors, in the order they signed on (four at most).
   presenting: Sponsor[];
+  // Their logos' own sizes (logoSizes), by sponsor: without one, a sponsor is there by name.
+  logoSizes?: Record<string, Size>;
   picks: Letter[];
   posted: number; // letters posted in the window; picks may be fewer
   total: number; // every letter in the mailbag
@@ -127,7 +126,16 @@ export function newsletterRows(section: NewsletterSection): string {
           section.presenting.length > 0
             ? `
         <tr>
-          <td class="px" style="padding:8px 32px 0; font-family:${SANS}; font-size:13px; color:#555555;">Presented by ${series(section.presenting.map(sponsorMark))}</td>
+          <td class="px" style="padding:8px 32px 0; font-family:${SANS}; font-size:13px; color:#555555;">${presentedBy(
+            section.presenting.map((sponsor) => {
+              const size = sponsor.logo_path ? section.logoSizes?.[sponsor.id] : undefined;
+              return {
+                name: sponsor.name,
+                href: sponsorHref(sponsor, "newsletter"),
+                logo: sponsor.logo_path && size ? { src: logoUrl(sponsor.logo_path), ...fitLogo(size) } : null,
+              };
+            }),
+          )}</td>
         </tr>`
             : ""
         }

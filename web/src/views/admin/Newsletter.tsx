@@ -14,7 +14,7 @@ import {
 } from "../../data";
 import { env } from "../../env";
 import { apDate, byline } from "../../format";
-import { MAX_LETTERS, newsletterRows, wrapBlock } from "../../newsletter";
+import { logoSizes, MAX_LETTERS, newsletterRows, wrapBlock } from "../../newsletter";
 import { describeFlags, privacyFlags } from "../../privacy";
 import { presentingSponsors } from "../../sales";
 import type { SavedNewsletterSection, Season } from "../../types";
@@ -88,7 +88,8 @@ async function loadPicker(seasonId: string, since: string) {
     loadSponsors(seasonId),
     countByStatus(seasonId),
   ]);
-  return { season, posted, sponsors, total: counts.approved };
+  const presenting = presentingSponsors(sponsors.filter((s) => !s.demo));
+  return { season, posted, presenting, logos: await logoSizes(presenting), total: counts.approved };
 }
 
 function Picker({
@@ -111,7 +112,7 @@ function Picker({
 
   if (page.status === "loading") return <p className="status">Gathering the letters…</p>;
   if (page.status === "failed") return <p className="status">Couldn’t gather the letters: {page.error.message}</p>;
-  const { season: now, posted, sponsors, total } = page.data;
+  const { season: now, posted, presenting, logos, total } = page.data;
   if (posted.length === 0) return <p className="empty">No letters went up since then.</p>;
 
   // The newest three the privacy check doesn't flag to start with, or the letters saved from this list.
@@ -126,7 +127,8 @@ function Picker({
   const picks = posted.filter((l) => chosen.includes(l.id));
   const rows = newsletterRows({
     season: now,
-    presenting: presentingSponsors(sponsors.filter((s) => !s.demo)),
+    presenting,
+    logoSizes: logos,
     picks,
     posted: posted.length,
     total,

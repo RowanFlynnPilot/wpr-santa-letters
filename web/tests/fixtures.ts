@@ -51,6 +51,15 @@ export const FOUR_SPONSORS = [
 // badge, and a small file of the kind saved off a Facebook page.
 export const LOGO_SPONSORS = FOUR_SPONSORS.map((sponsor, i) => ({ ...sponsor, logo_path: ["logo-square.png", "logo-wide.png", "logo-tall.png", "logo-small.png"][i] }));
 
+// Supporting sponsors, for the row under the envelope: a wide logo that links, a tall one that doesn't, a
+// name that links and a long name that doesn't. Made up, like the rest.
+export const SUPPORTERS = [
+  { id: "00000000-0000-4000-8000-0000000000b5", name: "Rib River Pizza", tier: "supporting", logo_path: "logo-wide.png", website_url: "https://example.com/pizza" },
+  { id: "00000000-0000-4000-8000-0000000000b6", name: "Evergreen Orthodontics", tier: "supporting", logo_path: "logo-tall.png", website_url: null },
+  { id: "00000000-0000-4000-8000-0000000000b7", name: "Granite City Hardware", tier: "supporting", logo_path: null, website_url: "https://example.com/hardware" },
+  { id: "00000000-0000-4000-8000-0000000000b8", name: "Third Street Bakery & Coffee Roasters", tier: "supporting", logo_path: null, website_url: null },
+];
+
 const TALL = "00000000-0000-4000-8000-0000000000c1";
 const WIDE = "00000000-0000-4000-8000-0000000000c2";
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -81,7 +90,18 @@ const json = (route: Route, body: unknown, headers: Record<string, string> = {})
 
 export const PRIZE = { id: "00000000-0000-4000-8000-0000000000d1", sponsor_id: SPONSOR.id, description: "a $50 savings starter", created_at: at(1, 12) };
 
-export async function mockBackend(page: Page, options: { pick?: boolean; sponsors?: unknown[]; phase?: Phase } = {}) {
+// Six prizes from two sponsors, three of them the same gift card: "three to win".
+export const SIX_PRIZES = [
+  PRIZE,
+  ...["a family pizza night", "a $25 gift card", "a $25 gift card", "a $25 gift card", "a sled"].map((description, i) => ({
+    id: `00000000-0000-4000-8000-0000000000d${i + 2}`,
+    sponsor_id: "00000000-0000-4000-8000-0000000000b5",
+    description,
+    created_at: at(1, 13 + i),
+  })),
+];
+
+export async function mockBackend(page: Page, options: { pick?: boolean; sponsors?: unknown[]; prizes?: unknown[]; phase?: Phase } = {}) {
   const phase = options.phase ?? "open";
   // Before letters open the mailbag is empty; on delivery day the first letter has won the prize.
   const letters = phase === "upcoming" ? [] : LETTERS;
@@ -119,7 +139,7 @@ export async function mockBackend(page: Page, options: { pick?: boolean; sponsor
       case "sponsors":
         return json(route, options.sponsors ?? [SPONSOR]);
       case "prizes":
-        return json(route, [PRIZE]);
+        return json(route, options.prizes ?? [PRIZE]);
       case "prize_winners":
         // Readers get winners only once the letters are delivered (RLS, in the real database).
         return json(route, phase === "delivered" ? [{ prize_id: PRIZE.id, letter_id: LETTERS[0].id }] : []);
