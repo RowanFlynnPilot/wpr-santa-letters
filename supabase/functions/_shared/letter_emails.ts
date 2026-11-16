@@ -46,15 +46,41 @@ function escape(text: string): string {
   return text.replace(/[&<>"']/g, (c) => ESCAPES[c]);
 }
 
-// One simple, readable layout for every email: blocks of HTML, with an optional photo up top.
+// An airmail envelope's edge, as a row of colored table cells: red, a gap, teal, a gap. Every email
+// program draws a cell's color, which can't be said of a striped background (Outlook draws none).
+function airmail(): string {
+  const dashes = [["#b3261e", 7], ["#fffdf8", 3], ["#2c6a62", 7], ["#fffdf8", 3]] as const;
+  const cells = Array.from({ length: 20 }, (_, i) => {
+    const [color, width] = dashes[i % 4];
+    return `<td width="${width}%" height="8" bgcolor="${color}" style="height:8px;font-size:0;line-height:0">&nbsp;</td>`;
+  }).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" ` +
+    `style="border-collapse:collapse;table-layout:fixed"><tr>${cells}</tr></table>`;
+}
+
+// One layout for every email, in the mailbag's own look as far as email allows: the envelope's airmail
+// edge, a band of the night's blue with the title in the moon's cream, then the words on the letter's
+// paper. It is tables, cell colors and the fonts every program has (Georgia stands in for the site's
+// display face); there is no picture to block and no striped or gradient background to go missing. The
+// head says nothing but the feature's name and WPR's, so the confirmation still carries nothing typed
+// into the form. An optional photo leads the words.
 function page(blocks: string[], photo?: { src: string; alt: string }): string {
   const image = photo
     ? `<p style="margin:0 0 16px"><img src="${escape(photo.src)}" alt="${escape(photo.alt)}" width="320" ` +
       `style="display:block;max-width:100%;height:auto;border-radius:4px;border:0"></p>`
     : "";
-  return `<!doctype html><html><body style="margin:0;padding:24px 16px;background:#ffffff">` +
-    `<div style="max-width:560px;margin:0 auto;border-top:4px solid #b3261e;padding-top:16px;` +
-    `font:16px/1.5 Arial,Helvetica,sans-serif;color:#1e2622">${image}${blocks.join("")}</div></body></html>`;
+  return `<!doctype html><html><body style="margin:0;padding:24px 12px;background:#f6f2e9">` +
+    `<table role="presentation" align="center" width="560" cellpadding="0" cellspacing="0" border="0" ` +
+    `style="width:100%;max-width:560px;margin:0 auto;border-collapse:collapse">` +
+    `<tr><td style="padding:0">${airmail()}</td></tr>` +
+    `<tr><td bgcolor="#10283a" style="padding:22px 24px 20px;background:#10283a">` +
+    `<div style="font:bold 28px/1.15 Georgia,'Times New Roman',serif;color:#f4ecd2">Letters to Santa</div>` +
+    `<div style="margin-top:6px;font:bold 11px/1.4 Arial,Helvetica,sans-serif;letter-spacing:2px;` +
+    `text-transform:uppercase;color:#f4ecd2">Wausau Pilot &amp; Review</div></td></tr>` +
+    `<tr><td bgcolor="#fffdf8" style="padding:24px 24px 8px;background:#fffdf8;` +
+    `font:16px/1.5 Arial,Helvetica,sans-serif;color:#1e2622">${image}${blocks.join("")}</td></tr>` +
+    `<tr><td style="padding:0">${airmail()}</td></tr>` +
+    `</table></body></html>`;
 }
 
 function p(html: string): string {

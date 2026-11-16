@@ -1,6 +1,8 @@
-// A letter as a picture a family can post (Facebook is where Wausau's parents are): the airmail envelope's
-// stripes around it, the letter on ruled paper (its photo first, when it has one), the presenting sponsor's
-// stamp, a postmark with the day it arrived, and WPR's flag with the mailbag's address along the foot.
+// A letter as a picture a family can post (Facebook is where Wausau's parents are): the airmail envelope,
+// lying a little off square on the mailbag's winter night (Night.tsx: the moon behind its corner, snow, a
+// line of pines), with the letter on ruled paper (its photo first, when it has one) and the presenting
+// sponsor's stamp; and on the snow at the foot, WPR's flag with the mailbag's address and a postmark with
+// the day the letter arrived.
 // Drawn in the reader's browser on a canvas, 1080 by 1350 (4:5, the tallest shape a feed shows whole):
 // nothing is uploaded, and it shows only what the mailbag already shows. Loaded on demand (ShareButton),
 // so the mailbag doesn't carry it.
@@ -24,18 +26,26 @@ const LINE = "#dcd3c1";
 const RULE = "#a9cdc7";
 const MARGIN = "#eba59e";
 const SLATE = "#32373c";
+const NIGHT = "#10283a";
+const NIGHT_FAR = "#183b52";
+const PINE = "#0b1d2a";
+const MOON = "#f4ecd2";
+const PAPER = "#f6f2e9";
 const DISPLAY = '"Fraunces", Georgia, serif';
 const BODY = '"Public Sans", system-ui, sans-serif';
 
-// The inside of the envelope, and the letter's sheet on it.
-const EDGE = 34;
+// The envelope on the night, its band of stripes, how far off square it lies, and the letter's sheet on it.
+const ENV = { x: 28, y: 44, w: W - 56, h: 1106 };
+const BAND = 26;
+const TILT = (-0.8 * Math.PI) / 180;
 const LEFT = 94;
 const RIGHT = W - 94;
-const PAGE = { x: LEFT, y: 318, w: RIGHT - LEFT, h: 826 };
+const PAGE = { x: LEFT, y: 346, w: RIGHT - LEFT, h: 748 };
 // The words are set as large as fits the page: a four-line letter fills it, a long one runs small.
 const SIZES = [68, 58, 50, 42];
 const rowFor = (size: number) => Math.round(size * 1.52);
-const FOOT = 1176;
+// Where the snow at the foot begins, and WPR's flag on it.
+const FOOT = 1204;
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -74,21 +84,84 @@ function contain(img: HTMLImageElement, box: { x: number; y: number; w: number; 
   return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w, h };
 }
 
-function envelope(ctx: Ctx) {
-  ctx.fillStyle = SHEET;
+function dot(ctx: Ctx, x: number, y: number, r: number) {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// A pine as the horizon draws it: two triangles, one over the other.
+function pine(ctx: Ctx, x: number, base: number, height: number) {
+  const k = height / 88;
+  for (const [top, foot, half] of [[88, 36, 26], [62, 0, 34]]) {
+    ctx.beginPath();
+    ctx.moveTo(x, base - top * k);
+    ctx.lineTo(x - half * k, base - foot * k);
+    ctx.lineTo(x + half * k, base - foot * k);
+    ctx.fill();
+  }
+}
+
+// The sky's snow, where the envelope leaves the night showing: above it, beside it and under it.
+const FLAKES = [
+  [60, 16, 3], [150, 26, 2], [250, 12, 2.5], [340, 24, 2], [470, 10, 3], [590, 22, 2], [700, 12, 2.5], [820, 24, 2],
+  [1050, 16, 2.5], [10, 150, 2.5], [14, 420, 2], [8, 700, 3], [16, 960, 2], [1068, 300, 2.5], [1072, 560, 2],
+  [1066, 830, 3], [1070, 1080, 2], [120, 1176, 2.5], [330, 1182, 2], [520, 1174, 2], [700, 1180, 2.5], [860, 1172, 2],
+  [1010, 1178, 2],
+];
+// A line of far-off pines along the snow: where each stands and how tall.
+const PINES = [
+  [34, 50], [70, 36], [128, 56], [236, 40], [282, 52], [418, 36], [566, 50], [606, 38], [742, 54], [880, 38],
+  [930, 52], [1012, 40], [1052, 56],
+];
+
+// The mailbag's winter night, the picture's whole ground: the moon rising behind the envelope's corner,
+// snow in the sky, a far ridge, pines, and at the foot the snow the flag sits on (the page's own cream).
+function night(ctx: Ctx) {
+  ctx.fillStyle = NIGHT;
   ctx.fillRect(0, 0, W, H);
-  // Airmail stripes, red and teal, running off every edge.
+  ctx.fillStyle = MOON;
+  dot(ctx, 958, 54, 52);
+  ctx.fillStyle = "#e6dcba";
+  dot(ctx, 940, 26, 8);
+  dot(ctx, 976, 20, 5);
+  ctx.fillStyle = NIGHT_FAR;
+  ctx.fill(new Path2D(`M0 1182 Q 270 1146 540 1174 T 1080 1160 V${H} H0 Z`));
+  ctx.fillStyle = PINE;
+  for (const [x, height] of PINES) pine(ctx, x, FOOT + 8, height);
   ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = SHEET;
+  for (const [x, y, r] of FLAKES) dot(ctx, x, y, r);
+  ctx.restore();
+  ctx.fillStyle = PAPER;
+  ctx.fill(new Path2D(`M0 ${FOOT + 4} Q 180 ${FOOT - 18} 400 ${FOOT - 2} T 780 ${FOOT - 6} T 1080 ${FOOT - 14} V${H} H0 Z`));
+}
+
+function envelope(ctx: Ctx) {
+  const { x, y, w, h } = ENV;
+  ctx.save();
+  ctx.shadowColor = "rgba(4, 14, 22, 0.55)";
+  ctx.shadowBlur = 36;
+  ctx.shadowOffsetY = 16;
+  ctx.fillStyle = SHEET;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+  // Airmail stripes, red and teal, around its edge.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
   ctx.translate(W / 2, H / 2);
   ctx.rotate(-Math.PI / 4);
   const reach = W + H;
-  for (let x = -reach, i = 0; x < reach; x += 44, i++) {
+  for (let at = -reach, i = 0; at < reach; at += 44, i++) {
     ctx.fillStyle = i % 2 ? TEAL_DEEP : RED;
-    ctx.fillRect(x, -reach, 26, reach * 2);
+    ctx.fillRect(at, -reach, 26, reach * 2);
   }
   ctx.restore();
   ctx.fillStyle = SHEET;
-  ctx.fillRect(EDGE, EDGE, W - EDGE * 2, H - EDGE * 2);
+  ctx.fillRect(x + BAND, y + BAND, w - BAND * 2, h - BAND * 2);
 }
 
 function spaced(ctx: Ctx, px: number) {
@@ -102,12 +175,12 @@ function head(ctx: Ctx, letter: Letter) {
   ctx.fillStyle = SLATE;
   ctx.font = `700 22px ${BODY}`;
   spaced(ctx, 4);
-  ctx.fillText("WAUSAU PILOT & REVIEW", LEFT, 116);
+  ctx.fillText("WAUSAU PILOT & REVIEW", LEFT, 144);
   spaced(ctx, 0);
 
   ctx.fillStyle = INK;
   ctx.font = `650 88px ${DISPLAY}`;
-  ctx.fillText("Letters to Santa", LEFT - 4, 204);
+  ctx.fillText("Letters to Santa", LEFT - 4, 232);
 
   // Who it's from, with the envelope's red bar beside it; set smaller for a long name and town.
   const from = `From ${byline(letter)}`;
@@ -116,9 +189,9 @@ function head(ctx: Ctx, letter: Letter) {
   let size = 42;
   do ctx.font = `600 ${size}px ${DISPLAY}`; while (ctx.measureText(from).width > room && --size > 26);
   ctx.fillStyle = RED;
-  ctx.fillRect(LEFT, 232, 5, 46);
+  ctx.fillRect(LEFT, 260, 5, 46);
   ctx.fillStyle = INK;
-  ctx.fillText(from, LEFT + 22, 270);
+  ctx.fillText(from, LEFT + 22, 298);
 }
 
 // The presenting sponsor's stamp, as on the envelope: its logo, or its name in type sized to its widest
@@ -127,7 +200,7 @@ function stamp(ctx: Ctx, sponsor: Sponsor | undefined, logo: HTMLImageElement | 
   const w = 150;
   const h = 188;
   const cx = RIGHT - w / 2 - 4;
-  const top = 64;
+  const top = 92;
   const cy = top + h / 2;
   ctx.save();
   ctx.translate(cx, cy);
@@ -211,7 +284,7 @@ function page(ctx: Ctx, letter: Letter, photo: HTMLImageElement | null) {
 
   let top = PAGE.y + 20;
   if (photo) {
-    const box = { x: PAGE.x + 36, y: PAGE.y + 36, w: PAGE.w - 72, h: 540 };
+    const box = { x: PAGE.x + 36, y: PAGE.y + 36, w: PAGE.w - 72, h: 480 };
     if (photo.naturalWidth / photo.naturalHeight < 0.8) {
       // A tall page, as in the mailbag: the width of the frame, showing its top (the greeting and the
       // first lines, large enough to read the child's hand).
@@ -305,20 +378,24 @@ function postmark(ctx: Ctx, date: string, cx: number, cy: number) {
   ctx.restore();
 }
 
-// WPR's flag on white under the thick-over-thin rule, with where to read the rest.
+// WPR's flag on the snow, with where to read the rest. Both of WPR's marks are files with a white ground:
+// the round badge is cut to its circle, and the wordmark is laid on so its white takes the snow's color.
 function foot(ctx: Ctx, letter: Letter, badge: HTMLImageElement | null, wordmark: HTMLImageElement | null) {
-  const bottom = H - EDGE;
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(EDGE, FOOT, W - EDGE * 2, bottom - FOOT);
-  ctx.fillStyle = SLATE;
-  ctx.fillRect(EDGE, FOOT, W - EDGE * 2, 4);
-  ctx.fillRect(EDGE, FOOT + 8, W - EDGE * 2, 1);
-
-  if (badge) ctx.drawImage(badge, LEFT, FOOT + 28, 84, 84);
+  if (badge) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(LEFT + 42, FOOT + 70, 42, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(badge, LEFT, FOOT + 28, 84, 84);
+    ctx.restore();
+  }
   const x = LEFT + 104;
   if (wordmark) {
     const height = 40;
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
     ctx.drawImage(wordmark, x, FOOT + 30, (wordmark.naturalWidth / wordmark.naturalHeight) * height, height);
+    ctx.restore();
   } else {
     ctx.fillStyle = INK;
     ctx.font = `700 34px ${BODY}`;
@@ -353,10 +430,17 @@ export async function letterPicture(letter: Letter, sponsor: Sponsor | undefined
   canvas.height = H;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("This browser can’t make the picture.");
+  night(ctx);
+  // The envelope and all that's on it, a little off square, as on the mailbag.
+  ctx.save();
+  ctx.translate(W / 2, ENV.y + ENV.h / 2);
+  ctx.rotate(TILT);
+  ctx.translate(-W / 2, -(ENV.y + ENV.h / 2));
   envelope(ctx);
   head(ctx, letter);
   stamp(ctx, sponsor, logo, badge);
   page(ctx, letter, photo);
+  ctx.restore();
   foot(ctx, letter, badge, wordmark);
 
   return new Promise((resolve, reject) => {

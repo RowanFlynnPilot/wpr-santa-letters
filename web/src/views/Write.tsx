@@ -85,8 +85,18 @@ function fromDraft(words: Record<string, string | boolean>): LetterSubmission {
 
 // The head of the page, whatever the season: the heading and, under it, the countdown's sentence
 // ("13 days left to send a letter."), on the night, with the horizon at its foot. The two sit on a patch
-// of the night's own color, so the snow passes behind the words and not through them.
-function WriteNight({ sentence, headingRef }: { sentence: string | null; headingRef?: RefObject<HTMLHeadingElement | null> }) {
+// of the night's own color, so the snow passes behind the words and not through them. While the page
+// loads (`holding`) the band is already there, with the sentence's line held open, so nothing under it
+// moves when the season arrives: inside WPR's page, a frame that jumps is the worst of it.
+function WriteNight({
+  sentence,
+  holding,
+  headingRef,
+}: {
+  sentence: string | null;
+  holding?: boolean;
+  headingRef?: RefObject<HTMLHeadingElement | null>;
+}) {
   return (
     <header className="night sent-night write-night">
       <NightSky />
@@ -95,6 +105,11 @@ function WriteNight({ sentence, headingRef }: { sentence: string | null; heading
           Write to Santa
         </h1>
         {sentence && <p className="countdown">{sentence}</p>}
+        {holding && (
+          <p className="countdown" aria-hidden="true">
+            &nbsp;
+          </p>
+        )}
       </div>
       <Horizon />
     </header>
@@ -143,8 +158,24 @@ export function Write() {
     else clearDraft();
   }, [letter, submissionKey, sent]);
 
-  if (page.status === "loading") return <p className="status">Loading the letter form…</p>;
-  if (page.status === "failed") return <p className="status">The letter form isn’t loading right now. Try again in a few minutes.</p>;
+  if (page.status === "loading") {
+    return (
+      <main className="write" aria-busy="true">
+        <WriteNight sentence={null} holding />
+        <p className="write-status" role="status">
+          Loading the letter form…
+        </p>
+      </main>
+    );
+  }
+  if (page.status === "failed") {
+    return (
+      <main className="write">
+        <WriteNight sentence={null} />
+        <p className="write-status">The letter form isn’t loading right now. Try again in a few minutes.</p>
+      </main>
+    );
+  }
 
   const { season, sponsors } = page.data;
   const presenting = presentingSponsors(sponsors);

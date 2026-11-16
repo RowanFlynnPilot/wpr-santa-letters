@@ -786,6 +786,32 @@ test("on a return visit with several sponsors, the stamps’ place is held while
   expect(Math.abs(after!.x - before!.x)).toBeLessThanOrEqual(2);
 });
 
+test("the form’s band of night is there before the form loads, and nothing under it moves when it does", async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await mockBackend(page);
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/rest/v1/current_season*", async (route) => {
+    await held;
+    await route.fallback();
+  });
+  await page.goto("#/write");
+
+  const band = page.locator(".write-night");
+  await expect(page.locator("main.write")).toHaveAttribute("aria-busy", "true");
+  await expect(page.getByRole("heading", { level: 1, name: "Write to Santa" })).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Loading the letter form…");
+  await page.evaluate(() => document.fonts.ready);
+  const before = await band.boundingBox();
+
+  release();
+  await expect(band.locator(".countdown")).toHaveText("13 days left to send a letter.");
+  await expect(page.locator("main.write")).not.toHaveAttribute("aria-busy", "true");
+  const after = await band.boundingBox();
+  expect(Math.abs(after!.height - before!.height)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after!.y - before!.y)).toBeLessThanOrEqual(2);
+});
+
 test("the envelope and its title are there before the mailbag loads, and don't move when it does", async ({ page }) => {
   await page.setViewportSize(DESK);
   await mockBackend(page);
