@@ -63,5 +63,12 @@ export function presentingFor(sponsors: Sponsor[], letterId: string): Sponsor | 
   return presenting.find((s) => s.demo && !s.open) ?? presenting[turnFor(letterId, presenting.length)];
 }
 
+// For the sponsor's report after the season: whose stamp a saved picture or a printed reply carried, as a
+// property on the count Plausible already keeps ("sponsor", the one Sponsor Click uses). It says which
+// sponsor and never which letter; a preview's placeholder isn't a sponsor and isn't counted.
+export function stampedBy(sponsor: Sponsor | undefined): Record<string, string> {
+  return sponsor && !sponsor.demo ? { sponsor: sponsor.name } : {};
+}
+
 // The season's sponsors, for whatever sits deep in the page and carries a stamp (a letter's picture).
 export const Sponsors = createContext<Sponsor[]>([]);

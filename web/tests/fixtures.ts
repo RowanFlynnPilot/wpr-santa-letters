@@ -46,6 +46,11 @@ export const FOUR_SPONSORS = [
   { id: "00000000-0000-4000-8000-0000000000b4", name: "Marathon Toy Chest", tier: "presenting", logo_path: null, website_url: "https://example.com/toys" },
 ];
 
+// The same four with their logos in, in the shapes real ones come in (tests/fixtures/logo-*.png, all made
+// up): a square mark, a wide wordmark on a clear background (the hardest fit for an upright stamp), a tall
+// badge, and a small file of the kind saved off a Facebook page.
+export const LOGO_SPONSORS = FOUR_SPONSORS.map((sponsor, i) => ({ ...sponsor, logo_path: ["logo-square.png", "logo-wide.png", "logo-tall.png", "logo-small.png"][i] }));
+
 const TALL = "00000000-0000-4000-8000-0000000000c1";
 const WIDE = "00000000-0000-4000-8000-0000000000c2";
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -91,6 +96,14 @@ export async function mockBackend(page: Page, options: { pick?: boolean; sponsor
       contentType: "image/jpeg",
       headers: { "access-control-allow-origin": "*" },
       body: readFileSync(file(route.request().url().includes(TALL) ? "./fixtures/letter-tall.jpg" : "./fixtures/drawing-wide.jpg")),
+    }));
+
+  await page.route("**/storage/v1/object/public/sponsor-logos/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      headers: { "access-control-allow-origin": "*" },
+      body: readFileSync(file(`./fixtures/${route.request().url().split("/").pop()}`)),
     }));
 
   await page.route("**/rest/v1/**", (route) => {
@@ -165,6 +178,33 @@ export const stampsWords = (page: Page) =>
       });
     });
   });
+
+// Every logo on a stamp: whether it sits inside its stamp's face, keeps its own shape, and is as large as
+// the stamp allows (it reaches the face's inner width or height, whichever its shape meets first).
+export const stampLogos = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll<HTMLImageElement>(".stamp-face img")].map((img) => {
+      const face = img.closest(".stamp-face") as HTMLElement;
+      // Laid-out sizes, before the stamp's tilt.
+      const style = getComputedStyle(face);
+      const room = {
+        w: face.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+        h: face.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom),
+      };
+      // What the picture itself covers inside its box (object-fit: contain).
+      const scale = Math.min(img.clientWidth / img.naturalWidth, img.clientHeight / img.naturalHeight);
+      const shown = { w: img.naturalWidth * scale, h: img.naturalHeight * scale };
+      return {
+        // A wordmark's name is set in type beside it, and the picture itself then needs no words.
+        name: img.alt || (face.textContent ?? ""),
+        loaded: img.naturalWidth > 0,
+        inside: img.clientWidth <= room.w + 1 && img.clientHeight <= room.h + 1,
+        fills: Math.max(shown.w / room.w, shown.h / room.h),
+        width: Math.round(shown.w),
+        height: Math.round(shown.h),
+      };
+    }),
+  );
 
 // The one stamp, where a page has one.
 export const stampWords = async (page: Page) => (await stampsWords(page))[0];

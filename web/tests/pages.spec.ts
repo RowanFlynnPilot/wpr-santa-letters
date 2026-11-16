@@ -6,7 +6,7 @@
 // after they close, delivery day) each get a test of their own at the foot.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { FOUR_SPONSORS, LETTERS, mockBackend, type Phase, PICK, scrollsSideways, settled, SPONSOR, stampsWords, stampWords } from "./fixtures";
+import { FOUR_SPONSORS, LETTERS, LOGO_SPONSORS, mockBackend, type Phase, PICK, scrollsSideways, settled, SPONSOR, stampLogos, stampsWords, stampWords } from "./fixtures";
 
 const DESK = { width: 1280, height: 900 };
 const PHONE = { width: 375, height: 812 };
@@ -243,6 +243,66 @@ for (const [name, size] of [["wide", { width: 1100, height: 340 }], ["phone", { 
   });
 }
 
+// Sponsors' logos -------------------------------------------------------------------------------
+
+// Each logo is on its stamp, inside it, and as large as the stamp allows, whatever shape or size the file is.
+async function expectLogosFill(page: Page, sponsors: { name: string }[]) {
+  const logos = await stampLogos(page);
+  expect(logos.map((logo) => logo.name)).toEqual(sponsors.map((s) => s.name));
+  for (const logo of logos) {
+    expect(logo, `${logo.name}’s logo`).toMatchObject({ loaded: true, inside: true });
+    expect(logo.fills, `${logo.name}’s logo fills its stamp`).toBeGreaterThan(0.97);
+  }
+}
+
+for (const [name, size] of [["desk", DESK], ["phone", PHONE]] as const) {
+  test(`four sponsors’ logos, ${name}: a wide one, a tall one, a square one and a small file each fill a stamp`, async ({ page }) => {
+    await open(page, "#/mailbag", size, { sponsors: LOGO_SPONSORS });
+    await expect(page.locator(".envelope .stamps li")).toHaveCount(4);
+    await settled(page);
+    await expectLogosFill(page, LOGO_SPONSORS);
+    // The wide wordmark would be a sliver on a stamp this size, so its name is set in type under it, whole.
+    const named = await stampsWords(page);
+    expect(named.map((words) => words.map((w) => w.word).join(" "))).toEqual(["Rib River Pizza"]);
+    for (const word of named.flat()) expect(word, `"${word.word}" under its logo`).toMatchObject({ lines: 1, inside: true });
+    // A logo is a picture: the line under the stamps is where every name can be read.
+    await expect(page.locator(".envelope .stamp-caption")).toHaveText(`Presented by ${FOUR_NAMES}`);
+    expect(await scrollsSideways(page)).toBe(false);
+    await expectAccessible(page);
+    // The stamps alone: on a picture of the whole envelope, a change this small would pass as noise.
+    if (test.info().project.name === "chromium") await expect(page.locator(".envelope .stamps")).toHaveScreenshot(`stamps-logos-${name}.png`);
+  });
+}
+
+test("four sponsors’ logos on the front-page strip", async ({ page }) => {
+  await open(page, "#/embed", { width: 1100, height: 340 }, { sponsors: LOGO_SPONSORS });
+  await expect(page.locator(".strip .stamps li")).toHaveCount(4);
+  await settled(page);
+  await expectLogosFill(page, LOGO_SPONSORS);
+  await expect(page.locator(".strip .stamp-wordmark .stamp-name")).toHaveText("Rib River Pizza");
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+  if (test.info().project.name === "chromium") await expect(page.locator(".strip .stamps")).toHaveScreenshot("stamps-logos-strip.png");
+});
+
+test("one sponsor’s logo fills the single stamp, wide on the envelope and a small file on Santa’s reply", async ({ page }) => {
+  // The single stamp is large and has "Presented by" and the name right under it: the logo alone is enough.
+  const wide = [LOGO_SPONSORS[1]];
+  await open(page, "#/mailbag", PHONE, { sponsors: wide });
+  await expect(page.locator(".envelope .stamp-face img")).toBeVisible();
+  await settled(page);
+  await expectLogosFill(page, wide);
+  await expect(page.locator(".envelope .stamp-name")).toHaveCount(0);
+  await expect(page.locator(".envelope .stamp-caption")).toHaveText("Presented by Rib River Pizza");
+  // A small file is scaled up to the stamp rather than left small in the middle of it.
+  const small = [LOGO_SPONSORS[3]];
+  await open(page, `?letter=${LETTERS[0].id}&from=email#/reply`, { width: 900, height: 1100 }, { sponsors: small });
+  await expect(page.getByText("Dear Emma,")).toBeVisible();
+  await expect(page.locator(".reply .stamp-face img")).toBeVisible();
+  await settled(page);
+  await expectLogosFill(page, small);
+});
+
 test("with four presenting sponsors, Santa’s reply carries one stamp and names all four", async ({ page }) => {
   const seen = new Set<string>();
   for (const letter of LETTERS) {
@@ -311,7 +371,76 @@ test("the thank-you page after a letter carries every presenting sponsor’s sta
   if (test.info().project.name === "chromium") await expect(page.locator(".sent")).toHaveScreenshot("sent-four-phone.png");
 });
 
+// What's counted for a sponsor's report -----------------------------------------------------------
+
+// What the page has counted under one name. Plausible's own script isn't loaded in tests, so every count
+// waits in the page's queue (analytics.ts), exactly as it would be sent.
+const counted = (page: Page, event: string) =>
+  page.evaluate((name) => {
+    const queue = (window as unknown as { plausible?: { q?: [string, { props?: Record<string, string> }?][] } }).plausible?.q ?? [];
+    return queue.filter(([sent]) => sent === name).map(([, options]) => options?.props ?? {});
+  }, event);
+
+test("a saved picture and a printed reply count whose stamp they carried, and never which letter", async ({ page }) => {
+  const names = FOUR_SPONSORS.map((s) => s.name);
+  await page.addInitScript(() => {
+    window.print = () => {};
+  });
+
+  await open(page, "#/mailbag", DESK, { sponsors: FOUR_SPONSORS });
+  const download = page.waitForEvent("download");
+  await page.locator(".featured-letter").getByRole("button", { name: "Save it as a picture" }).click();
+  await download;
+  await expect(page.locator(".featured-letter .share-note")).toHaveText("Picture saved. It’s ready to post.");
+  const shared = await counted(page, "Letter Shared");
+  expect(shared).toHaveLength(1);
+  expect(shared[0].method).toBe("picture, saved");
+  expect(names).toContain(shared[0].sponsor);
+  expect(Object.keys(shared[0]).sort()).toEqual(["method", "sponsor"]);
+
+  await open(page, `?letter=${LETTERS[0].id}&from=email#/reply`, { width: 900, height: 1100 }, { sponsors: FOUR_SPONSORS });
+  await expect(page.getByText("Dear Emma,")).toBeVisible();
+  const onTheReply = await page.locator(".reply .stamp-name").textContent();
+  await page.getByRole("button", { name: "Print Santa’s reply" }).click();
+  // The count names the sponsor whose stamp is on the sheet that was printed.
+  expect(await counted(page, "Santa Reply Printed")).toEqual([{ from: "email", sponsor: onTheReply }]);
+
+  // Before any sponsor has signed on, the same counts carry no sponsor at all.
+  await open(page, `?letter=${LETTERS[1].id}&from=staff#/reply`, { width: 900, height: 1100 }, { sponsors: [] });
+  await expect(page.getByText("Dear Liam,")).toBeVisible();
+  await page.getByRole("button", { name: "Print Santa’s reply" }).click();
+  expect(await counted(page, "Santa Reply Printed")).toEqual([{ from: "staff" }]);
+});
+
 // While the first request is in flight ----------------------------------------------------------
+
+test("on a return visit with several sponsors, the stamps’ place is held while the mailbag loads", async ({ page }) => {
+  // A first visit: four stamps in a row above the title, and the browser keeps their names.
+  await open(page, "#/mailbag", PHONE, { sponsors: FOUR_SPONSORS });
+  await expect(page.locator(".envelope .stamps li")).toHaveCount(4);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("letters-to-santa:stamps"))).toContain("Marathon Toy Chest");
+
+  // The next visit, with the season's answer held back: the envelope already has four blank stamps.
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/rest/v1/current_season*", async (route) => {
+    await held;
+    await route.fallback();
+  });
+  await page.reload();
+  const title = page.getByRole("heading", { level: 1, name: "Letters to Santa" });
+  await expect(page.locator("main.mailbag")).toHaveAttribute("aria-busy", "true");
+  await expect(page.locator(".stamps-opening li")).toHaveCount(4);
+  await page.evaluate(() => document.fonts.ready);
+  const before = await title.boundingBox();
+
+  release();
+  await expect(page.locator(".countdown")).toBeVisible();
+  await expect(page.locator(".envelope .stamp-caption")).toHaveText(`Presented by ${FOUR_NAMES}`);
+  const after = await title.boundingBox();
+  expect(Math.abs(after!.y - before!.y)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after!.x - before!.x)).toBeLessThanOrEqual(2);
+});
 
 test("the envelope and its title are there before the mailbag loads, and don't move when it does", async ({ page }) => {
   await page.setViewportSize(DESK);
