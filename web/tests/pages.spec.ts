@@ -9,6 +9,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 import { fitLogo, presentedBy } from "../src/emailMarks";
+import { hashOf } from "../src/looks";
+import { santaReply } from "../src/santaReply";
 import {
   FOUR_SPONSORS,
   LETTERS,
@@ -181,6 +183,63 @@ test("Santa’s reply", async ({ page }) => {
   expect(await scrollsSideways(page)).toBe(false);
   await expectAccessible(page);
   await shot(page, "reply.png", { fullPage: true });
+
+  // On screen the sheet lies on the night; on paper it is the sheet alone: no blue, no snow, no horizon,
+  // no button, and one letter-size page.
+  const night = () =>
+    page.locator("main.reply").evaluate((main) => ({
+      background: getComputedStyle(main).backgroundColor,
+      snow: getComputedStyle(main, "::before").display,
+    }));
+  expect(await night()).toEqual({ background: "rgb(16, 40, 58)", snow: "block" });
+  await page.emulateMedia({ media: "print" });
+  expect(await night()).toEqual({ background: "rgba(0, 0, 0, 0)", snow: "none" });
+  await expect(page.locator(".reply .night-horizon")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Print Santa’s reply" })).toBeHidden();
+  await expect(page.getByText("Dear Emma,")).toBeVisible();
+  if (test.info().project.name === "chromium") expect(await printedPages(page)).toBe(1);
+});
+
+// How many sheets the page prints on, with the margins its own print styles ask for.
+async function printedPages(page: Page) {
+  const pdf = await page.pdf({ format: "Letter", printBackground: true, margin: { top: "0.6in", right: "0.6in", bottom: "0.6in", left: "0.6in" } });
+  return (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+}
+
+test("Santa’s longest possible reply still prints on one sheet", async ({ page }) => {
+  // The longest name and town the form allows, a child young enough that Santa thanks the grown-up too,
+  // four sponsors in the foot, and the longest version of each of Santa's four parts.
+  const child = { first_name: "Maximiliana-Josephine-Annabelle", age: 4, town: "Rhinelander-on-the-Wisconsin River Flats" };
+  const words = (n: number) => {
+    const reply = santaReply(child, n);
+    return reply.paragraphs.join("").length + reply.postscript.length;
+  };
+  const parts = (n: number) => [n % 4, (n >>> 8) % 4, (n >>> 16) % 4, (n >>> 24) % 4].join();
+  let longest = 0;
+  for (let n = 0; n < 256; n++) {
+    const number = (n & 3) | (((n >> 2) & 3) << 8) | (((n >> 4) & 3) << 16) | (((n >> 6) & 3) << 24);
+    if (words(number) > words(longest)) longest = number;
+  }
+  // A letter whose id picks exactly those four versions (looks.ts's hashOf decides, as on the real page).
+  let id = "";
+  for (let i = 0; i < 200_000 && !id; i++) {
+    const candidate = `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+    if (parts(hashOf(candidate)) === parts(longest)) id = candidate;
+  }
+  expect(id).not.toBe("");
+
+  // A letter-size page less 0.6in margins is 700px wide and 940px tall, which is how wide print sets the sheet.
+  await page.setViewportSize({ width: 700, height: 1100 });
+  await mockBackend(page, { sponsors: FOUR_SPONSORS, letters: [{ id, ...child, photo_id: null, created_at: "2026-12-05T15:00:00Z", body: "Dear Santa" }] });
+  await page.goto(`?letter=${id}&from=email#/reply`);
+  await expect(page.getByText("Dear Maximiliana-Josephine-Annabelle,")).toBeVisible();
+  await expect(page.locator(".reply-sheet")).toContainText("Thank you to the grown-up who helped you write it, too.");
+  await settled(page);
+  await page.emulateMedia({ media: "print" });
+  const height = await page.locator(".reply-sheet").evaluate((sheet) => sheet.getBoundingClientRect().height);
+  // With room to spare for a browser that sets type a little wider.
+  expect(height).toBeLessThan(915);
+  if (test.info().project.name === "chromium") expect(await printedPages(page)).toBe(1);
 });
 
 
@@ -388,13 +447,24 @@ test("the thank-you page after a letter carries every presenting sponsor’s sta
     "Presented by Northwoods Community Bank, Rib River Pizza, Evergreen Orthodontics and Your business here",
   );
   await settled(page);
-  // The stamps land one after another; look once the last one is down.
-  await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+  // The stamps land one after another; look once the last one is down. (The snow behind them never
+  // finishes falling, so it isn't waited for.)
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished),
+    ),
+  );
   await expectStampsWhole(page, [...FOUR_SPONSORS.slice(0, 3), { name: "Your business here" }]);
   expect(await scrollsSideways(page)).toBe(false);
   // The thank-you itself: the preview's sample letter under it is the sales page's, not a reader's.
   await expectAccessible(page, ".sent");
-  if (test.info().project.name === "chromium") await expect(page.locator(".sent")).toHaveScreenshot("sent-four-phone.png");
+  // The envelope lies on the mailbag's night, with the horizon under it.
+  await expect(page.locator(".sent-night .night-horizon")).toBeVisible();
+  expect(await page.locator(".sent-night").evaluate((night) => getComputedStyle(night).backgroundColor)).toBe("rgb(16, 40, 58)");
+  if (test.info().project.name === "chromium") await expect(page.locator(".sent-night")).toHaveScreenshot("sent-four-phone.png");
 });
 
 // The night scene -----------------------------------------------------------------------------------

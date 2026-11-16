@@ -101,10 +101,13 @@ export const SIX_PRIZES = [
   })),
 ];
 
-export async function mockBackend(page: Page, options: { pick?: boolean; sponsors?: unknown[]; prizes?: unknown[]; phase?: Phase } = {}) {
+export async function mockBackend(
+  page: Page,
+  options: { pick?: boolean; sponsors?: unknown[]; prizes?: unknown[]; phase?: Phase; letters?: (typeof LETTERS)[number][] } = {},
+) {
   const phase = options.phase ?? "open";
   // Before letters open the mailbag is empty; on delivery day the first letter has won the prize.
-  const letters = phase === "upcoming" ? [] : LETTERS;
+  const letters = phase === "upcoming" ? [] : (options.letters ?? LETTERS);
   await page.clock.setFixedTime(DAYS[phase]);
 
   // Analytics and the spam check are other people's services: not loaded in tests.

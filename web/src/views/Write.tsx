@@ -8,6 +8,7 @@ import { track } from "../analytics";
 import { clearDraft, loadDraft, saveDraft } from "../letterDraft";
 import { LetterCard } from "../components/LetterCard";
 import { PhotoField, type ChosenPhoto } from "../components/PhotoField";
+import { Horizon } from "../components/Night";
 import { Stamps } from "../components/Stamp";
 import { Turnstile } from "../components/Turnstile";
 import { EDITOR_EMAIL } from "../contact";
@@ -213,16 +214,20 @@ export function Write() {
   if (sent) {
     return (
       <main className="write">
-        <section className="sent">
-          <Stamps sponsors={presenting} placement="write-form" />
-          <h1 ref={headingRef} tabIndex={-1}>
-            {possessive(sent.first_name)} letter is on its way
-          </h1>
-          <p>
-            {!DEMO && "We’re emailing you a confirmation. "}An editor reads every letter before it goes in Santa’s mailbag.
-            We’ll deliver them all to the North Pole on {apDate(season.delivered_at)}.
-          </p>
-        </section>
+        {/* The same winter night as the mailbag's (Night.tsx), with the letter's own small envelope on it. */}
+        <div className="night sent-night">
+          <section className="sent">
+            <Stamps sponsors={presenting} placement="write-form" />
+            <h1 ref={headingRef} tabIndex={-1}>
+              {possessive(sent.first_name)} letter is on its way
+            </h1>
+            <p>
+              {!DEMO && "We’re emailing you a confirmation. "}An editor reads every letter before it goes in Santa’s
+              mailbag. We’ll deliver them all to the North Pole on {apDate(season.delivered_at)}.
+            </p>
+          </section>
+          <Horizon />
+        </div>
         {DEMO && (
           <>
             <p className="demo-note">Preview only: nothing was sent. Here’s how this letter would look in the mailbag.</p>

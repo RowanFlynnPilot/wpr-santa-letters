@@ -1742,9 +1742,23 @@ textarea.ruled {
   min-height: 65px;
 }
 
-/* After sending: the envelope again, small, with its stamp landing. */
+/* After sending: the envelope again, small, with its stamp landing, on the mailbag's night. */
+.sent-night {
+  padding: 1.5rem 1rem 0;
+}
+
+.sent-night .night-horizon {
+  width: calc(100% + 2rem);
+  /* Short enough that a phone's view of it still takes in the North Pole's sign. */
+  height: 4.25rem;
+  margin: 0.25rem -1rem -2px;
+}
+
 .sent {
   position: relative;
+  rotate: -1deg;
+  box-shadow: 0 1.25rem 2.5rem rgba(4, 14, 22, 0.5);
+  color: var(--ink);
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 1rem 1.5rem;
@@ -2027,7 +2041,27 @@ body:has(main.strip) {
       var(--sheet) 35px 42px
     )
     10;
-  background: var(--sheet);
+  /* The mailbag's night, in small: its blue, without its snow. Here the words run edge to edge, and a
+     flake that stands still beside a letter reads as an accent on it. */
+  background: var(--night);
+  color: var(--moon);
+}
+
+/* On the night, the second button and the sponsors' line are drawn in the moon's cream. */
+.strip .button:not(.button-airmail) {
+  border-color: var(--moon);
+  color: var(--moon);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .strip .button:not(.button-airmail):hover {
+    background: var(--moon);
+    color: var(--night);
+  }
+}
+
+.strip :focus-visible {
+  outline-color: var(--moon);
 }
 
 .strip-head {
@@ -2055,6 +2089,7 @@ body:has(main.strip) {
 }
 
 .strip .stamp-caption {
+  color: var(--moon);
   font-size: 0.6875rem;
 }
 
@@ -2070,7 +2105,7 @@ body:has(main.strip) {
 }
 
 .strip-title a {
-  color: var(--ink);
+  color: var(--sheet);
   text-decoration: none;
 }
 
@@ -2227,11 +2262,17 @@ body:has(main.strip) {
   font-size: 0.875rem;
 }
 
-/* Santa's reply: North Pole stationery to print at home. Its one flourish is the red postmark. */
+/* Santa's reply: North Pole stationery to print at home. Its one flourish is the red postmark. On screen
+   the sheet lies on the mailbag's night (.night); printed, it is the sheet alone (below). */
 .reply {
+  padding-top: 1.5rem;
+}
+
+.reply-inner {
+  position: relative;
   max-width: 46rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
+  padding: 0 1rem 1rem;
 }
 
 .reply-tools {
@@ -2240,7 +2281,7 @@ body:has(main.strip) {
   align-items: center;
   gap: 0.75rem 1rem;
   margin-bottom: 1.25rem;
-  color: var(--bark);
+  color: var(--moon);
 }
 
 .reply-sheet {
@@ -2248,7 +2289,10 @@ body:has(main.strip) {
   padding: 2.5rem clamp(1.25rem, 5vw, 3.5rem) 2rem;
   background: var(--sheet);
   border: 1px solid var(--line);
-  box-shadow: inset 0 0 0 6px var(--sheet), inset 0 0 0 7px var(--margin-red);
+  box-shadow:
+    inset 0 0 0 6px var(--sheet),
+    inset 0 0 0 7px var(--margin-red),
+    0 1.5rem 3rem rgba(4, 14, 22, 0.5);
   font-family: var(--display);
   font-size: 1.25rem;
   line-height: 1.6;
@@ -2346,17 +2390,56 @@ body:has(main.strip) {
     background: none;
   }
 
+  /* No night on paper: no blue, no snow, no moon, no horizon, no shadow under the sheet. */
   .reply {
+    padding: 0;
+    background: none;
+    overflow: visible;
+  }
+
+  .reply::before,
+  .reply::after,
+  .reply .night-moon,
+  .reply .night-horizon {
+    display: none;
+  }
+
+  .reply-inner {
     max-width: none;
     padding: 0;
   }
 
+  /* One sheet, always: a letter-size page less its margins is 940px tall at the width it's set, and the
+     longest reply (the longest of each of Santa's four parts, a 30-letter name, a 40-letter town, the
+     thanks to a grown-up, four sponsors in the foot) has to fit inside it. Set at 1.4rem with the screen's
+     spacing it ran to 1,016px and a second page; at this size and spacing it's about 880. A test holds it. */
   .reply-sheet {
     border: 0;
-    padding-top: 3rem;
-    font-size: 1.4rem;
+    box-shadow: inset 0 0 0 6px var(--sheet), inset 0 0 0 7px var(--margin-red);
+    padding: 2.25rem 2.5rem 1.5rem;
+    font-size: 1.2rem;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .reply-head {
+    margin-bottom: 1.25rem;
+  }
+
+  .reply-sheet p {
+    margin-bottom: 0.85rem;
+  }
+
+  .reply-close {
+    margin-top: 1.25rem !important;
+  }
+
+  .reply-sign {
+    font-size: 2.4rem;
+  }
+
+  .reply-foot {
+    margin-top: 1.25rem;
   }
 
   @page {
