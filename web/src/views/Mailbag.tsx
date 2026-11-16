@@ -147,8 +147,14 @@ export function Mailbag() {
 
       {letters.length > 0 ? (
         <LetterWall letters={letters.filter((l) => l !== linked && l !== featured)} />
+      ) : season.phase === "upcoming" || open ? (
+        // Nothing to read yet: the letters' place says how the mailbag works.
+        <>
+          {open && <p className="empty-mailbag">No letters yet. Yours could be the first one in the mailbag.</p>}
+          <HowItWorks season={season} prizes={prizes.length} />
+        </>
       ) : (
-        <p className="empty-mailbag">{emptyLine(season)}</p>
+        <p className="empty-mailbag">No letters came in {season.year}.</p>
       )}
 
       <footer className="mailbag-foot">
@@ -220,10 +226,45 @@ function lede(season: Season): string {
   }
 }
 
-function emptyLine(season: Season): string {
-  if (season.phase === "upcoming" && !DEMO) return `The first letters come in ${apDate(season.entries_open_at)}.`;
-  if (season.phase === "open" || DEMO) return "No letters yet. Yours could be the first one in the mailbag.";
-  return `No letters came in ${season.year}.`;
+// Before the first letter is in, where the letters will be: the mailbag in three steps, along a dashed
+// line like the route's that ends in its star. Each step says only what the site does (the reply to print
+// goes with the email a family gets when the letter is up; winners are named on delivery day), and the
+// drawing is mentioned only once there are prizes to draw, as on the envelope.
+function HowItWorks({ season, prizes }: { season: Season; prizes: number }) {
+  const lastDay = apLastDay(season.entries_close_at);
+  const when = season.phase === "upcoming" && !DEMO ? `From ${apDate(season.entries_open_at)} through ${lastDay}` : `Through ${lastDay}`;
+  return (
+    <section className="how" aria-labelledby="how-heading">
+      <h2 id="how-heading">How Santa’s mailbag works</h2>
+      {/* role: Safari drops a list's meaning once its markers are styled away. */}
+      <ol role="list">
+        <li>
+          <h3>A grown-up sends it</h3>
+          <p>
+            {when}, a parent or guardian sends their child’s letter, in the child’s own words: typed here, emailed or
+            mailed. A photo of the handwritten page or a drawing can go with it.
+          </p>
+        </li>
+        <li>
+          <h3>An editor reads it</h3>
+          <p>
+            A Wausau Pilot &amp; Review editor reads every letter before it goes in the mailbag, with the child’s first
+            name, age and town only. Families who give an email get a link when it’s up, and a reply from Santa to print.
+          </p>
+        </li>
+        <li>
+          <h3>Santa gets it</h3>
+          <p>
+            On {apDate(season.delivered_at)}, we deliver every letter to the North Pole
+            {prizes > 0 && " and name the winners of the prize drawing"}.
+          </p>
+          <svg className="how-star" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 1.5l3 7.1 7.6.6-5.8 5 1.8 7.4L12 17.7 5.4 21.6l1.8-7.4-5.8-5 7.6-.6z" />
+          </svg>
+        </li>
+      </ol>
+    </section>
+  );
 }
 
 function OtherWays() {
