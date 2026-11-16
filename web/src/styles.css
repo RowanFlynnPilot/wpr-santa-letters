@@ -74,6 +74,10 @@
   --bark: #6e6353;
   --line: #dcd3c1;
   --slate: #32373c; /* WPR's masthead rule and tagline */
+  --night: #10283a; /* the winter night behind the envelope; cream on it is 13:1 */
+  --night-far: #183b52;
+  --pine: #0b1d2a;
+  --moon: #f4ecd2;
   --rule: #a9cdc7; /* ruled paper: the baseline */
   --rule-faint: #c9e0dc; /* and the dashed midline */
   --margin-red: #eba59e;
@@ -351,13 +355,272 @@ img {
 /* The envelope: the mailbag's title, address and stamp. ----------------------- */
 
 .mailbag {
+  padding-bottom: 3rem;
+}
+
+/* The night runs the width of the page; what's in it, and everything under it, keeps to a column. */
+.night-inner,
+.mailbag-body {
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--gap) var(--gap) 3rem;
+  padding-inline: var(--gap);
+}
+
+/* The winter night the envelope sits in (Night.tsx). Snow falls behind everything, in two layers of dots
+   that slide down by exactly one tile and start again; where a reader asks for less motion, it hangs still. */
+.night {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding-top: 1.25rem;
+  background: var(--night);
+  color: var(--moon);
+}
+
+.night::before,
+.night::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -18.75rem 0 0;
+  pointer-events: none;
+}
+
+.night::before {
+  background-image:
+    radial-gradient(circle at 1.5rem 2rem, #fffdf8 0 1.5px, transparent 2px),
+    radial-gradient(circle at 9rem 6rem, #fffdf8 0 2px, transparent 2.5px),
+    radial-gradient(circle at 15.5rem 11.5rem, #fffdf8 0 1.5px, transparent 2px),
+    radial-gradient(circle at 5rem 15rem, #fffdf8 0 2.5px, transparent 3px),
+    radial-gradient(circle at 12.5rem 17.25rem, #fffdf8 0 1.5px, transparent 2px);
+  background-size: 18.75rem 18.75rem;
+  opacity: 0.85;
+}
+
+.night::after {
+  background-image:
+    radial-gradient(circle at 3rem 1.25rem, #fffdf8 0 1px, transparent 1.5px),
+    radial-gradient(circle at 10rem 4.5rem, #fffdf8 0 1.5px, transparent 2px),
+    radial-gradient(circle at 6.5rem 9.5rem, #fffdf8 0 1px, transparent 1.5px);
+  background-size: 12.5rem 12.5rem;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .night::before {
+    animation: snowfall 38s linear infinite;
+  }
+
+  .night::after {
+    animation: snowfall-far 52s linear infinite;
+  }
+
+  @keyframes snowfall {
+    to {
+      transform: translateY(18.75rem);
+    }
+  }
+
+  @keyframes snowfall-far {
+    to {
+      transform: translateY(12.5rem);
+    }
+  }
+}
+
+/* The moon, in the corner the route leaves free; a phone has no corner to spare. */
+.night-moon {
+  display: none;
+}
+
+@media (min-width: 62rem) {
+  .night-moon {
+    display: block;
+    position: absolute;
+    z-index: -1;
+    top: 1.25rem;
+    right: max(1.5rem, calc(50% - 36rem));
+    width: 5.5rem;
+    height: 5.5rem;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 34% 36%, #e6dcba 0 0.5rem, transparent 0.55rem),
+      radial-gradient(circle at 66% 64%, #e6dcba 0 0.35rem, transparent 0.4rem),
+      var(--moon);
+  }
+}
+
+.night-inner {
+  position: relative;
+  display: grid;
+  gap: 0.9rem;
+}
+
+/* The horizon tucks under the envelope's foot, and its snow is the page's own color: the night ends in it. */
+.night-horizon {
+  position: relative;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: clamp(4.5rem, 9.5vw, 7.5rem);
+  /* Just under the envelope's foot; the last hair hides the seam where the snow meets the page. */
+  margin: -0.5rem 0 -2px;
+  font-family: var(--body);
+}
+
+.night-ridge {
+  fill: var(--night-far);
+}
+
+.night-pines {
+  fill: var(--pine);
+}
+
+.night-snow {
+  fill: var(--paper);
+}
+
+/* The route from Wausau to the North Pole: the countdown's sentence, then a track with the sleigh as far
+   along it as the season is (--sleigh) and the last day to write marked (--last-day). */
+.route {
+  display: grid;
+  gap: 0.3rem;
+  width: min(100%, 54rem);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding-inline: 0.75rem;
+}
+
+.route-count {
+  min-height: 1.65rem;
+  text-align: center;
+}
+
+/* On a patch of the night's own color, so the snow passes behind the words and not through them. */
+.route .countdown {
+  display: inline-block;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: var(--night);
+  color: var(--moon);
+  font: italic 500 1.1875rem / 1.35 var(--display);
+  font-variation-settings: "SOFT" 100;
+}
+
+.route-track {
+  position: relative;
+  height: 2.25rem;
+  color: var(--moon);
+}
+
+.route-line,
+.route-done {
+  position: absolute;
+  top: 1.5rem;
+  left: 0;
+}
+
+.route-line {
+  right: 0;
+  border-top: 2px dashed rgba(244, 236, 210, 0.65);
+}
+
+.route-done {
+  width: var(--sleigh, 0%);
+  border-top: 2px solid var(--moon);
+}
+
+.route-stop {
+  position: absolute;
+  top: calc(1.5rem + 1px);
+  box-sizing: border-box;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--moon);
+  translate: -50% -50%;
+}
+
+.route-start {
+  left: 0;
+}
+
+/* The last day to write: a ring, not yet reached or already passed. */
+.route-last {
+  left: var(--last-day);
+  border: 2px solid var(--moon);
+  background: var(--night);
+}
+
+.route-star {
+  position: absolute;
+  top: calc(1.5rem + 1px);
+  right: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: var(--moon);
+  translate: 50% -50%;
+}
+
+/* It pulls up beside the North Pole's star rather than on top of it. */
+.route-sleigh {
+  position: absolute;
+  top: -0.2rem;
+  left: min(var(--sleigh, 0%), calc(100% - 2.3rem));
+  width: 2.9rem;
+  height: 1.65rem;
+  fill: currentColor;
+  translate: -50% 0;
+}
+
+.route-labels {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  min-height: 2.1rem;
+  color: var(--moon);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.route-labels span {
+  display: grid;
+}
+
+.route-labels span:last-child {
+  text-align: right;
+}
+
+.route-labels b {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Named only where there's room between the two ends. */
+.route-labels .route-last-label {
+  display: none;
+}
+
+@media (min-width: 46rem) {
+  /* It ends at its mark, so it never runs into the North Pole's label beside it. */
+  .route-labels .route-last-label {
+    display: grid;
+    position: absolute;
+    left: var(--last-day);
+    padding-right: 0.6rem;
+    text-align: right;
+    white-space: nowrap;
+    translate: -100% 0;
+  }
 }
 
 .envelope {
   position: relative;
+  /* Set down by hand, a little off square, with the night under it. */
+  rotate: -1deg;
+  box-shadow: 0 1.75rem 3.5rem rgba(4, 14, 22, 0.5);
+  color: var(--ink);
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 1.5rem 2.5rem;
@@ -386,6 +649,51 @@ img {
 .envelope > .stamp {
   grid-column: 2;
   grid-row: 1;
+}
+
+/* The sticker a clerk puts on mail going by air. */
+.airmail-label {
+  display: inline-block;
+  justify-self: start;
+  padding: 0.05rem 0.6rem;
+  border: 2px solid var(--teal-deep);
+  color: var(--teal-deep);
+  font: 700 0.6875rem / 1.7 var(--body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* The cancellation: a postmark beside the stamps, its wavy lines running onto the first of them. Only
+   where the envelope is wide enough that it lands clear of the title. --postage is how wide the stamps sit. */
+.envelope-cancel {
+  display: none;
+}
+
+@media (min-width: 56rem) {
+  .envelope-cancel {
+    display: block;
+    position: absolute;
+    z-index: 1;
+    top: calc(clamp(1.25rem, 4vw, 2.75rem) + 2.25rem);
+    /* The lines reach the first stamp's edge and stop short of what's printed on it. */
+    right: calc(clamp(1.25rem, 4vw, 2.75rem) + var(--postage, 9.5rem) - 1.5rem);
+    width: 11.5rem;
+    color: var(--ink);
+    opacity: 0.45;
+    font-family: var(--body);
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    rotate: -7deg;
+  }
+
+  .envelope[data-stamps="several"] {
+    --postage: 12.9rem;
+  }
+
+  .envelope-cancel .postmark {
+    display: block;
+    width: 100%;
+  }
 }
 
 .envelope h1 {
@@ -533,6 +841,10 @@ img {
   .envelope-address > * + *,
   .sent > * + * {
     margin-top: 1rem;
+  }
+
+  .envelope {
+    rotate: -0.6deg;
   }
 
   .envelope > .stamp,
@@ -803,6 +1115,29 @@ img {
   min-width: 0;
 }
 
+/* A pile of mail: each sheet lies a little off square with a soft shadow under it, and straightens when
+   a reader points at it or tabs into it. */
+.letter-wall .letter {
+  box-shadow: 0 0.35rem 0.9rem rgba(30, 38, 34, 0.08);
+  rotate: 0.45deg;
+}
+
+.letter-wall .letter-column:nth-child(odd) .letter:nth-child(odd),
+.letter-wall .letter-column:nth-child(even) .letter:nth-child(even) {
+  rotate: -0.5deg;
+}
+
+.letter-wall .letter:hover,
+.letter-wall .letter:focus-within {
+  rotate: 0deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .letter-wall .letter {
+    transition: rotate 180ms ease-out;
+  }
+}
+
 .letter {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -951,12 +1286,85 @@ textarea.ruled {
 .featured-letter {
   display: grid;
   gap: 0.35rem;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
 }
 
 .featured-card {
   max-width: 34rem;
   margin-top: 0.5rem;
+}
+
+.featured-card .letter {
+  box-shadow: 0 1rem 2.5rem rgba(30, 38, 34, 0.12);
+}
+
+/* On a wide screen a pick with a photo is a spread: the child's own page taped down on the left, hanging
+   a little off the sheet, and the typed words beside it, set larger. A phone keeps the photo above the words. */
+@media (min-width: 56rem) {
+  .featured-card {
+    max-width: 64rem;
+  }
+
+  .featured-card:has(.letter[data-photo]) {
+    margin-top: 3.25rem;
+  }
+
+  .featured-card .letter[data-photo] {
+    --row: 2.375rem;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "photo head"
+      "photo body"
+      "photo foot";
+    column-gap: 2.25rem;
+    padding: 1.75rem 2rem 1.25rem 0;
+  }
+
+  .featured-card .letter[data-photo] .letter-head {
+    grid-area: head;
+  }
+
+  .featured-card .letter[data-photo] .letter-body {
+    grid-area: body;
+    font-size: 1.4375rem;
+  }
+
+  .featured-card .letter[data-photo] .letter-foot {
+    grid-area: foot;
+  }
+
+  .featured-card .letter[data-photo] .letter-photo {
+    grid-area: photo;
+    position: relative;
+    align-self: start;
+    margin: -3.5rem 0 1rem -1.25rem;
+    padding: 0.7rem 0.7rem 0.6rem;
+    background: #fff;
+    box-shadow: 0 1rem 2.25rem rgba(30, 38, 34, 0.25);
+    rotate: -1.8deg;
+  }
+
+  /* Two strips of tape at the top corners. */
+  .featured-card .letter[data-photo] .letter-photo::before,
+  .featured-card .letter[data-photo] .letter-photo::after {
+    content: "";
+    position: absolute;
+    top: -0.7rem;
+    width: 6.5rem;
+    height: 1.75rem;
+    background: rgba(233, 216, 160, 0.9);
+  }
+
+  .featured-card .letter[data-photo] .letter-photo::before {
+    left: -2rem;
+    rotate: -24deg;
+  }
+
+  .featured-card .letter[data-photo] .letter-photo::after {
+    right: -2rem;
+    rotate: 21deg;
+  }
 }
 
 /* While the mailbag loads: blank sheets where the letters will land. */

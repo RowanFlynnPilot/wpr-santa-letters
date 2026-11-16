@@ -60,3 +60,19 @@ export function countdown(season: Calendar, now: number = Date.now()): string | 
   }
   return null;
 }
+
+// Where things sit on the route drawn above the envelope, from Wausau (0, the day letters open) to the
+// North Pole (1, delivery): the last day to write, and the sleigh. The phase decides which stretch the
+// sleigh is on (invariant 1); the clock only places it within that stretch, so a device with the wrong
+// date can't put the sleigh at the North Pole while letters are still open.
+export function route(season: Calendar, now: number = Date.now()): { sleigh: number; lastDay: number } {
+  const start = Date.parse(season.entries_open_at);
+  const span = Date.parse(season.delivered_at) - start;
+  const along = (ms: number) => (span > 0 ? Math.min(1, Math.max(0, (ms - start) / span)) : 0);
+  const lastDay = along(Date.parse(season.entries_close_at));
+  const within = (low: number, high: number) => Math.min(high, Math.max(low, along(now)));
+  if (season.phase === "upcoming") return { sleigh: 0, lastDay };
+  if (season.phase === "open") return { sleigh: within(0, lastDay), lastDay };
+  if (season.phase === "closed") return { sleigh: within(lastDay, 0.98), lastDay };
+  return { sleigh: 1, lastDay };
+}

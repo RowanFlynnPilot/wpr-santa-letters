@@ -4,9 +4,10 @@
 import { type RefObject, useEffect, useRef } from "react";
 import { LetterCard } from "../components/LetterCard";
 import { LetterWall } from "../components/LetterWall";
+import { Horizon, NightSky, Route } from "../components/Night";
+import { Postmark } from "../components/Postmark";
 import { Stamps, StampsOpening } from "../components/Stamp";
 import { EDITOR_EMAIL, MAIL_TO } from "../contact";
-import { countdown } from "../countdown";
 import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive } from "../format";
 import { scrollIntoView, viewLink } from "../host";
 import { LINKED_LETTER } from "../linked";
@@ -45,16 +46,28 @@ export function Mailbag() {
   const linked = LINKED_LETTER ? letters.find((l) => l.id === LINKED_LETTER) : undefined;
   // The editor's pick leads the letters, unless it's the letter the reader followed a link to (shown above).
   const featured = letters.find((l) => l.id === mailbag.data.featured && l !== linked);
-  // How long until the next date on the calendar; a sales preview counts as open, like the rest of the page.
-  const daysLeft = countdown(DEMO && season.phase === "upcoming" ? { ...season, phase: "open" } : season);
+  // The route counts down to the next date on the calendar; a sales preview counts as open, like the rest of the page.
+  const calendar = DEMO && season.phase === "upcoming" ? { ...season, phase: "open" as const } : season;
+  const presenting = presentingSponsors(sponsors);
   return (
     <Sponsors.Provider value={sponsors}>
       <main className="mailbag">
-      <header className="envelope">
+      <div className="night">
+        <NightSky />
+        <div className="night-inner">
+          <Route season={calendar} />
+      <header className="envelope" data-stamps={presenting.length > 1 ? "several" : "one"}>
         {/* First in the page, so on a phone one stamp floats in the corner and the title wraps around it;
             several sit in a row above the title. */}
-        <Stamps sponsors={presentingSponsors(sponsors)} placement="mailbag-title" />
+        <Stamps sponsors={presenting} placement="mailbag-title" />
+        {/* The post office's cancellation, run across the stamps: decoration, on a wide screen only. */}
+        <div className="envelope-cancel" aria-hidden="true">
+          <Postmark place="Wausau, Wis." date={String(season.year)} label="" cancelled />
+        </div>
         <div className="envelope-address">
+          <p className="airmail-label" aria-hidden="true">
+            Par avion · Air mail
+          </p>
           <h1>Letters to Santa</h1>
           <p className="address">
             <span>To Santa Claus, at the North Pole</span>
@@ -91,10 +104,13 @@ export function Mailbag() {
               </button>
             </p>
           )}
-          {daysLeft && <p className="countdown">{daysLeft}</p>}
         </div>
       </header>
+        </div>
+        <Horizon />
+      </div>
 
+      <div className="mailbag-body">
       <Supporters sponsors={supportingSponsors(sponsors)} />
 
       {LINKED_LETTER && (
@@ -143,6 +159,7 @@ export function Mailbag() {
           <SponsorList sponsors={sponsors.filter((s) => !s.demo).sort((a, b) => Number(b.tier === "presenting") - Number(a.tier === "presenting"))} />
         )}
       </footer>
+      </div>
       </main>
     </Sponsors.Provider>
   );
@@ -153,10 +170,17 @@ export function Mailbag() {
 function MailbagOpening() {
   return (
     <main className="mailbag" aria-busy="true">
+      <div className="night">
+        <NightSky />
+        <div className="night-inner">
+          <Route />
       <header className="envelope">
         {/* One blank stamp, or the place of the several this browser saw here last time. */}
         <StampsOpening names={DEMO ? [] : keptStamps()} />
         <div className="envelope-address">
+          <p className="airmail-label" aria-hidden="true">
+            Par avion · Air mail
+          </p>
           <h1>Letters to Santa</h1>
           <p className="address">
             <span>To Santa Claus, at the North Pole</span>
@@ -167,10 +191,15 @@ function MailbagOpening() {
           </p>
         </div>
       </header>
-      <div className="letters-opening" aria-hidden="true">
-        <div className="letter" />
-        <div className="letter" />
-        <div className="letter" />
+        </div>
+        <Horizon />
+      </div>
+      <div className="mailbag-body">
+        <div className="letters-opening" aria-hidden="true">
+          <div className="letter" />
+          <div className="letter" />
+          <div className="letter" />
+        </div>
       </div>
     </main>
   );
