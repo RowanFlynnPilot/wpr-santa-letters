@@ -21,13 +21,15 @@ const open = async (page: import("@playwright/test").Page, path: string, size: {
 };
 
 test("the mailbag's envelope and its letters", async ({ page }) => {
-  await open(page, "?demo#/mailbag", { width: 1200, height: 900 });
+  // Wider than the page's column, so the night shows on both sides of the envelope and the picture comes
+  // out the shape the sponsor sheet has room for.
+  await open(page, "?demo#/mailbag", { width: 1400, height: 900 });
   await page.locator(".featured-letter").waitFor();
   await settled(page);
   await page.locator(".envelope").screenshot({ path: `${OUT}/envelope.png` });
-  // The envelope with the first letters under it, the preview's ribbon left out.
-  const top = await page.locator(".envelope").boundingBox();
-  await page.screenshot({ path: `${OUT}/mailbag.png`, fullPage: true, clip: { x: 0, y: top!.y - 16, width: 1200, height: 1150 } });
+  // The night and its envelope with the first letters under it, the preview's ribbon left out.
+  const top = await page.locator(".night").boundingBox();
+  await page.screenshot({ path: `${OUT}/mailbag.png`, fullPage: true, clip: { x: 0, y: top!.y, width: 1400, height: 1300 } });
 });
 
 test("the front-page strip", async ({ page }) => {

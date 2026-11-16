@@ -26,7 +26,14 @@ export function LetterCard({
 }) {
   const arrived = apDate(letter.created_at);
   return (
-    <article className="letter" data-paper={paperFor(letter.id)} data-letter-id={letter.id} tabIndex={-1}>
+    <article
+      className="letter"
+      data-paper={paperFor(letter.id)}
+      data-letter-id={letter.id}
+      // The editor's pick lays a letter with a photo out as a spread (styles.css).
+      data-photo={preview || letter.photo_id ? "" : undefined}
+      tabIndex={-1}
+    >
       <h3 className="letter-head">
         <Blank label="Name" value={letter.first_name} />
         <Blank label="Age" value={ageLabel(letter.age)} />

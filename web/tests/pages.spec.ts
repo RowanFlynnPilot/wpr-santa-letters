@@ -397,6 +397,73 @@ test("the thank-you page after a letter carries every presenting sponsor’s sta
   if (test.info().project.name === "chromium") await expect(page.locator(".sent")).toHaveScreenshot("sent-four-phone.png");
 });
 
+// The night scene -----------------------------------------------------------------------------------
+
+// How far along the route the sleigh is, as a percentage of the way from Wausau to the North Pole.
+const sleighAt = (page: Page) => page.locator(".route-track").evaluate((track) => parseFloat(getComputedStyle(track).getPropertyValue("--sleigh")));
+const snowfall = (page: Page) => page.locator(".night").evaluate((night) => getComputedStyle(night, "::before").animationName);
+
+test("the night scene: the route, the envelope’s postmark, the pick as a spread, and snow that stops when asked", async ({ page }) => {
+  await open(page, "#/mailbag", DESK);
+  // The route says what the countdown says, and draws it: Dec. 5 is about a third of the way from
+  // Nov. 27 to Dec. 23.
+  await expect(page.locator(".route .countdown")).toHaveText("13 days left to send a letter.");
+  await expect(page.locator(".route-labels")).toHaveText(/Wausau\s*Nov\.\s27.*Last day to write\s*Dec\.\s18.*North Pole\s*Dec\.\s23/);
+  const along = await sleighAt(page);
+  expect(along).toBeGreaterThan(28);
+  expect(along).toBeLessThan(36);
+  await expect(page.locator(".route-sleigh")).toBeVisible();
+
+  // The envelope is cancelled like real mail, where there's room for it.
+  await expect(page.locator(".envelope-cancel")).toBeVisible();
+  await expect(page.locator(".airmail-label")).toHaveText("Par avion · Air mail");
+
+  // The editor's pick is a spread: the child's own page on the left, the typed words beside it.
+  await settled(page);
+  const [photo, words] = await Promise.all([".featured-card .letter-photo", ".featured-card .letter-body"].map((s) => page.locator(s).boundingBox()));
+  expect(photo!.x + photo!.width).toBeLessThan(words!.x + 12);
+  expect(Math.abs(photo!.y - words!.y)).toBeLessThan(160);
+
+  // Snow falls, and hangs still for a reader who has asked for less motion.
+  expect(await snowfall(page)).toBe("snowfall");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await snowfall(page)).toBe("none");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+
+  // On a phone the postmark gives way to the title, and the photo sits above the words.
+  await page.goto("about:blank");
+  await open(page, "#/mailbag", PHONE);
+  await expect(page.locator(".route-sleigh")).toBeVisible();
+  await expect(page.locator(".envelope-cancel")).toBeHidden();
+  await settled(page);
+  const [above, below] = await Promise.all([".featured-card .letter-photo", ".featured-card .letter-body"].map((s) => page.locator(s).boundingBox()));
+  expect(above!.y + above!.height).toBeLessThanOrEqual(below!.y + 1);
+  expect(await scrollsSideways(page)).toBe(false);
+});
+
+test("the sleigh waits in Wausau before letters open and is at the North Pole once they’re delivered", async ({ page }) => {
+  await open(page, "#/mailbag", DESK, { phase: "upcoming" });
+  await expect(page.locator(".route .countdown")).toHaveText("Santa’s mailbag opens in seven days.");
+  expect(await sleighAt(page)).toBe(0);
+
+  await page.goto("about:blank");
+  await open(page, "#/mailbag", DESK, { phase: "closed" });
+  await expect(page.locator(".route .countdown")).toHaveText("The letters go to the North Pole in three days.");
+  // Past the last day to write, short of the Pole.
+  const closed = await sleighAt(page);
+  expect(closed).toBeGreaterThan(83);
+  expect(closed).toBeLessThan(100);
+
+  await page.goto("about:blank");
+  await open(page, "#/mailbag", DESK, { phase: "delivered" });
+  await expect(page.locator(".winners")).toBeVisible();
+  expect(await sleighAt(page)).toBe(100);
+  // Nothing left to count down to; the sleigh pulls up beside the star, not on it.
+  await expect(page.locator(".countdown")).toHaveCount(0);
+  const [sleigh, star] = await Promise.all([".route-sleigh", ".route-star"].map((s) => page.locator(s).boundingBox()));
+  expect(sleigh!.x + sleigh!.width).toBeLessThanOrEqual(star!.x + star!.width / 2);
+});
+
 // Supporting sponsors, and the prizes ----------------------------------------------------------------
 
 for (const [name, size] of [["desk", DESK], ["phone", PHONE]] as const) {

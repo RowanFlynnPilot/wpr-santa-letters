@@ -46,8 +46,8 @@ PARTS = {
     "public_sans": data("web/src/fonts/public-sans-latin-wght-normal.woff2", "font/woff2"),
     "badge": data("web/public/wpr-typewriter-badge.png", "image/png"),
     "wordmark": data("web/public/wpr-wordmark.png", "image/png"),
-    # The envelope and the supporting sponsors' row under it.
-    "mailbag": picture("docs/media/mailbag.png", 1000, crop=(0, 0, 1200, 606)),
+    # The night, its envelope and the supporting sponsors' row under it.
+    "mailbag": picture("docs/media/mailbag.png", 1000, crop=(0, 122, 1400, 826)),
     "shared": picture("docs/media/picture-ava.jpg", 560),
     "reply": picture("docs/media/reply.png", 560, crop=(0, 0, 704, 760)),
     "strip": picture("docs/media/strip.png", 1000),
@@ -165,7 +165,7 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
         <p class="dates">Letters open Nov. 27<br>Last day to write: Dec. 18<br>Every letter and the prize winners: Dec. 23</p>
       </div>
       <figure>
-        <img src="%(mailbag)s" alt="The Letters to Santa mailbag: an airmail envelope with four stamps in its corner, one reading Your business here, a row under it that reads With support from, and a child's handwritten letter.">
+        <img src="%(mailbag)s" alt="The Letters to Santa mailbag: an airmail envelope on a winter night, with four stamps in its corner, one reading Your business here, and a row under it that reads With support from.">
         <figcaption>The mailbag. A presenting sponsor&rsquo;s logo is one of its stamps, four at most; supporting sponsors are named in the row under the envelope. Letters shown are samples; the children are made up.</figcaption>
       </figure>
     </section>

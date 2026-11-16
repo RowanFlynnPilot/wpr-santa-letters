@@ -1,6 +1,6 @@
 // Run with Deno (CI's database job: `deno test web/src`); the web build leaves *_test.ts out.
 import { assertEquals } from "jsr:@std/assert@1";
-import { type Calendar, countdown, daysUntil } from "./countdown.ts";
+import { type Calendar, countdown, daysUntil, route } from "./countdown.ts";
 
 // The 2026 calendar (supabase/seasons/2026.sql): opens Nov. 27, closes at the end of Dec. 18, delivered
 // Dec. 23 at 6 a.m., all in Wausau's time.
@@ -44,4 +44,34 @@ Deno.test("a device whose clock disagrees with the phase gets no countdown rathe
   assertEquals(countdown(season("upcoming"), at("2026-11-28T09:00:00")), null);
   assertEquals(countdown(season("open"), at("2026-12-20T09:00:00")), null);
   assertEquals(countdown(season("closed"), at("2026-12-24T09:00:00")), null);
+});
+
+Deno.test("the sleigh is as far along the route as the season is, on the stretch its phase allows", () => {
+  const near = (actual: number, expected: number) => assertEquals(Math.round(actual * 100), Math.round(expected * 100));
+  // The last day to write sits where letters close: 22 of the 26 and a quarter days from opening to delivery.
+  near(route(season("open"), at("2026-12-05T12:00:00")).lastDay, 22 / 26.25);
+  // Before letters open the sleigh waits in Wausau; once they're delivered it's at the North Pole.
+  assertEquals(route(season("upcoming"), at("2026-11-20T12:00:00")).sleigh, 0);
+  assertEquals(route(season("delivered"), at("2026-12-23T07:00:00")).sleigh, 1);
+  // While letters are open it moves a little each day, and never past the last day to write.
+  const dec5 = route(season("open"), at("2026-12-05T12:00:00")).sleigh;
+  const dec6 = route(season("open"), at("2026-12-06T12:00:00")).sleigh;
+  near(dec5, 8.5 / 26.25);
+  assertEquals(dec6 > dec5, true);
+  // After they close it's on the last stretch, short of the Pole until delivery.
+  const dec21 = route(season("closed"), at("2026-12-21T12:00:00")).sleigh;
+  assertEquals(dec21 > route(season("closed"), at("2026-12-19T01:00:00")).sleigh, true);
+  assertEquals(dec21 < 1, true);
+});
+
+Deno.test("a device with the wrong date can't move the sleigh off its phase's stretch", () => {
+  const open = season("open");
+  const lastDay = route(open, at("2026-12-05T12:00:00")).lastDay;
+  // A clock set to next year, while the database says letters are open: the sleigh stops at the last day.
+  assertEquals(route(open, at("2027-06-01T12:00:00")).sleigh, lastDay);
+  // A clock set to last year: it's at the start, not off the route.
+  assertEquals(route(open, at("2025-06-01T12:00:00")).sleigh, 0);
+  // Closed, with a clock still in November: the sleigh is already at the last day, not behind it.
+  assertEquals(route(season("closed"), at("2026-11-30T12:00:00")).sleigh, lastDay);
+  assertEquals(route(season("closed"), at("2027-06-01T12:00:00")).sleigh, 0.98);
 });
