@@ -38,7 +38,7 @@ The script runs in the same Playwright image as CI, because text renders a littl
 
 ## Sponsor sheet
 
-`docs/sponsor-sheet/letters-to-santa-sponsor-sheet.pdf` (and the `.html` beside it) is the one page Chris sends a prospective sponsor: what the mailbag is, WPR's audience, what each of the three levels gets, and how to reach her. Prices are blanks to write in. To change it, edit `docs/sponsor-sheet/build.py`, then:
+`docs/sponsor-sheet/letters-to-santa-sponsor-sheet.pdf` (and the `.html` beside it) is the one page Chris sends a prospective sponsor: what the mailbag is, WPR's audience, what each of the three levels gets and costs, and how to reach her. The prices are the ones Shereen and Chris set on Nov. 11, 2026: the presenting sponsor pays $500 and gives a prize for the drawing, a supporting sponsor pays $300, and a prize donor gives a prize worth $75 to $100 and pays nothing. The presenting sponsor also gets a banner ad on WPR's homepage and on the Letters to Santa page, and is named in every post promoting the mailbag; the ad is WPR's own ad space in WordPress, not part of this app. To change it, edit `docs/sponsor-sheet/build.py`, then:
 
 ```sh
 scripts/browser-tests.sh shots      # only if the site's look changed: retake the pictures in docs/media
