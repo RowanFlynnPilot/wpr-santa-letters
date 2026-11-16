@@ -1,17 +1,17 @@
-// Santa's mailbag: the envelope up top (the presenting sponsor's logo is its stamp), the letters as
+// Santa's mailbag: the envelope up top (the presenting sponsors' logos are its stamps), the letters as
 // they're posted, and the prizes and sponsors at the foot. On delivery day the winners lead. A link
 // to one letter (linked.ts) opens it under the envelope, before the rest.
 import { useEffect, useRef } from "react";
 import { LetterCard } from "../components/LetterCard";
 import { LetterWall } from "../components/LetterWall";
-import { Stamp } from "../components/Stamp";
+import { Stamps } from "../components/Stamp";
 import { EDITOR_EMAIL, MAIL_TO } from "../contact";
 import { countdown } from "../countdown";
 import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive } from "../format";
 import { scrollIntoView, viewLink } from "../host";
 import { LINKED_LETTER } from "../linked";
 import { loadMailbag } from "../reads";
-import { DEMO, PresentingSponsor, presentingSponsor, sponsorHref } from "../sales";
+import { DEMO, presentingSponsors, sponsorHref, Sponsors } from "../sales";
 import { track } from "../analytics";
 import { logoUrl } from "../storage";
 import type { Letter, Mailbag as MailbagData, Prize, Season, Sponsor } from "../types";
@@ -40,11 +40,12 @@ export function Mailbag() {
   // How long until the next date on the calendar; a sales preview counts as open, like the rest of the page.
   const daysLeft = countdown(DEMO && season.phase === "upcoming" ? { ...season, phase: "open" } : season);
   return (
-    <PresentingSponsor.Provider value={presentingSponsor(sponsors)}>
+    <Sponsors.Provider value={sponsors}>
       <main className="mailbag">
       <header className="envelope">
-        {/* First in the page, so on a phone it floats in the corner and the title wraps around it. */}
-        <Stamp sponsor={presentingSponsor(sponsors)} placement="mailbag-title" />
+        {/* First in the page, so on a phone one stamp floats in the corner and the title wraps around it;
+            several sit in a row above the title. */}
+        <Stamps sponsors={presentingSponsors(sponsors)} placement="mailbag-title" />
         <div className="envelope-address">
           <h1>Letters to Santa</h1>
           <p className="address">
@@ -112,12 +113,12 @@ export function Mailbag() {
         {(season.phase === "upcoming" || season.phase === "open") && <OtherWays />}
         {prizes.length > 0 && season.phase !== "delivered" && <PrizeList prizes={prizes} sponsors={sponsors} />}
         {sponsors.some((s) => !s.demo) && (
-          // The presenting sponsor first, then the rest in the order they signed on.
+          // The presenting sponsors first, then the rest, each in the order they signed on.
           <SponsorList sponsors={sponsors.filter((s) => !s.demo).sort((a, b) => Number(b.tier === "presenting") - Number(a.tier === "presenting"))} />
         )}
       </footer>
       </main>
-    </PresentingSponsor.Provider>
+    </Sponsors.Provider>
   );
 }
 

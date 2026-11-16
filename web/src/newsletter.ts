@@ -3,7 +3,7 @@
 // section rule, an Oswald eyebrow, Merriweather bylines, Source Sans 3 body, inline styles only.
 // Staff save the rows for a morning (migration 0007) and the wpr-newsletter build adds them to that
 // morning's edition. With three letters they stay well under the newsletter tool's ~13 KB block limit.
-import { apLastDay, apNumber, byline, capitalize, count } from "./format";
+import { apLastDay, apNumber, byline, capitalize, count, series } from "./format";
 import { sponsorHref } from "./sales";
 import { logoUrl } from "./storage";
 import type { Letter, Season, Sponsor } from "./types";
@@ -79,7 +79,8 @@ function letterRow(letter: Letter, href: string): string {
 
 export interface NewsletterSection {
   season: Season;
-  presenting: Sponsor | undefined;
+  // The presenting sponsors, in the order they signed on (four at most).
+  presenting: Sponsor[];
   picks: Letter[];
   posted: number; // letters posted in the window; picks may be fewer
   total: number; // every letter in the mailbag
@@ -123,10 +124,10 @@ export function newsletterRows(section: NewsletterSection): string {
         <tr>
           <td class="px oswald" style="padding:10px 32px 0; font-family:${OSWALD}; font-size:15px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#1a1a1a;">Letters to Santa</td>
         </tr>${
-          section.presenting
+          section.presenting.length > 0
             ? `
         <tr>
-          <td class="px" style="padding:8px 32px 0; font-family:${SANS}; font-size:13px; color:#555555;">Presented by ${sponsorMark(section.presenting)}</td>
+          <td class="px" style="padding:8px 32px 0; font-family:${SANS}; font-size:13px; color:#555555;">Presented by ${series(section.presenting.map(sponsorMark))}</td>
         </tr>`
             : ""
         }

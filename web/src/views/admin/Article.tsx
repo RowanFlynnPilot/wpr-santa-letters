@@ -27,11 +27,11 @@ async function loadArticle(seasonId: string) {
 }
 
 function defaultIntro(year: number, sponsors: Sponsor[]): string {
-  const presenting = sponsors.find((s) => s.tier === "presenting");
+  const presenting = sponsors.filter((s) => s.tier === "presenting").map((s) => s.name);
   const others = sponsors.filter((s) => s.tier !== "presenting").map((s) => s.name);
   return [
     `Wausau-area children wrote to Santa this year, and Wausau Pilot & Review is delivering their ${year} letters to the North Pole. Here’s what they’re wishing for.`,
-    presenting && `Letters to Santa is presented by ${presenting.name}.`,
+    presenting.length > 0 && `Letters to Santa is presented by ${series(presenting)}.`,
     others.length > 0 && `Thanks also to ${series(others)}.`,
   ]
     .filter(Boolean)

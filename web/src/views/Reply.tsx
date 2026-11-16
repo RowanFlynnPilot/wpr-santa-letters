@@ -1,17 +1,18 @@
 // A reply from Santa, to print at home, for one letter in the mailbag. The family's "your letter is
 // up" email links here (?letter=<id>&from=email#/reply), on its own page rather than inside WordPress
 // so it prints as one sheet. It speaks to the child by first name and town and promises nothing:
-// no gifts, no lists. The presenting sponsor's stamp sits in the corner, as on the mailbag's envelope.
+// no gifts, no lists. A presenting sponsor's stamp sits in the corner, as on the mailbag's envelope: with
+// several, they take turns by letter, and the foot names them all.
 import { track } from "../analytics";
 import { Postmark } from "../components/Postmark";
 import { Stamp } from "../components/Stamp";
-import { apDate } from "../format";
+import { apDate, series } from "../format";
 import { hashOf } from "../looks";
 import { LINKED_FROM, LINKED_LETTER } from "../linked";
 import { loadLetter, loadSeason, loadSponsors } from "../reads";
-import { presentingSponsor } from "../sales";
+import { presentingFor, presentingSponsors } from "../sales";
 import { santaReply } from "../santaReply";
-import type { Letter } from "../types";
+import type { Letter, Sponsor } from "../types";
 import { useLoad } from "../useLoad";
 
 async function loadReply(letterId: string) {
@@ -33,10 +34,14 @@ function ReplyFor({ letterId }: { letterId: string }) {
   if (page.status === "failed") return <p className="status">Santa’s reply didn’t load: {page.error.message}</p>;
   const { letter, sponsors } = page.data;
   if (!letter) return <p className="status">That letter isn’t in Santa’s mailbag.</p>;
-  return <SantasReply letter={letter} sponsor={presentingSponsor(sponsors)} />;
+  return <SantasReply letter={letter} sponsors={sponsors} />;
 }
 
-function SantasReply({ letter, sponsor }: { letter: Letter; sponsor: ReturnType<typeof presentingSponsor> }) {
+function SantasReply({ letter, sponsors }: { letter: Letter; sponsors: Sponsor[] }) {
+  const sponsor = presentingFor(sponsors, letter.id);
+  const presenters = presentingSponsors(sponsors)
+    .filter((s) => !s.open)
+    .map((s) => s.name);
   const today = apDate(new Date().toISOString());
   // One of 256 wordings, by the letter: the same each time it's opened, different for a brother or sister.
   const reply = santaReply(letter, hashOf(letter.id));
@@ -72,7 +77,7 @@ function SantasReply({ letter, sponsor }: { letter: Letter; sponsor: ReturnType<
         <p className="reply-sign">Santa</p>
         <p className="reply-ps">P.S. {reply.postscript}</p>
         <footer className="reply-foot">
-          From Letters to Santa, Wausau Pilot &amp; Review{sponsor ? `, presented by ${sponsor.name}` : ""}
+          From Letters to Santa, Wausau Pilot &amp; Review{presenters.length > 0 ? `, presented by ${series(presenters)}` : ""}
         </footer>
       </article>
     </main>

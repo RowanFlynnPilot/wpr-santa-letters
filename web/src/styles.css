@@ -568,6 +568,199 @@ img {
   }
 }
 
+/* Several presenting sponsors (four at most): their stamps side by side, as on a letter that needed more
+   postage, and one line naming them all. Two across in the envelope's corner. On a phone, where a single
+   stamp floats beside the title, several sit in a row above it. --stamp is one stamp's width. */
+.stamps {
+  --stamp: 6.25rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+}
+
+.stamps ul {
+  display: grid;
+  grid-template-columns: repeat(2, var(--stamp));
+  gap: 0.5rem 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  filter: drop-shadow(0 1px 1px rgba(30, 38, 34, 0.25));
+}
+
+/* Three: the third sits under the second, toward the corner. */
+.stamps[data-count="3"] li:nth-child(3) {
+  grid-column: 2;
+}
+
+.stamps li .stamp-face {
+  width: 100%;
+  padding: 0.6rem;
+  /* A smaller stamp's printed frame sits closer to its edge. */
+  box-shadow: inset 0 0 0 5px #fff, inset 0 0 0 6px var(--line);
+}
+
+/* Stuck on by hand: no two quite straight. */
+.stamps li:nth-child(4n + 1) .stamp-face {
+  rotate: -2deg;
+}
+
+.stamps li:nth-child(4n + 2) .stamp-face {
+  rotate: 3deg;
+}
+
+.stamps li:nth-child(4n + 3) .stamp-face {
+  rotate: 2deg;
+}
+
+.stamps li:nth-child(4n) .stamp-face {
+  rotate: -3deg;
+}
+
+/* A name in type on a small stamp may set smaller than on the single one, so its widest word still fits
+   whole; the line under the stamps spells every name at reading size. */
+.stamps .stamp-name {
+  font-size: 0.5rem;
+}
+
+@supports (font-size: 1cqi) {
+  .stamps .stamp-name {
+    font-size: clamp(0.375rem, calc((100cqi - var(--inset, 0px)) / (var(--widest, 8) * 0.66)), 0.8125rem);
+  }
+}
+
+/* A sales preview's places fill their stamps alike, the one that reads "Your business here" and the
+   blank ones still open beside it. */
+.stamps .stamp-demo {
+  --inset: 0.75rem;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0.25rem;
+  border-width: 1.5px;
+}
+
+/* A sales preview's open place: the dashed box alone, fainter than the one that reads "Your business here". */
+.stamps .stamp-open {
+  width: 100%;
+  height: 100%;
+  opacity: 0.45;
+}
+
+.stamps .stamp-caption {
+  max-width: calc(var(--stamp) * 2 + 0.4rem);
+  text-wrap: balance;
+}
+
+.envelope > .stamps {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.sent > .stamps {
+  --stamp: 5rem;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+/* The front-page strip: a small block of stamps in the corner, the title beside it. There the stamps
+   themselves say who (a logo, or the name in type); the names stay for screen readers. */
+.strip-head > .stamps {
+  --stamp: 3.5rem;
+  float: right;
+  gap: 0.3rem;
+  margin: 0 0 0.5rem 0.75rem;
+}
+
+.strip .stamps ul {
+  gap: 0.3rem 0.25rem;
+}
+
+/* "Presented by" reads into the stamps, so there it goes above them. */
+.strip .stamps .stamp-caption {
+  order: -1;
+}
+
+.strip .stamps li .stamp-face {
+  padding: 0.4rem;
+}
+
+.strip .stamp-names {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .envelope > .stamps,
+  .sent > .stamps {
+    justify-items: end;
+    margin-bottom: 1rem;
+  }
+
+  /* The thank-you stays a grid on a phone: the row of stamps takes its full width, the words under it. */
+  .sent > .stamps {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin-bottom: 0;
+  }
+
+  .sent > .stamps ~ * {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+
+  /* One row, each stamp as wide as a phone's single stamp when there's room and narrower when there isn't. */
+  .envelope > .stamps ul,
+  .sent > .stamps ul {
+    grid-template-columns: repeat(var(--count), minmax(0, 5rem));
+    justify-content: end;
+    width: 100%;
+  }
+
+  .envelope > .stamps[data-count="3"] li:nth-child(3),
+  .sent > .stamps[data-count="3"] li:nth-child(3) {
+    grid-column: auto;
+  }
+
+  .stamps li .stamp-face {
+    padding: 0.45rem;
+  }
+
+  .envelope > .stamps .stamp-caption,
+  .sent > .stamps .stamp-caption {
+    max-width: none;
+    text-align: right;
+  }
+}
+
+/* The narrowest phones: four in a row would leave no room for a name, so they sit two and two. */
+@media (max-width: 339px) {
+  .envelope > .stamps[data-count="4"] ul,
+  .sent > .stamps[data-count="4"] ul {
+    grid-template-columns: repeat(2, minmax(0, 5rem));
+  }
+}
+
+/* On the thank-you page they land one after another. */
+@media (prefers-reduced-motion: no-preference) {
+  .sent .stamps li:nth-child(2) .stamp-face {
+    animation-delay: 90ms;
+  }
+
+  .sent .stamps li:nth-child(3) .stamp-face {
+    animation-delay: 180ms;
+  }
+
+  .sent .stamps li:nth-child(4) .stamp-face {
+    animation-delay: 270ms;
+  }
+}
+
 /* The letters: ruled writing paper. ------------------------------------------ */
 
 /* Columns of letters, filled row by row (LetterWall sets how many fit). */

@@ -16,7 +16,7 @@ import { env } from "../../env";
 import { apDate, byline } from "../../format";
 import { MAX_LETTERS, newsletterRows, wrapBlock } from "../../newsletter";
 import { describeFlags, privacyFlags } from "../../privacy";
-import { presentingSponsor } from "../../sales";
+import { presentingSponsors } from "../../sales";
 import type { SavedNewsletterSection, Season } from "../../types";
 import { useLoad } from "../../useLoad";
 
@@ -126,7 +126,7 @@ function Picker({
   const picks = posted.filter((l) => chosen.includes(l.id));
   const rows = newsletterRows({
     season: now,
-    presenting: presentingSponsor(sponsors.filter((s) => !s.demo)),
+    presenting: presentingSponsors(sponsors.filter((s) => !s.demo)),
     picks,
     posted: posted.length,
     total,

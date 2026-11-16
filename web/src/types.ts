@@ -22,6 +22,8 @@ export interface Sponsor {
   website_url: string | null;
   // A `?demo` placeholder ("Your business here"), never a real row.
   demo?: boolean;
+  // A `?demo` placeholder for a presenting place still open beyond that one: a blank stamp, no name.
+  open?: boolean;
 }
 
 export interface Prize {
