@@ -46,7 +46,8 @@ PARTS = {
     "public_sans": data("web/src/fonts/public-sans-latin-wght-normal.woff2", "font/woff2"),
     "badge": data("web/public/wpr-typewriter-badge.png", "image/png"),
     "wordmark": data("web/public/wpr-wordmark.png", "image/png"),
-    "mailbag": picture("docs/media/mailbag.png", 1000, crop=(0, 0, 1200, 560)),
+    # The envelope and the supporting sponsors' row under it.
+    "mailbag": picture("docs/media/mailbag.png", 1000, crop=(0, 0, 1200, 606)),
     "shared": picture("docs/media/picture-ava.jpg", 560),
     "reply": picture("docs/media/reply.png", 560, crop=(0, 0, 704, 760)),
     "strip": picture("docs/media/strip.png", 1000),
@@ -164,8 +165,8 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
         <p class="dates">Letters open Nov. 27<br>Last day to write: Dec. 18<br>Every letter and the prize winners: Dec. 23</p>
       </div>
       <figure>
-        <img src="%(mailbag)s" alt="The Letters to Santa mailbag: an airmail envelope with four stamps in its corner, one reading Your business here, above a child's handwritten letter.">
-        <figcaption>The mailbag. Your logo is one of its stamps, four at most. Letters shown are samples; the children are made up.</figcaption>
+        <img src="%(mailbag)s" alt="The Letters to Santa mailbag: an airmail envelope with four stamps in its corner, one reading Your business here, a row under it that reads With support from, and a child's handwritten letter.">
+        <figcaption>The mailbag. A presenting sponsor&rsquo;s logo is one of its stamps, four at most; supporting sponsors are named in the row under the envelope. Letters shown are samples; the children are made up.</figcaption>
       </figure>
     </section>
 
@@ -194,7 +195,8 @@ figcaption { margin-top: 4px; color: var(--bark); font-size: 11px; line-height: 
       <div class="level">
         <h2>Supporting sponsor</h2>
         <ul>
-          <li>Your name or logo, linked to your site, under &ldquo;Thanks to our sponsors&rdquo; on the mailbag all season</li>
+          <li>Your name or logo, linked to your site, in the &ldquo;With support from&rdquo; row right under the mailbag&rsquo;s envelope, above the letters, all season</li>
+          <li>And again under &ldquo;Thanks to our sponsors&rdquo; at the foot of the mailbag</li>
         </ul>
         <p class="price"><b>$300</b></p>
       </div>

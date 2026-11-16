@@ -1,7 +1,7 @@
 // Santa's mailbag: the envelope up top (the presenting sponsors' logos are its stamps), the letters as
 // they're posted, and the prizes and sponsors at the foot. On delivery day the winners lead. A link
 // to one letter (linked.ts) opens it under the envelope, before the rest.
-import { useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 import { LetterCard } from "../components/LetterCard";
 import { LetterWall } from "../components/LetterWall";
 import { Stamps, StampsOpening } from "../components/Stamp";
@@ -11,7 +11,7 @@ import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive } fr
 import { scrollIntoView, viewLink } from "../host";
 import { LINKED_LETTER } from "../linked";
 import { loadMailbag } from "../reads";
-import { DEMO, presentingSponsors, sponsorHref, Sponsors } from "../sales";
+import { DEMO, type Placement, presentingSponsors, sponsorHref, Sponsors, supportingSponsors } from "../sales";
 import { track } from "../analytics";
 import { keepStamps, keptStamps } from "../stampsKept";
 import { logoUrl } from "../storage";
@@ -21,6 +21,7 @@ import { useLoad } from "../useLoad";
 export function Mailbag() {
   const mailbag = useLoad(loadMailbag);
   const linkedRef = useRef<HTMLElement>(null);
+  const prizesRef = useRef<HTMLElement>(null);
   const ready = mailbag.status === "ready";
 
   // A linked letter is what the reader came for: bring it into view once it's on the page.
@@ -74,9 +75,27 @@ export function Mailbag() {
               )}
             </div>
           )}
+          {prizes.length > 0 && season.phase !== "delivered" && (
+            // The prizes are listed at the foot, a long way down: say so up here, with a way there.
+            <p className="envelope-prizes">
+              Letters in the mailbag are entered in a drawing for {prizes.length === 1 ? "a prize" : `${apNumber(prizes.length)} prizes`}.{" "}
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  prizesRef.current?.focus({ preventScroll: true });
+                  if (prizesRef.current) void scrollIntoView(prizesRef.current);
+                }}
+              >
+                See the {prizes.length === 1 ? "prize" : "prizes"}
+              </button>
+            </p>
+          )}
           {daysLeft && <p className="countdown">{daysLeft}</p>}
         </div>
       </header>
+
+      <Supporters sponsors={supportingSponsors(sponsors)} />
 
       {LINKED_LETTER && (
         <section className="linked-letter" ref={linkedRef} aria-label="The letter you followed a link to">
@@ -118,7 +137,7 @@ export function Mailbag() {
 
       <footer className="mailbag-foot">
         {(season.phase === "upcoming" || season.phase === "open") && <OtherWays />}
-        {prizes.length > 0 && season.phase !== "delivered" && <PrizeList prizes={prizes} sponsors={sponsors} />}
+        {prizes.length > 0 && season.phase !== "delivered" && <PrizeList prizes={prizes} sponsors={sponsors} sectionRef={prizesRef} />}
         {sponsors.some((s) => !s.demo) && (
           // The presenting sponsors first, then the rest, each in the order they signed on.
           <SponsorList sponsors={sponsors.filter((s) => !s.demo).sort((a, b) => Number(b.tier === "presenting") - Number(a.tier === "presenting"))} />
@@ -200,7 +219,7 @@ function OtherWays() {
 
 // Prizes given more than once are listed once, with how many there are to win.
 
-function PrizeList({ prizes, sponsors }: { prizes: Prize[]; sponsors: Sponsor[] }) {
+function PrizeList({ prizes, sponsors, sectionRef }: { prizes: Prize[]; sponsors: Sponsor[]; sectionRef: RefObject<HTMLElement | null> }) {
   const groups = new Map<string, { prize: Prize; count: number }>();
   for (const prize of prizes) {
     const key = `${prize.sponsor_id}\n${prize.description}`;
@@ -209,8 +228,9 @@ function PrizeList({ prizes, sponsors }: { prizes: Prize[]; sponsors: Sponsor[] 
     else groups.set(key, { prize, count: 1 });
   }
   return (
-    <section className="prize-list">
-      <h2>Prizes</h2>
+    // Takes focus when a reader comes down from the envelope's "See the prizes".
+    <section className="prize-list" ref={sectionRef} tabIndex={-1} aria-labelledby="prizes-heading">
+      <h2 id="prizes-heading">Prizes</h2>
       <p>Letters in the mailbag are entered in a drawing for:</p>
       <ul>
         {[...groups.values()].map(({ prize, count }) => {
@@ -228,35 +248,54 @@ function PrizeList({ prizes, sponsors }: { prizes: Prize[]; sponsors: Sponsor[] 
   );
 }
 
+// A sponsor in a list: its logo or its name, linked to its site. Paid links are marked `sponsored` for
+// search engines; each click is counted per sponsor and spot.
+function SponsorMark({ sponsor, placement, lazy }: { sponsor: Sponsor; placement: Placement; lazy?: boolean }) {
+  const face = sponsor.logo_path ? (
+    <img src={logoUrl(sponsor.logo_path)} alt={sponsor.name} loading={lazy ? "lazy" : undefined} />
+  ) : (
+    <span>{sponsor.name}</span>
+  );
+  const href = sponsorHref(sponsor, placement);
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer sponsored" onClick={() => track("Sponsor Click", { sponsor: sponsor.name, placement })}>
+      {face}
+    </a>
+  ) : (
+    face
+  );
+}
+
+// The supporting sponsors, named right under the envelope, before the letters: at the foot alone they sat
+// below every letter in the mailbag. A sales preview adds the place a business would take.
+function Supporters({ sponsors }: { sponsors: Sponsor[] }) {
+  if (sponsors.length === 0) return null;
+  return (
+    <section className="supporters" aria-labelledby="supporters-label">
+      <p id="supporters-label" className="supporters-label">
+        With support from
+      </p>
+      <ul>
+        {sponsors.map((sponsor) => (
+          <li key={sponsor.id}>
+            {sponsor.demo ? <span className="supporter-open">{sponsor.name}</span> : <SponsorMark sponsor={sponsor} placement="supporters" />}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function SponsorList({ sponsors }: { sponsors: Sponsor[] }) {
   return (
     <section className="sponsor-list">
       <h2>Thanks to our sponsors</h2>
       <ul>
-        {sponsors.map((sponsor) => {
-          const face = sponsor.logo_path ? (
-            <img src={logoUrl(sponsor.logo_path)} alt={sponsor.name} loading="lazy" />
-          ) : (
-            <span>{sponsor.name}</span>
-          );
-          const href = sponsorHref(sponsor, "sponsor-list");
-          return (
-            <li key={sponsor.id}>
-              {href ? (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer sponsored"
-                  onClick={() => track("Sponsor Click", { sponsor: sponsor.name, placement: "sponsor-list" })}
-                >
-                  {face}
-                </a>
-              ) : (
-                face
-              )}
-            </li>
-          );
-        })}
+        {sponsors.map((sponsor) => (
+          <li key={sponsor.id}>
+            <SponsorMark sponsor={sponsor} placement="sponsor-list" lazy />
+          </li>
+        ))}
       </ul>
     </section>
   );

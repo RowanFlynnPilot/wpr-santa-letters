@@ -5,8 +5,26 @@
 // Everything runs in Chrome's engine and in Safari's; the season's other three phases (before letters open,
 // after they close, delivery day) each get a test of their own at the foot.
 import AxeBuilder from "@axe-core/playwright";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
-import { FOUR_SPONSORS, LETTERS, LOGO_SPONSORS, mockBackend, type Phase, PICK, scrollsSideways, settled, SPONSOR, stampLogos, stampsWords, stampWords } from "./fixtures";
+import { fitLogo, presentedBy } from "../src/emailMarks";
+import {
+  FOUR_SPONSORS,
+  LETTERS,
+  LOGO_SPONSORS,
+  mockBackend,
+  type Phase,
+  PICK,
+  scrollsSideways,
+  settled,
+  SIX_PRIZES,
+  SPONSOR,
+  stampLogos,
+  stampsWords,
+  stampWords,
+  SUPPORTERS,
+} from "./fixtures";
 
 const DESK = { width: 1280, height: 900 };
 const PHONE = { width: 375, height: 812 };
@@ -17,7 +35,12 @@ async function shot(page: Page, name: string, options?: { fullPage?: boolean }) 
   if (test.info().project.name === "chromium") await expect(page).toHaveScreenshot(name, options);
 }
 
-async function open(page: Page, path: string, size: { width: number; height: number }, options?: { pick?: boolean; phase?: Phase; sponsors?: unknown[] }) {
+async function open(
+  page: Page,
+  path: string,
+  size: { width: number; height: number },
+  options?: { pick?: boolean; phase?: Phase; sponsors?: unknown[]; prizes?: unknown[] },
+) {
   await page.setViewportSize(size);
   await mockBackend(page, options);
   await page.goto(path);
@@ -334,6 +357,9 @@ test("a sales preview shows all four places: the sponsors signed on, “Your bus
   await expect(places.first()).toHaveText("Your business here");
   await expect(page.locator(".envelope .stamp-open")).toHaveCount(3);
   await expect(page.locator(".envelope .stamp-caption")).toHaveText("Presented by Your business here");
+  // A supporting sponsor's place is shown too, under the envelope.
+  await expect(page.locator(".supporters .supporter-open")).toHaveText("Your business here");
+  await expectAccessible(page, ".supporters");
   await open(page, `?demo&letter=${LETTERS[0].id}&from=staff#/reply`, { width: 900, height: 1100 }, { sponsors: [] });
   await expect(page.locator(".reply .stamp-name")).toHaveText("Your business here");
   await expect(page.locator(".reply-foot")).toHaveText("From Letters to Santa, Wausau Pilot & Review, presented by Your business here");
@@ -369,6 +395,145 @@ test("the thank-you page after a letter carries every presenting sponsor’s sta
   // The thank-you itself: the preview's sample letter under it is the sales page's, not a reader's.
   await expectAccessible(page, ".sent");
   if (test.info().project.name === "chromium") await expect(page.locator(".sent")).toHaveScreenshot("sent-four-phone.png");
+});
+
+// Supporting sponsors, and the prizes ----------------------------------------------------------------
+
+for (const [name, size] of [["desk", DESK], ["phone", PHONE]] as const) {
+  test(`supporting sponsors, ${name}: named in a row under the envelope, before the letters`, async ({ page }) => {
+    await open(page, "#/mailbag", size, { sponsors: [SPONSOR, ...SUPPORTERS] });
+    const row = page.locator(".supporters");
+    await expect(row.locator(".supporters-label")).toHaveText("With support from");
+    await expect(row.locator("li")).toHaveCount(4);
+    // A logo for those that have one, the name for those that don't, in the order they signed on.
+    expect(await row.locator("li").evaluateAll((items) => items.map((li) => li.querySelector("img")?.alt ?? li.textContent))).toEqual(
+      SUPPORTERS.map((s) => s.name),
+    );
+    // Those with a site link to it, marked as paid and tagged with where the click came from.
+    const links = row.locator("a");
+    await expect(links).toHaveCount(2);
+    for (const link of await links.all()) {
+      await expect(link).toHaveAttribute("rel", /sponsored/);
+      await expect(link).toHaveAttribute("href", /utm_content=supporters/);
+    }
+    // The foot still thanks everyone, the presenting sponsor first.
+    await expect(page.locator(".sponsor-list li")).toHaveCount(5);
+
+    await settled(page);
+    const [envelope, at, pick] = await Promise.all([".envelope", ".supporters", ".featured-letter"].map((s) => page.locator(s).boundingBox()));
+    expect(at!.y).toBeGreaterThanOrEqual(envelope!.y + envelope!.height);
+    expect(at!.y + at!.height).toBeLessThanOrEqual(pick!.y + 1);
+    expect(await scrollsSideways(page)).toBe(false);
+    await expectAccessible(page);
+    if (test.info().project.name === "chromium") await expect(row).toHaveScreenshot(`supporters-${name}.png`);
+  });
+}
+
+test("supporting sponsors fit the narrowest phone, and a mailbag without any has no row", async ({ page }) => {
+  await open(page, "#/mailbag", { width: 320, height: 700 }, { sponsors: [SPONSOR, ...SUPPORTERS] });
+  await expect(page.locator(".supporters li")).toHaveCount(4);
+  await settled(page);
+  expect(await scrollsSideways(page)).toBe(false);
+  await page.goto("about:blank");
+  await open(page, "#/mailbag", DESK);
+  await expect(page.locator(".letter-wall")).toBeVisible();
+  await expect(page.locator(".supporters")).toHaveCount(0);
+});
+
+test("the envelope says there are prizes and takes a reader down to them", async ({ page }) => {
+  await open(page, "#/mailbag", DESK);
+  await expect(page.locator(".envelope-prizes")).toContainText("Letters in the mailbag are entered in a drawing for a prize.");
+  await expect(page.locator(".prize-list")).not.toBeInViewport();
+  await page.getByRole("button", { name: "See the prize" }).click();
+  await expect(page.locator(".prize-list")).toBeInViewport();
+  await expect(page.locator(".prize-list")).toBeFocused();
+
+  // Six to win, three of them alike: the line counts every one, the list groups them.
+  await page.goto("about:blank");
+  await open(page, "#/mailbag", PHONE, { sponsors: [SPONSOR, ...SUPPORTERS], prizes: SIX_PRIZES });
+  await expect(page.locator(".envelope-prizes")).toContainText("entered in a drawing for six prizes.");
+  await expect(page.getByRole("button", { name: "See the prizes" })).toBeVisible();
+  await expect(page.locator(".prize-list li")).toHaveCount(4);
+  await expect(page.locator(".prize-list")).toContainText("A $25 gift card from Rib River Pizza (three to win)");
+  await settled(page);
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+
+  // With no prizes there's nothing to say, and on delivery day the winners say it.
+  await page.goto("about:blank");
+  await open(page, "#/mailbag", DESK, { prizes: [] });
+  await expect(page.locator(".countdown")).toBeVisible();
+  await expect(page.locator(".envelope-prizes")).toHaveCount(0);
+  await page.goto("about:blank");
+  await open(page, "#/mailbag", DESK, { phase: "delivered" });
+  await expect(page.locator(".winners")).toBeVisible();
+  await expect(page.locator(".envelope-prizes")).toHaveCount(0);
+});
+
+// Logos beyond the stamps -------------------------------------------------------------------------------
+
+// The made-up logos' own sizes (tests/fixtures/logo-*.png), as the staff page would measure them.
+const LOGO_SIZES: Record<string, { width: number; height: number }> = {
+  "logo-square.png": { width: 480, height: 480 },
+  "logo-wide.png": { width: 800, height: 200 },
+  "logo-tall.png": { width: 420, height: 560 },
+  "logo-small.png": { width: 96, height: 96 },
+};
+
+test("the newsletter’s Presented by line sets four logos side by side, each in its own shape", async ({ page }) => {
+  await page.route("https://logos.test/**", (route) =>
+    route.fulfill({ status: 200, contentType: "image/png", body: readFileSync(fileURLToPath(new URL(`./fixtures/${route.request().url().split("/").pop()}`, import.meta.url))) }),
+  );
+  const marks = LOGO_SPONSORS.map((sponsor) => ({
+    name: sponsor.name,
+    href: sponsor.website_url,
+    logo: { src: `https://logos.test/${sponsor.logo_path}`, ...fitLogo(LOGO_SIZES[sponsor.logo_path]) },
+  }));
+  // As the section sets it: the newsletter's 600px column with 32px gutters (newsletter.ts).
+  const column = (line: string) =>
+    `<body style="margin:0; background:#ffffff;"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;"><tr><td id="line" style="padding:8px 32px 8px; font-family:Helvetica,Arial,sans-serif; font-size:13px; color:#555555;">${line}</td></tr></table></body>`;
+  await page.setViewportSize({ width: 640, height: 300 });
+  await page.setContent(column(presentedBy(marks)));
+  await settled(page);
+
+  const shown = await page.locator("#line img").evaluateAll((imgs) =>
+    (imgs as HTMLImageElement[]).map((img) => ({ name: img.alt, loaded: img.naturalWidth > 0, w: img.clientWidth, h: img.clientHeight, shape: img.naturalWidth / img.naturalHeight, top: img.getBoundingClientRect().top })),
+  );
+  expect(shown.map((logo) => logo.name)).toEqual(LOGO_SPONSORS.map((s) => s.name));
+  for (const logo of shown) {
+    expect(logo.loaded, logo.name).toBe(true);
+    // In the room every logo gets, and not squeezed out of its own shape.
+    expect(logo.w).toBeLessThanOrEqual(132);
+    expect(logo.h).toBeLessThanOrEqual(40);
+    expect(Math.max(logo.w / 132, logo.h / 40)).toBeGreaterThan(0.97);
+    expect(Math.abs(logo.w / logo.h / logo.shape - 1)).toBeLessThan(0.04);
+  }
+  // All four on one row of the column.
+  expect(Math.max(...shown.map((logo) => logo.top)) - Math.min(...shown.map((logo) => logo.top))).toBeLessThan(40);
+  expect(await scrollsSideways(page)).toBe(false);
+  if (test.info().project.name === "chromium") await expect(page.locator("#line")).toHaveScreenshot("newsletter-presented-by.png");
+
+  // One sponsor still waiting on its logo is there by name, in its place among the pictures.
+  await page.setContent(column(presentedBy([marks[0], { ...marks[1], logo: null }, marks[2]])));
+  await expect(page.locator("#line img")).toHaveCount(2);
+  await expect(page.locator("#line strong")).toHaveText("Rib River Pizza");
+});
+
+test("a saved picture is made with the sponsor’s logo, whatever its shape", async ({ page }, testInfo) => {
+  for (const sponsor of LOGO_SPONSORS) {
+    await page.goto("about:blank");
+    await open(page, "#/mailbag", DESK, { sponsors: [sponsor] });
+    // The picture reads the logo back itself (a fetch), apart from the stamp already on the page.
+    const fetched = page.waitForResponse((response) => response.url().endsWith(`sponsor-logos/${sponsor.logo_path}`) && response.request().resourceType() === "fetch");
+    const download = page.waitForEvent("download");
+    await page.locator(".featured-letter").getByRole("button", { name: "Save it as a picture" }).click();
+    expect((await fetched).ok()).toBe(true);
+    const saved = await download;
+    await saved.saveAs(testInfo.outputPath(`picture-${sponsor.logo_path}.jpg`));
+    const { size } = await import("node:fs").then((fs) => fs.statSync(testInfo.outputPath(`picture-${sponsor.logo_path}.jpg`)));
+    expect(size).toBeGreaterThan(40_000);
+    await expect(page.locator(".featured-letter .share-note")).toHaveText("Picture saved. It’s ready to post.");
+  }
 });
 
 // What's counted for a sponsor's report -----------------------------------------------------------
