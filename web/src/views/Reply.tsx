@@ -4,6 +4,7 @@
 // no gifts, no lists. A presenting sponsor's stamp sits in the corner, as on the mailbag's envelope: with
 // several, they take turns by letter, and the foot names them all.
 import { track } from "../analytics";
+import { Horizon, NightSky } from "../components/Night";
 import { Postmark } from "../components/Postmark";
 import { Stamp } from "../components/Stamp";
 import { apDate, series } from "../format";
@@ -50,7 +51,9 @@ function SantasReply({ letter, sponsors }: { letter: Letter; sponsors: Sponsor[]
     window.print();
   };
   return (
-    <main className="reply">
+    <main className="reply night">
+      <NightSky />
+      <div className="reply-inner">
       <div className="reply-tools">
         <button type="button" className="button button-airmail" onClick={print}>
           Print Santa’s reply
@@ -80,6 +83,8 @@ function SantasReply({ letter, sponsors }: { letter: Letter; sponsors: Sponsor[]
           From Letters to Santa, Wausau Pilot &amp; Review{presenters.length > 0 ? `, presented by ${series(presenters)}` : ""}
         </footer>
       </article>
+      </div>
+      <Horizon />
     </main>
   );
 }
