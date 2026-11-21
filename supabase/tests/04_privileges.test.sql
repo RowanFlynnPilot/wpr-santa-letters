@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(87);
+select plan(88);
 
 -- The privilege map, asserted in both directions, so a missing grant fails CI as loudly as an
 -- extra one. The suite passes with and without Supabase's permissive default grants.
@@ -67,7 +67,8 @@ from unnest(array[
   'public.save_sponsor(uuid, text, public.sponsor_tier, text, text)',
   'public.remove_sponsor(uuid)',
   'public.add_prizes(uuid, text, integer)',
-  'public.remove_prize(uuid)'
+  'public.remove_prize(uuid)',
+  'public.move_sponsor(uuid, boolean)'
 ]) as f;
 select ok(not has_function_privilege('anon', 'public.add_letter(public.letter_source, text, smallint, text, text, uuid, text, text, text)', 'execute'),
   'anon can''t add letters');
@@ -109,7 +110,7 @@ select is(
 from (values
   ('anon', array['phase_at']),
   ('authenticated', array['add_letter', 'add_prizes', 'decline_letters', 'edit_letter', 'feature_letter', 'is_staff', 'moderate_letter',
-    'phase_at', 'redraw_prize', 'remove_letter_photo', 'remove_prize', 'remove_sponsor', 'run_prize_drawing',
+    'move_sponsor', 'phase_at', 'redraw_prize', 'remove_letter_photo', 'remove_prize', 'remove_sponsor', 'run_prize_drawing',
     'save_newsletter_section', 'save_sponsor', 'set_prize_eligible', 'unfeature_letter']),
   ('service_role', array['allow_sender', 'mark_posted_notice', 'note_form_problem', 'posted_notice', 'submit_letter'])
 ) as v (r, expected);

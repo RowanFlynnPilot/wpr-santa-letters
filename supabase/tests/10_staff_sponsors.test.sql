@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(43);
+select plan(54);
 
 -- Fixtures: this year's season, last year's with a sponsor of its own, an editor and a reader. ----
 
@@ -33,7 +33,8 @@ from (values
   ($$ select public.save_sponsor(null, 'Sneaky Co', 'presenting', null, null) $$, 'add a sponsor'),
   ($$ select public.remove_sponsor('00000000-0000-0000-0000-00000000c098') $$, 'remove one'),
   ($$ select public.add_prizes('00000000-0000-0000-0000-00000000c098', 'a prize', 1) $$, 'add a prize'),
-  ($$ select public.remove_prize(gen_random_uuid()) $$, 'remove one')
+  ($$ select public.remove_prize(gen_random_uuid()) $$, 'remove one'),
+  ($$ select public.move_sponsor('00000000-0000-0000-0000-00000000c098', true) $$, 'or move a sponsor')
 ) as v (sql, what);
 select throws_ok(
   $$ insert into storage.objects (bucket_id, name) values ('sponsor-logos', 'sneaky.png') $$,
@@ -180,10 +181,40 @@ select throws_ok(
 );
 reset role;
 
+-- A sponsor's place among those at its level (migration 0014). The three presenting sponsors left were
+-- all added in this one transaction, so they share a time: the hard case, with no place yet to trade.
+insert into ids
+select 'p' || row_number() over (order by created_at, id), id
+from public.sponsors where season_id = '00000000-0000-0000-0000-00000000a001' and tier = 'presenting';
+create function pg_temp.presenting() returns text[] language sql as $$
+  select array_agg(i.label order by s.created_at, s.id)
+  from public.sponsors s join pg_temp.ids i on i.id = s.id where i.label like 'p_'
+$$;
+
+set local role authenticated;
+select lives_ok($$ select public.move_sponsor((select id from ids where label = 'p3'), true) $$, 'staff move a sponsor up');
+select is(pg_temp.presenting(), array['p1', 'p3', 'p2'], 'it trades places with the one before it');
+select lives_ok($$ select public.move_sponsor((select id from ids where label = 'p3'), true) $$, 'and up again');
+select is(pg_temp.presenting(), array['p3', 'p1', 'p2'], 'to the head of the list');
+select lives_ok($$ select public.move_sponsor((select id from ids where label = 'p3'), true) $$, 'the first has nowhere higher to go');
+select is(pg_temp.presenting(), array['p3', 'p1', 'p2'], 'and stays where it is');
+select lives_ok($$ select public.move_sponsor((select id from ids where label = 'p3'), false) $$, 'staff move a sponsor down');
+select is(pg_temp.presenting(), array['p1', 'p3', 'p2'], 'it trades places with the one after it');
+select is(
+  (select count(distinct created_at)::int from public.sponsors where season_id = '00000000-0000-0000-0000-00000000a001' and tier = 'presenting'),
+  3,
+  'each now has a place of its own'
+);
+select throws_ok(
+  $$ select public.move_sponsor('00000000-0000-0000-0000-00000000c098', true) $$,
+  'P0001', 'That sponsor isn''t on this year''s list any more.', 'last year''s list can''t be rearranged'
+);
+reset role;
+
 -- Readers see the list as staff left it, and still can't write it.
 set local role anon;
 select is(
-  (select array_agg(name order by created_at, name) from public.sponsors where season_id = '00000000-0000-0000-0000-00000000a001'),
+  (select array_agg(name order by name) from public.sponsors where season_id = '00000000-0000-0000-0000-00000000a001'),
   array['Candy Shop on 3rd', 'Fourth Presenter', 'Last Year Bank', 'Third Presenter'],
   'readers see this year''s sponsors'
 );

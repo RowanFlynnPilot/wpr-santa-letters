@@ -146,6 +146,9 @@ function StaffOnly({ email }: { email: string | undefined }) {
           </button>
         ))}
       </nav>
+      {/* The tool's name as a heading, for a screen reader to land on and so the headings inside each tool
+          (a letter's, a prize's) have one above them; the pressed button already shows it to the eye. */}
+      <h2 className="visually-hidden">{TOOLS.find((t) => t.tool === tool)?.label}</h2>
       {tool === "review" ? (
         <Review season={season} />
       ) : tool === "add" ? (

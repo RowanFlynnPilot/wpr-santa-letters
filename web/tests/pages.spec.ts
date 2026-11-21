@@ -1105,7 +1105,9 @@ for (const [name, size] of [["desk", DESK], ["phone", PHONE]] as const) {
 test("delivery day with several prizes: every winning letter is shown once with its prize, whether it's also the pick or the letter a reader followed a link to", async ({ page }) => {
   // Three visits in one test.
   test.setTimeout(90_000);
-  const sponsors = [SPONSOR, ...SUPPORTERS];
+  // One sponsor's name ends in a period of its own, as a real one's does ("PGA Inc."): a line that ends on
+  // it takes no second one.
+  const sponsors = [SPONSOR, { ...SUPPORTERS[0], name: "Rib River Pizza Inc." }, ...SUPPORTERS.slice(1)];
   // Emma, the editor's pick (Ava) and Mai, whose letter is a drawing.
   const winners = [LETTERS[0], PICK, LETTERS[4]].map((letter, i) => ({ prize_id: SIX_PRIZES[i].id, letter_id: letter.id }));
   const once = async () => {
@@ -1117,8 +1119,8 @@ test("delivery day with several prizes: every winning letter is shown once with 
   await open(page, "#/mailbag", { width: 320, height: 700 }, { phase: "delivered", sponsors, prizes: SIX_PRIZES, winners });
   await expect(page.locator(".winner-line")).toHaveText([
     "Emma, 7, of Wausau, wins a $50 savings starter from Northwoods Community Bank.",
-    "Ava, 9, of Schofield, wins a family pizza night from Rib River Pizza.",
-    "Mai, 8, of Wausau, wins a $25 gift card from Rib River Pizza.",
+    "Ava, 9, of Schofield, wins a family pizza night from Rib River Pizza Inc.",
+    "Mai, 8, of Wausau, wins a $25 gift card from Rib River Pizza Inc.",
   ]);
   await expect(page.locator(".winners .letter")).toHaveCount(3);
   // The pick won: it's with the winners, not set out a second time as the pick.
