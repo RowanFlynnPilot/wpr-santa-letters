@@ -39,7 +39,7 @@ export function Prizes({ seasonId }: { seasonId: string }) {
   if (prizes.length === 0) {
     return (
       <p className="status">
-        No prizes yet. Add them in Supabase’s SQL editor when Chris confirms them (CLAUDE.md, Operations).
+        No prizes yet. Add them under Sponsors and prizes when Chris confirms them.
       </p>
     );
   }
