@@ -58,18 +58,28 @@ function airmail(): string {
     `style="border-collapse:collapse;table-layout:fixed"><tr>${cells}</tr></table>`;
 }
 
+// The line an inbox shows beside the subject, before the email is opened. Without one, a mail program
+// takes the first words it finds, which here are the band's title: "Letters to Santa" a second time. It
+// is in the email and not shown in it; the run of blank characters after it keeps the program from going
+// on into the body to fill the line out. Like everything in the confirmation, that email's line carries
+// nothing typed into the form.
+function preview(text: string): string {
+  return `<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;` +
+    `font-size:1px;line-height:1px;color:#f6f2e9">${escape(text)}${"&#847;&zwnj;&nbsp;".repeat(60)}</div>`;
+}
+
 // One layout for every email, in the mailbag's own look as far as email allows: the envelope's airmail
 // edge, a band of the night's blue with the title in the moon's cream, then the words on the letter's
 // paper. It is tables, cell colors and the fonts every program has (Georgia stands in for the site's
 // display face); there is no picture to block and no striped or gradient background to go missing. The
 // head says nothing but the feature's name and WPR's, so the confirmation still carries nothing typed
-// into the form. An optional photo leads the words.
-function page(blocks: string[], photo?: { src: string; alt: string }): string {
+// into the form. The inbox's preview line comes first (above); an optional photo leads the words.
+function page(inbox: string, blocks: string[], photo?: { src: string; alt: string }): string {
   const image = photo
     ? `<p style="margin:0 0 16px"><img src="${escape(photo.src)}" alt="${escape(photo.alt)}" width="320" ` +
       `style="display:block;max-width:100%;height:auto;border-radius:4px;border:0"></p>`
     : "";
-  return `<!doctype html><html><body style="margin:0;padding:24px 12px;background:#f6f2e9">` +
+  return `<!doctype html><html><body style="margin:0;padding:24px 12px;background:#f6f2e9">${preview(inbox)}` +
     `<table role="presentation" align="center" width="560" cellpadding="0" cellspacing="0" border="0" ` +
     `style="width:100%;max-width:560px;margin:0 auto;border-collapse:collapse">` +
     `<tr><td style="padding:0">${airmail()}</td></tr>` +
@@ -122,7 +132,7 @@ export function confirmationEmail(
       help,
       "Wausau Pilot & Review\nwausaupilotandreview.com",
     ].join("\n\n"),
-    html: page([
+    html: page("An editor reads every letter before it goes in Santa’s mailbag. We’ll email you a link when it’s up.", [
       p("Hi there,"),
       ...lines.map((line) => p(escape(line))),
       p(`<a href="${escape(links.mailbag)}" style="color:#2c6a62;font-weight:bold">See Santa’s mailbag</a>`),
@@ -213,6 +223,10 @@ export function digestEmail(
     : "Good morning. No letters are waiting for review.";
   const troubleIntro = "Since yesterday morning, the letter form had trouble:";
   const link = waiting.length > 0 ? "Review them on the staff page" : "The staff page";
+  // In the inbox: who is waiting (the first three), or the trouble when that's all there is.
+  const inbox = waiting.length > 0
+    ? `${waiting.slice(0, 3).map(byline).join("; ")}${waiting.length > 3 ? ", and more" : ""}.`
+    : trouble[0] ?? intro;
 
   return {
     to: links.to,
@@ -225,7 +239,7 @@ export function digestEmail(
       ...(trouble.length > 0 ? [troubleIntro, ...trouble.map((line) => `- ${line}`)] : []),
       `${link}: ${links.queue}`,
     ].join("\n\n"),
-    html: page([
+    html: page(inbox, [
       p(escape(intro)),
       ...lines.map((line) => p(`<strong>${escape(line.head)}</strong><br>${escape(line.excerpt)}`)),
       ...rest.map((line) => p(escape(line))),
@@ -285,7 +299,7 @@ export function postedEmail(notice: PostedNotice, id: string, links: { letter: s
       "Wausau Pilot & Review\nwausaupilotandreview.com",
     ]
       .join("\n\n"),
-    html: page([
+    html: page(`Read it, pass it along to family, and print Santa’s reply to ${name}.`, [
       p(`Hi ${escape(greeting)},`),
       p(escape(lines[0])),
       p(

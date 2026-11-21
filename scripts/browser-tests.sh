@@ -7,6 +7,8 @@
 #                                      change a page; look at the new ones (web/tests/__screenshots__)
 #                                      before committing them
 #   scripts/browser-tests.sh og        remake web/public/og-image.png, the picture a pasted link shows
+#   scripts/browser-tests.sh social    remake the launch kit in docs/social (the pictures to post and the
+#                                      words to post with them) from docs/social/kit.json
 #   scripts/browser-tests.sh sheet     print the sponsor sheet (docs/sponsor-sheet, after its build.py) to PDF
 #   scripts/browser-tests.sh shots     retake the sales pictures in docs/media: the site in its preview
 #                                      mode ("Your business here"), for the sponsor sheet
@@ -23,6 +25,7 @@ ARGS=""
 RUN="CI=1 npx playwright test $ARGS"
 [ "${1:-run}" = "shots" ] && RUN="SPONSOR_SHOTS=1 npx playwright test sponsor-shots --project=chromium && mkdir -p /repo-docs/media && cp sponsor-shots/* /repo-docs/media/"
 [ "${1:-run}" = "sheet" ] && RUN="node tests/sponsor-sheet-pdf.mjs /repo-docs/sponsor-sheet"
+[ "${1:-run}" = "social" ] && RUN="node tests/social.mjs /repo-docs/social"
 [ "${1:-run}" = "og" ] && RUN="node tests/og-image.mjs && cp public/og-image.png /repo-web/public/og-image.png"
 
 MSYS_NO_PATHCONV=1 docker run --rm --ipc=host -v "$WEB:/repo-web" -v "$WEB/../docs:/repo-docs" "$IMAGE" bash -c "

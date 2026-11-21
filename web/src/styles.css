@@ -2961,6 +2961,199 @@ body:has(main.strip) {
   }
 }
 
+/* Santa's letter paper (#/paper): the reply's stationery, blank, for a child to write on by hand. It
+   shares the reply's frame, its night on screen and its print rules (the classes above); what's here is
+   the sheet's own. Everything a child writes on or in is a border, which a printer draws whether or not
+   it's set to print backgrounds. */
+.paper-sheet {
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+.paper-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.paper-stamp {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 4.25rem;
+  height: 5.25rem;
+  margin: 0 0.25rem 0 0 !important;
+  padding: 0.25rem;
+  border: 2px dashed var(--bark);
+  font-family: var(--body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--bark);
+  transform: rotate(3deg);
+}
+
+/* "My name is ____ and I am __ years old. I live in ____." Each blank is a line to write on, with what
+   goes on it in small type underneath, so the rows are set far enough apart to hold both. The two
+   sentences each start a line. */
+.paper-blanks {
+  margin: 0 0 0.5rem !important;
+  line-height: 2.75rem;
+}
+
+.paper-line {
+  display: block;
+}
+
+.paper-blank {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  height: 1.5rem;
+  border-bottom: 1.5px solid var(--ink);
+  vertical-align: baseline;
+}
+
+.paper-blank-name {
+  width: 10rem;
+}
+
+.paper-blank-town {
+  width: 14rem;
+}
+
+.paper-blank-age {
+  width: 3rem;
+}
+
+.paper-blank small {
+  position: absolute;
+  top: calc(100% + 0.15rem);
+  left: 0;
+  font-family: var(--body);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--bark);
+}
+
+.paper-dear {
+  margin: 0 !important;
+  font-size: 1.75rem;
+  font-style: italic;
+  font-variation-settings: "SOFT" 100;
+}
+
+/* Handwriting paper: a baseline to sit on and a dashed midline for the small letters. */
+.paper-rows {
+  margin-bottom: 1rem;
+}
+
+.paper-rows span {
+  position: relative;
+  display: block;
+  height: 2.5rem;
+  border-bottom: 1.5px solid var(--teal);
+}
+
+.paper-rows span::before {
+  content: "";
+  position: absolute;
+  top: 55%;
+  right: 0;
+  left: 0;
+  border-top: 1px dashed var(--rule);
+}
+
+.paper-drawing {
+  position: relative;
+  height: 6rem;
+  border: 2px dashed var(--bark);
+  border-radius: 0.375rem;
+}
+
+.paper-drawing p {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.65rem;
+  margin: 0;
+  font-family: var(--body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bark);
+}
+
+.paper-drawing svg {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.35rem;
+  height: 3.25rem;
+  fill: none;
+  stroke: var(--bark);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+/* The grown-up's part, under a dashed line to fold on. */
+.paper-grownup {
+  margin-top: 1rem;
+  padding-top: 0.6rem;
+  border-top: 2px dashed var(--ink);
+  font-family: var(--body);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.paper-grownup p {
+  margin: 0 0 0.4rem;
+}
+
+.paper-contact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0 1.5rem;
+  font-weight: 600;
+}
+
+.paper-contact span {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 2rem;
+  white-space: nowrap;
+}
+
+.paper-contact i {
+  flex: 1;
+  min-width: 3rem;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+@media print {
+  /* One sheet, as the reply is (its test's twin holds this one): a letter-size page less its margins is
+     940px tall at the width it's set. */
+  .paper-sheet {
+    padding-top: 1.5rem;
+    padding-bottom: 0.75rem;
+    font-size: 1.125rem;
+  }
+
+  .paper-grownup {
+    font-size: 0.6875rem;
+  }
+
+  .paper-grownup p {
+    margin-bottom: 0.3rem;
+  }
+}
+
 /* Add a letter: Claude's reading of the photo, and what to take out of it. */
 .read-letter,
 .reading {

@@ -19,7 +19,7 @@ import { loadSeason, loadSponsors } from "../reads";
 import { submitLetter, type LetterSubmission } from "../send";
 import { env } from "../env";
 import { AGES, apDate, apLastDay, possessive } from "../format";
-import { scrollToTop, viewLink } from "../host";
+import { paperLink, scrollToTop, viewLink } from "../host";
 import { describeFlags, privacyFlags } from "../privacy";
 import { DEMO, presentingSponsors } from "../sales";
 import type { Letter } from "../types";
@@ -391,6 +391,10 @@ export function Write() {
             label="Add a photo of the handwritten letter or a drawing (optional)"
             hint="We’ll show it with the letter. Make sure it doesn’t show a last name, an address or anyone’s face."
           />
+          <p className="hint">
+            Would your child rather write by hand? <a {...paperLink}>Print Santa’s letter paper</a>, then add a photo
+            of the page here.
+          </p>
           {IN_APP_TIP && <p className="hint">{IN_APP_TIP}</p>}
         </fieldset>
 
