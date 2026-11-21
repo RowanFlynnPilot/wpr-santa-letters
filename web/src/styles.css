@@ -737,6 +737,19 @@ img {
   font-weight: 700;
 }
 
+/* Delivery day: a rubber stamp across the envelope, a little off square like the rest of the mail. */
+.envelope-delivered {
+  justify-self: start;
+  padding: 0.3rem 0.8rem;
+  border: 3px double var(--airmail);
+  border-radius: 0.3rem;
+  color: var(--airmail);
+  font: 700 0.875rem / 1.3 var(--body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  rotate: -2.5deg;
+}
+
 /* That there are prizes, and a way down to them: they're listed at the mailbag's foot. */
 .envelope-prizes {
   color: var(--bark);
@@ -1635,7 +1648,108 @@ textarea.ruled {
   height: auto;
 }
 
-/* The foot of the mailbag: other ways to send, prizes, sponsors. ------------------- */
+/* The prizes in the drawing, each on a gift tag: a pointed end with a punched hole, the prize in the
+   display face, who gives it under that. The tags lie a little off square, as the letters do. */
+.prize-list {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line);
+}
+
+.prize-tags {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  gap: 1.1rem 1.5rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The shadow is the list item's, since the tag itself is cut to its shape. */
+.prize-tag {
+  min-width: 0;
+  filter: drop-shadow(0 0.2rem 0.35rem rgba(30, 38, 34, 0.16));
+}
+
+.prize-tag:nth-child(odd) {
+  rotate: -0.7deg;
+}
+
+.prize-tag:nth-child(even) {
+  rotate: 0.6deg;
+}
+
+/* The words in one column and the giver's logo, when there is one, beside them; the envelope's stripes
+   run down the tag's square end. */
+.prize-tag > div {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  align-items: center;
+  gap: 0.2rem 0.9rem;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 5.5rem;
+  padding: 0.9rem 1.6rem 0.9rem 3.4rem;
+  background:
+    repeating-linear-gradient(-45deg, var(--airmail) 0 7px, var(--sheet) 7px 10.5px, var(--teal-deep) 10.5px 17.5px, var(--sheet) 17.5px 21px)
+      right / 0.5rem 100% no-repeat,
+    var(--sheet);
+  clip-path: polygon(0 50%, 1.6rem 0, 100% 0, 100% 100%, 1.6rem 100%);
+}
+
+.prize-tag > div > span {
+  grid-column: 1;
+}
+
+.prize-tag img {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  width: auto;
+  max-width: 4.75rem;
+  height: auto;
+  max-height: 3rem;
+  object-fit: contain;
+}
+
+/* The hole a ribbon goes through, ringed in the envelope's red. */
+.prize-tag > div::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 1.5rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid var(--airmail);
+  border-radius: 50%;
+  background: var(--paper);
+  translate: 0 -50%;
+}
+
+.prize-what {
+  font: 650 1.1875rem / 1.25 var(--display);
+  font-variation-settings: "SOFT" 100;
+}
+
+.prize-from {
+  color: var(--bark);
+}
+
+.prize-from b {
+  color: var(--ink);
+}
+
+.prize-count {
+  color: var(--airmail);
+  font: 700 0.75rem / 1.4 var(--body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* The foot of the mailbag: other ways to send, sponsors. ----------------------------- */
 
 .mailbag-foot {
   display: grid;
@@ -1683,18 +1797,60 @@ textarea.ruled {
 /* Delivery day: the winners lead. */
 .winners {
   display: grid;
-  gap: 0.75rem;
-  margin-top: 2rem;
-  padding: 1.25rem 1.5rem;
-  border-left: 6px solid var(--airmail);
-  background: var(--sheet);
+  gap: 1.5rem;
+  margin-top: 2.25rem;
 }
 
+.winners h2 {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-variation-settings: "SOFT" 100, "opsz" 144;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* Each winner: the line that names the prize, a rosette beside it, and the winning letter under it. Side
+   by side where there's room, centered when there are few. */
 .winners ul {
-  display: grid;
-  gap: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2rem 1.75rem;
   margin: 0;
-  padding-left: 1.1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.winner {
+  display: grid;
+  flex: 1 1 19rem;
+  gap: 0.9rem;
+  min-width: 0;
+  max-width: 27rem;
+}
+
+.winner-line {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 3.75rem;
+  padding: 0.75rem 1rem 0.75rem 4.1rem;
+  border-top: 3px solid var(--airmail);
+  background: var(--sheet);
+  box-shadow: 0 0.2rem 0.6rem rgba(30, 38, 34, 0.1);
+  font-size: 1.0625rem;
+}
+
+.winner-rosette {
+  position: absolute;
+  top: -0.6rem;
+  left: 0.6rem;
+  width: 2.9rem;
+  height: 3.8rem;
+  filter: drop-shadow(0 1px 1px rgba(30, 38, 34, 0.25));
+}
+
+.winners-note {
+  text-align: center;
 }
 
 /* The letter form. -------------------------------------------------------------------- */

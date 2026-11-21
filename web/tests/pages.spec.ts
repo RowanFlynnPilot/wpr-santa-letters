@@ -44,7 +44,7 @@ async function open(
   page: Page,
   path: string,
   size: { width: number; height: number },
-  options?: { pick?: boolean; phase?: Phase; sponsors?: unknown[]; prizes?: unknown[] },
+  options?: Parameters<typeof mockBackend>[1],
 ) {
   await page.setViewportSize(size);
   await mockBackend(page, options);
@@ -623,6 +623,8 @@ test("supporting sponsors fit the narrowest phone, and a mailbag without any has
 });
 
 test("the envelope says there are prizes and takes a reader down to them", async ({ page }) => {
+  // Four visits in one test.
+  test.setTimeout(90_000);
   await open(page, "#/mailbag", DESK);
   await expect(page.locator(".envelope-prizes")).toContainText("Letters in the mailbag are entered in a drawing for a prize.");
   await expect(page.locator(".prize-list")).not.toBeInViewport();
@@ -637,9 +639,25 @@ test("the envelope says there are prizes and takes a reader down to them", async
   await expect(page.getByRole("button", { name: "See the prizes" })).toBeVisible();
   await expect(page.locator(".prize-list li")).toHaveCount(4);
   await expect(page.locator(".prize-list")).toContainText("A $25 gift card from Rib River Pizza (three to win)");
+  // Each prize is a gift tag: the giver's logo on it when they have one, and how many there are to win
+  // without the parentheses a reader of the plain line gets.
+  await expect(page.locator(".prize-tag")).toHaveCount(4);
+  await expect(page.locator(".prize-tag img")).toHaveCount(3);
+  await expect(page.locator(".prize-count")).toHaveText("(three to win)");
+  expect(await page.locator(".prize-count .visually-hidden").evaluateAll((marks) => marks.map((mark) => [mark.textContent, Math.round(mark.getBoundingClientRect().width)]))).toEqual([
+    ["(", 1],
+    [")", 1],
+  ]);
   await settled(page);
   expect(await scrollsSideways(page)).toBe(false);
   await expectAccessible(page);
+  if (test.info().project.name === "chromium") await expect(page.locator(".prize-list")).toHaveScreenshot("prizes-phone.png");
+  // Side by side where there's room.
+  await page.setViewportSize(DESK);
+  const tagTops = await page.locator(".prize-tag").evaluateAll((tags) => tags.map((tag) => Math.round(tag.getBoundingClientRect().top / 10)));
+  expect(new Set(tagTops).size).toBeLessThan(4);
+  expect(await scrollsSideways(page)).toBe(false);
+  if (test.info().project.name === "chromium") await expect(page.locator(".prize-list")).toHaveScreenshot("prizes-desk.png");
 
   // With no prizes there's nothing to say, and on delivery day the winners say it.
   await page.goto("about:blank");
@@ -1059,21 +1077,73 @@ for (const [name, size] of [["desk", DESK], ["phone", PHONE]] as const) {
     await open(page, "#/mailbag", size, { phase: "delivered" });
     const winners = page.locator(".winners");
     await expect(winners.getByRole("heading", { name: "Our 2026 prize winners" })).toBeVisible();
-    await expect(winners.getByRole("listitem")).toHaveText("Emma, 7, of Wausau, wins a $50 savings starter from Northwoods Community Bank.");
+    // Each winner: a rosette, the line that names the prize, and the winning letter itself, which then
+    // isn't repeated on the wall below.
+    await expect(winners.locator(".winner")).toHaveCount(1);
+    await expect(winners.locator(".winner-line")).toHaveText("Emma, 7, of Wausau, wins a $50 savings starter from Northwoods Community Bank.");
+    await expect(winners.locator(".winner-rosette")).toBeVisible();
+    await expect(winners.locator(".letter .blank-fill").first()).toHaveText("Emma");
+    await expect(page.locator(`[data-letter-id="${LETTERS[0].id}"]`)).toHaveCount(1);
     await expect(page.locator(".lede")).toContainText("Every letter is on its way to the North Pole.");
+    await expect(page.locator(".envelope-delivered")).toHaveText("Delivered · Dec. 23 · North Pole");
     // Delivered: nothing left to count down to, nothing to send, no prizes still to win.
     await expect(page.locator(".countdown")).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Write a letter to Santa" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Prizes" })).toHaveCount(0);
-    await expect(page.locator(".letter-wall .letter")).toHaveCount(LETTERS.length - 1);
+    // The wall holds every letter but the winner's and the editor's pick, each shown above it.
+    await expect(page.locator(".letter-wall .letter")).toHaveCount(LETTERS.length - 2);
 
     await settled(page);
     await expectStampWhole(page);
     expect(await scrollsSideways(page)).toBe(false);
     await expectAccessible(page);
+    if (test.info().project.name === "chromium") await expect(winners).toHaveScreenshot(`winners-${name}.png`);
     if (name === "desk") await shot(page, "mailbag-delivered-desk.png", { fullPage: true });
   });
 }
+
+test("delivery day with several prizes: every winning letter is shown once with its prize, whether it's also the pick or the letter a reader followed a link to", async ({ page }) => {
+  // Three visits in one test.
+  test.setTimeout(90_000);
+  const sponsors = [SPONSOR, ...SUPPORTERS];
+  // Emma, the editor's pick (Ava) and Mai, whose letter is a drawing.
+  const winners = [LETTERS[0], PICK, LETTERS[4]].map((letter, i) => ({ prize_id: SIX_PRIZES[i].id, letter_id: letter.id }));
+  const once = async () => {
+    const ids = await page.locator("[data-letter-id]").evaluateAll((letters) => letters.map((letter) => letter.getAttribute("data-letter-id")));
+    expect(ids.length).toBe(LETTERS.length);
+    expect(new Set(ids).size).toBe(LETTERS.length);
+  };
+
+  await open(page, "#/mailbag", { width: 320, height: 700 }, { phase: "delivered", sponsors, prizes: SIX_PRIZES, winners });
+  await expect(page.locator(".winner-line")).toHaveText([
+    "Emma, 7, of Wausau, wins a $50 savings starter from Northwoods Community Bank.",
+    "Ava, 9, of Schofield, wins a family pizza night from Rib River Pizza.",
+    "Mai, 8, of Wausau, wins a $25 gift card from Rib River Pizza.",
+  ]);
+  await expect(page.locator(".winners .letter")).toHaveCount(3);
+  // The pick won: it's with the winners, not set out a second time as the pick.
+  await expect(page.locator(".featured-letter")).toHaveCount(0);
+  await expect(page.locator(".letter-wall .letter")).toHaveCount(LETTERS.length - 3);
+  await once();
+  await settled(page);
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+
+  // At a desk the three stand side by side.
+  await page.setViewportSize(DESK);
+  const tops = await page.locator(".winner").evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().top)));
+  expect(new Set(tops).size).toBe(1);
+  expect(await scrollsSideways(page)).toBe(false);
+
+  // A reader who followed a link to a winning letter has it at the top already: the winners name the
+  // prize beside it and don't show the letter again.
+  await page.goto("about:blank");
+  await page.goto(`?letter=${LETTERS[0].id}&from=share#/mailbag`);
+  await expect(page.locator(".linked-letter .letter .blank-fill").first()).toHaveText("Emma");
+  await expect(page.locator(".winner-line")).toHaveCount(3);
+  await expect(page.locator(".winners .letter")).toHaveCount(2);
+  await once();
+});
 
 test("delivery day: the strip sends readers to the letters and the winners", async ({ page }) => {
   await open(page, "#/embed", { width: 1100, height: 340 }, { phase: "delivered" });
