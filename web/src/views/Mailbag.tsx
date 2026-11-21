@@ -10,7 +10,7 @@ import { Postmark } from "../components/Postmark";
 import { SponsorAd } from "../components/SponsorAd";
 import { Stamps, StampsOpening } from "../components/Stamp";
 import { EDITOR_EMAIL, MAIL_TO } from "../contact";
-import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive } from "../format";
+import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive, sentence } from "../format";
 import { scrollIntoView, viewLink } from "../host";
 import { LINKED_LETTER } from "../linked";
 import { loadMailbag } from "../reads";
@@ -433,8 +433,8 @@ function Winners({ data, linked }: { data: MailbagData; linked: Letter | undefin
               <p className="winner-line">
                 <Rosette />
                 {/* AP: the age and town are set off by commas on both sides. */}
-                <strong>{byline(letter)}</strong>, wins {prize.description}
-                {sponsor && ` from ${sponsor.name}`}.
+                <strong>{byline(letter)}</strong>
+                {sentence(`, wins ${prize.description}${sponsor ? ` from ${sponsor.name}` : ""}`)}
               </p>
               {letter !== linked && <LetterCard letter={letter} share />}
             </li>

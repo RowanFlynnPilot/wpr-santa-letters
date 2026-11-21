@@ -3,8 +3,8 @@
 // now it's this page (migration 0013), and what's saved shows on the mailbag straight away. A presenting
 // sponsor's banner ad is the one thing that isn't here: it's a file in the app (README).
 import { useState, type FormEvent } from "react";
-import { addPrizes, loadDraws, loadPrizes, loadSponsors, LOGO_BYTES, LOGO_TYPES, removePrize, removeSponsor, saveSponsor } from "../../data";
-import { apNumber, capitalize } from "../../format";
+import { addPrizes, loadDraws, loadPrizes, loadSponsors, LOGO_BYTES, LOGO_TYPES, moveSponsor, removePrize, removeSponsor, saveSponsor } from "../../data";
+import { apNumber, capitalize, sentence } from "../../format";
 import { PRESENTING_LIMIT } from "../../sales";
 import { logoUrl } from "../../storage";
 import type { Draw, Prize, Season, Sponsor, SponsorTier } from "../../types";
@@ -17,7 +17,7 @@ const LEVELS: { tier: SponsorTier; heading: string; one: string; gets: string }[
     tier: "presenting",
     heading: "Presenting sponsors",
     one: "Presenting sponsor",
-    gets: "A stamp on the envelope, in the order they’re added here, and a prize of their own in the drawing. Four at most.",
+    gets: "A stamp on the envelope, in the order they stand here, and a prize of their own in the drawing. Four at most.",
   },
   {
     tier: "supporting",
@@ -84,13 +84,15 @@ export function Sponsors({ season }: { season: Season }) {
               <p>None yet.</p>
             ) : (
               <ol className="sponsor-rows">
-                {listed.map((sponsor) => (
+                {listed.map((sponsor, i) => (
                   <SponsorRow
                     key={sponsor.id}
                     sponsor={sponsor}
                     prizes={prizes.filter((p) => p.sponsor_id === sponsor.id)}
                     draws={draws}
                     presentingFull={presenting >= PRESENTING_LIMIT}
+                    first={i === 0}
+                    last={i === listed.length - 1}
                     onChange={changed}
                   />
                 ))}
@@ -113,12 +115,17 @@ function SponsorRow({
   prizes,
   draws,
   presentingFull,
+  first,
+  last,
   onChange,
 }: {
   sponsor: Sponsor;
   prizes: Prize[];
   draws: Draw[];
   presentingFull: boolean;
+  // Its place among the sponsors at its level: the first can't move up, nor the last down.
+  first: boolean;
+  last: boolean;
   onChange: (what: string) => void;
 }) {
   const [open, setOpen] = useState<"change" | "prize" | "remove" | null>(null);
@@ -228,6 +235,16 @@ function SponsorRow({
             <button type="button" className="link-button" onClick={() => setOpen("change")}>
               Change
             </button>
+            {!first && (
+              <button type="button" className="link-button" disabled={busy} onClick={() => run(() => moveSponsor(sponsor.id, true), `${sponsor.name} moved up.`)}>
+                Move up
+              </button>
+            )}
+            {!last && (
+              <button type="button" className="link-button" disabled={busy} onClick={() => run(() => moveSponsor(sponsor.id, false), `${sponsor.name} moved down.`)}>
+                Move down
+              </button>
+            )}
             {prizes.length === 0 ? (
               <button type="button" className="link-button" onClick={() => setOpen("remove")}>
                 Remove…
@@ -409,7 +426,8 @@ function PrizeForm({ sponsor, onAdded, onCancel }: { sponsor: Sponsor; onAdded: 
       </label>
       {words && (
         <p className="sponsor-reads">
-          As the winners will read: <strong>Mia, 6, of Weston</strong>, wins {words} from {sponsor.name}.
+          As the winners will read: <strong>Mia, 6, of Weston</strong>
+          {sentence(`, wins ${words} from ${sponsor.name}`)}
         </p>
       )}
       {error && (

@@ -3,7 +3,7 @@
 // redrawn. Winners are public from delivery day.
 import { useState } from "react";
 import { countWaiting, loadDraws, loadPrizes, loadSeason, loadSponsors, loadStaffLetters, redrawPrize, runDrawing } from "../../data";
-import { apDate, apLastDay, byline, capitalize, possessive } from "../../format";
+import { apDate, apLastDay, byline, capitalize, possessive, sentence } from "../../format";
 import type { Draw, Prize, Sponsor, StaffLetter } from "../../types";
 import { useLoad } from "../../useLoad";
 
@@ -230,7 +230,7 @@ function Contact({ letter, prize, replyBy }: { letter: StaffLetter; prize: strin
   const greeting = p.parent_name ? p.parent_name.split(/\s+/)[0] : "there";
   const body = [
     `Hi ${greeting},`,
-    `Congratulations! ${possessive(letter.first_name)} letter to Santa was drawn in our Letters to Santa prize drawing, and ${letter.first_name} wins ${prize}.`,
+    `Congratulations! ${possessive(letter.first_name)} letter to Santa was drawn in our Letters to Santa prize drawing, ${sentence(`and ${letter.first_name} wins ${prize}`)}`,
     `What mailing address should we send it to? Just reply to this email by ${replyBy}.`,
     "Merry Christmas,\nWausau Pilot & Review",
   ].join("\n\n");

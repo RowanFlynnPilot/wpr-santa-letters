@@ -341,6 +341,12 @@ export async function removeSponsor(sponsorId: string): Promise<void> {
   if (logoPath) await removeLogo(logoPath);
 }
 
+// Trades a sponsor's place with the one before it (`earlier`) or after it at the same level: the order
+// its stamp, or its name, takes on the mailbag (migration 0014).
+export async function moveSponsor(sponsorId: string, earlier: boolean): Promise<void> {
+  await rows<null>(supabase.rpc("move_sponsor", { p_sponsor_id: sponsorId, p_earlier: earlier }));
+}
+
 // One row for each one to win: three gift cards are three prizes.
 export async function addPrizes(sponsorId: string, description: string, count: number): Promise<void> {
   await rows<number>(supabase.rpc("add_prizes", { p_sponsor_id: sponsorId, p_description: description, p_count: count }));

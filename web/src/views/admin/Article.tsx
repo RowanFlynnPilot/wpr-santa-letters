@@ -5,7 +5,7 @@ import { useState } from "react";
 import { articleHtml } from "../../article";
 import { loadPrizes, loadSponsors, loadStaffLetters, loadWinners } from "../../data";
 import { env } from "../../env";
-import { series } from "../../format";
+import { sentence, series } from "../../format";
 import type { Letter, Season, Sponsor } from "../../types";
 import { useDraft } from "../../useDraft";
 import { useLoad } from "../../useLoad";
@@ -31,8 +31,8 @@ function defaultIntro(year: number, sponsors: Sponsor[]): string {
   const others = sponsors.filter((s) => s.tier !== "presenting").map((s) => s.name);
   return [
     `Wausau-area children wrote to Santa this year, and Wausau Pilot & Review is delivering their ${year} letters to the North Pole. Here’s what they’re wishing for.`,
-    presenting.length > 0 && `Letters to Santa is presented by ${series(presenting)}.`,
-    others.length > 0 && `Thanks also to ${series(others)}.`,
+    presenting.length > 0 && sentence(`Letters to Santa is presented by ${series(presenting)}`),
+    others.length > 0 && sentence(`Thanks also to ${series(others)}`),
   ]
     .filter(Boolean)
     .join(" ");

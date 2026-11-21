@@ -50,6 +50,10 @@ export function count(n: number, one: string, many: string): string {
   return `${apNumber(n)} ${n === 1 ? one : many}`;
 }
 
+// Ends a sentence without doubling a period after a name that has its own ("PGA Inc."): sentence.ts, a
+// file with no imports so Deno tests it.
+export { sentence } from "./sentence";
+
 // AP series: "Mia, Si and Ethan" (no Oxford comma).
 export function series(items: string[]): string {
   if (items.length <= 1) return items.join("");
