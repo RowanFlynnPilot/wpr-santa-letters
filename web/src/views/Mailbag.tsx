@@ -11,7 +11,7 @@ import { SponsorAd } from "../components/SponsorAd";
 import { Stamps, StampsOpening } from "../components/Stamp";
 import { EDITOR_EMAIL, MAIL_TO } from "../contact";
 import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive, sentence } from "../format";
-import { scrollIntoView, viewLink } from "../host";
+import { paperLink, scrollIntoView, viewLink } from "../host";
 import { LINKED_LETTER } from "../linked";
 import { loadMailbag } from "../reads";
 import { DEMO, type Placement, presentingSponsors, sponsorHref, Sponsors, supportingSponsors } from "../sales";
@@ -306,6 +306,10 @@ function OtherWays() {
         ))}
       </p>
       <p>Include your child’s first name, age and town, and a way to reach you if your child wins a prize.</p>
+      <p>
+        Writing by hand? <a {...paperLink}>Print Santa’s letter paper</a> for your child to write on. It has a place
+        for all of that.
+      </p>
     </section>
   );
 }

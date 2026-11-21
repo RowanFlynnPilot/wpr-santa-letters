@@ -44,6 +44,10 @@ export function viewLink(view: "mailbag" | "write"): { href: string; target?: st
   return { href: view === "write" ? env.writePageUrl : env.mailbagPageUrl, target: "_top" };
 }
 
+// A link to Santa's letter paper (#/paper), a sheet to print. Like Santa's reply it opens on its own page,
+// in a new tab: a frame inside WordPress would print WPR's whole page around it.
+export const paperLink = { href: `${import.meta.env.BASE_URL}#/paper`, target: "_blank", rel: "noopener" };
+
 // Bring an element to the top of the reader's screen, on the host page if we're embedded (embed.js
 // scrolls the page; without it, the frame scrolls itself). Waits for the web fonts first, since the
 // fallback fonts wrap the title differently and would move the element after measuring.

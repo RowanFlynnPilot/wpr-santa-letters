@@ -259,6 +259,101 @@ test("Santa’s longest possible reply still prints on one sheet", async ({ page
   if (test.info().project.name === "chromium") expect(await printedPages(page)).toBe(1);
 });
 
+// Santa's letter paper ----------------------------------------------------------------------------
+
+test("Santa’s letter paper", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.print = () => {};
+  });
+  await open(page, "#/paper", { width: 900, height: 1100 });
+  const sheet = page.locator(".paper-sheet");
+  await expect(page.getByRole("heading", { level: 1, name: "Santa’s letter paper" })).toHaveCount(1);
+  // What the mailbag publishes, and nothing more: a first name, an age, a town.
+  await expect(sheet.locator(".paper-blanks")).toHaveText(/^My name is\s+first name only\s+and I am\s+years old\. I live in\s+town\s*\.$/);
+  await expect(sheet.locator(".paper-rows span")).toHaveCount(7);
+  await expect(sheet.locator(".paper-drawing")).toContainText("Draw Santa a picture");
+  // The grown-up's part: a name and an email to write in, where to mail it and by when, and what sending
+  // it agrees to.
+  const grownup = sheet.getByRole("complementary", { name: "For a grown-up" });
+  await expect(grownup.locator(".paper-contact span")).toHaveText(["Your name", "Your email"]);
+  await expect(grownup).toContainText(/Mail it to Santa, care of Wausau Pilot & Review, PO Box 117, Wausau, WI 54402, to arrive by Dec\.\s18\./);
+  await expect(grownup).toContainText("send it at wausaupilotandreview.com/letters-to-santa.");
+  await expect(grownup).toContainText("agrees to the rules (wausaupilotandreview.com/letters-to-santa-rules)");
+
+  await settled(page);
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+  await shot(page, "paper.png", { fullPage: true });
+
+  // Printing it is counted, with nothing else said.
+  await page.getByRole("button", { name: "Print Santa’s letter paper" }).click();
+  expect(await counted(page, "Letter Paper Printed")).toEqual([{}]);
+
+  // On paper it is the sheet alone, as Santa's reply is: no night, no button, one letter-size page.
+  await page.emulateMedia({ media: "print" });
+  expect(await page.locator("main.paper").evaluate((main) => getComputedStyle(main).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+  await expect(page.locator(".paper .night-horizon")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Print Santa’s letter paper" })).toBeHidden();
+  await expect(sheet.locator(".paper-dear")).toBeVisible();
+  if (test.info().project.name === "chromium") expect(await printedPages(page)).toBe(1);
+});
+
+test("the letter paper prints on one sheet with room to spare, and fits the narrowest phone", async ({ page }) => {
+  // A letter-size page less 0.6in margins is 700px wide and 940px tall, which is how wide print sets the sheet.
+  await open(page, "#/paper", { width: 700, height: 1100 });
+  await expect(page.locator(".paper-sheet")).toBeVisible();
+  await settled(page);
+  await page.emulateMedia({ media: "print" });
+  const height = await page.locator(".paper-sheet").evaluate((sheet) => sheet.getBoundingClientRect().height);
+  expect(height).toBeLessThan(915);
+  if (test.info().project.name === "chromium") expect(await printedPages(page)).toBe(1);
+
+  await page.emulateMedia({ media: "screen" });
+  await page.setViewportSize({ width: 320, height: 700 });
+  expect(await scrollsSideways(page)).toBe(false);
+  // Every blank still sits inside the sheet.
+  const inside = await page.locator(".paper-sheet").evaluate((sheet) => {
+    const edge = sheet.getBoundingClientRect();
+    return [...sheet.querySelectorAll(".paper-blank, .paper-contact i")].every((blank) => {
+      const box = blank.getBoundingClientRect();
+      return box.left >= edge.left && box.right <= edge.right && box.width >= 40;
+    });
+  });
+  expect(inside).toBe(true);
+});
+
+test("the mailbag and the form offer the letter paper; it stops when the mailbag closes and never needs the season", async ({ page }) => {
+  await open(page, "#/mailbag", DESK);
+  const fromMailbag = page.locator(".other-ways").getByRole("link", { name: "Print Santa’s letter paper" });
+  await expect(fromMailbag).toHaveAttribute("href", "/wpr-santa-letters/#/paper");
+  await expect(fromMailbag).toHaveAttribute("target", "_blank");
+
+  await open(page, "#/write", PHONE);
+  const fromForm = page.locator("form").getByRole("link", { name: "Print Santa’s letter paper" });
+  await expect(fromForm).toHaveAttribute("href", "/wpr-santa-letters/#/paper");
+  await expect(fromForm).toHaveAttribute("target", "_blank");
+
+  // Before letters open, a child can already be writing.
+  await open(page, "#/paper", DESK, { phase: "upcoming" });
+  await expect(page.locator(".paper-sheet")).toBeVisible();
+
+  // Once letters close, a sheet printed now would arrive too late.
+  for (const phase of ["closed", "delivered"] as const) {
+    await open(page, "#/paper", DESK, { phase });
+    // The address is the one the page is already at, so going to it again loads nothing: ask again.
+    await page.reload();
+    await expect(page.getByText("Santa’s mailbag is closed for 2026.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Read the letters" })).toHaveAttribute("href", "https://wausaupilotandreview.com/letters-to-santa/");
+    await expect(page.locator(".paper-sheet")).toHaveCount(0);
+  }
+
+  // If the season can't be read, the sheet is there all the same, without the date.
+  await open(page, "#/paper", DESK);
+  await page.route("**/rest/v1/current_season*", (route) => route.fulfill({ status: 500, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: "{}" }));
+  await page.reload();
+  await expect(page.locator(".paper-grownup")).toContainText("Wausau, WI 54402. Or take a photo");
+  await expect(page.locator(".paper-grownup")).not.toContainText("to arrive by");
+});
 
 test("a half-written letter is kept across a reload, without the consent tick, and Start over clears it", async ({ page }) => {
   await open(page, "#/write", PHONE);

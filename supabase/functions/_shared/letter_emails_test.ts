@@ -136,6 +136,60 @@ Deno.test("the digest escapes what families typed", () => {
   assert(!email.html.includes("<b>Mia</b>") && !email.html.includes("<script>"));
 });
 
+// The line an inbox shows beside the subject: the first words in the email's body, hidden once it's open.
+function inboxLine(html: string): string {
+  const hidden = html.match(/<body[^>]*><div style="display:none;[^"]*">([^<]*)<\/div><table/);
+  assert(hidden, "the preview line leads the body, hidden");
+  return hidden[1].replace(/(&#847;&zwnj;&nbsp;)+$/, "");
+}
+
+Deno.test("each email has a line for the inbox, and the confirmation's carries nothing typed into the form", () => {
+  const confirmation = confirmationEmail(
+    { ...LETTER, first_name: "Claim at evil.example", town: "Call 715-555-0100" },
+    "id-1",
+    { mailbag: "https://example.com/mailbag", drawing: true },
+  );
+  assertEquals(
+    inboxLine(confirmation.html),
+    "An editor reads every letter before it goes in Santa’s mailbag. We’ll email you a link when it’s up.",
+  );
+  // Enough blank characters after it that a mail program doesn't go on into the body.
+  assert(confirmation.html.split("&#847;&zwnj;&nbsp;").length > 50);
+
+  const posted = postedEmail(
+    { ...NOTICE, first_name: "Mia <b>" },
+    "id-1",
+    { letter: "https://example.com/l", reply: "https://example.com/r" },
+  );
+  assertEquals(inboxLine(posted.html), "Read it, pass it along to family, and print Santa’s reply to Mia &lt;b&gt;.");
+
+  const letter = (first_name: string, age: number, town: string | null) => ({
+    first_name,
+    age,
+    town,
+    body: "Dear Santa",
+    photo_id: null,
+    created_at: "2026-12-01T15:00:00Z",
+  });
+  const links = { to: ["editor@example.com"], queue: "https://example.com/#/admin", today: "2026-12-03" };
+  assertEquals(
+    inboxLine(digestEmail([letter("Mia", 6, "Weston"), letter("Si", 4, null)], links).html),
+    "Mia, 6, of Weston; Si, 4.",
+  );
+  assertEquals(
+    inboxLine(
+      digestEmail(
+        [letter("Mia", 6, "Weston"), letter("Si", 4, null), letter("Jo", 5, null), letter("Al", 9, null)],
+        links,
+      )
+        .html,
+    ),
+    "Mia, 6, of Weston; Si, 4; Jo, 5, and more.",
+  );
+  // With no letters waiting, the digest goes only for the form's trouble, and leads with it.
+  assertStringIncludes(inboxLine(digestEmail([], links, { save: 2 }).html), "A letter couldn’t be saved twice.");
+});
+
 const NOTICE = {
   first_name: "Mia",
   age: 6,
