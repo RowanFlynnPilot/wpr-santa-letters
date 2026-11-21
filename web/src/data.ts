@@ -7,7 +7,7 @@ import type { PreparedPhoto } from "./photo";
 import { LETTER_COLUMNS, readAsSignedIn } from "./reads";
 import { photoPaths } from "./storage";
 import { supabase } from "./supabase";
-import type { Draw, LetterSource, LetterStatus, SavedNewsletterSection, StaffLetter } from "./types";
+import type { Draw, LetterSource, LetterStatus, SavedNewsletterSection, Sponsor, SponsorTier, StaffLetter } from "./types";
 
 readAsSignedIn(async () => (await supabase.auth.getSession()).data.session?.access_token ?? null);
 export { loadFeaturedId, loadMailbag, loadPrizes, loadSeason, loadSponsors, loadWinners } from "./reads";
@@ -275,6 +275,79 @@ export async function runDrawing(seasonId: string) {
 // Names the draw being given up, so a page that's out of date can't forfeit a winner it hasn't shown.
 export async function redrawPrize(drawId: string) {
   await rows<null>(supabase.rpc("redraw_prize", { p_draw_id: drawId }));
+}
+
+// Sponsors and prizes (migration 0013) -------------------------------------------------------------
+
+// What a logo can be, and how big: the sponsor-logos bucket's own limits, said before the upload is tried.
+export const LOGO_TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg" };
+export const LOGO_BYTES = 1024 * 1024;
+
+// A logo's file gets a name of its own, from the business's name: a replacement never overwrites the file
+// a reader's browser may have kept, and two sponsors' files can't collide.
+function logoName(sponsor: string, file: File): string {
+  const slug =
+    sponsor
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "sponsor";
+  return `${slug}-${crypto.randomUUID().slice(0, 8)}.${LOGO_TYPES[file.type]}`;
+}
+
+// A file no sponsor's row points at any more. If it can't be deleted it is only clutter: nothing shows it.
+async function removeLogo(path: string) {
+  const { error } = await supabase.storage.from("sponsor-logos").remove([path]);
+  if (error) console.warn("A logo no sponsor uses stayed in storage:", path, error);
+}
+
+export interface SponsorDetails {
+  name: string;
+  tier: SponsorTier;
+  website_url: string;
+}
+
+// Saves a sponsor: a new one (no `current`), or a change to one on the list. `logo` is a file to use, null
+// to take the logo off, or undefined to leave it as it is. A new logo goes up first; if the sponsor is
+// then refused (a name already on the list, a fifth presenting sponsor), the file comes back down, and
+// once the sponsor is saved, the logo it replaced is deleted.
+export async function saveSponsor(current: Sponsor | null, details: SponsorDetails, logo: File | null | undefined): Promise<void> {
+  const uploaded = logo ? logoName(details.name, logo) : null;
+  if (logo && uploaded) {
+    const { error } = await supabase.storage.from("sponsor-logos").upload(uploaded, logo, { contentType: logo.type, cacheControl: "3600" });
+    if (error) throw new Error(`The logo didn’t upload: ${error.message}`);
+  }
+  const logoPath = logo === undefined ? (current?.logo_path ?? null) : uploaded;
+  try {
+    await rows<string>(
+      supabase.rpc("save_sponsor", {
+        p_sponsor_id: current?.id ?? null,
+        p_name: details.name,
+        p_tier: details.tier,
+        p_website_url: details.website_url,
+        p_logo_path: logoPath,
+      }),
+    );
+  } catch (err) {
+    if (uploaded) await removeLogo(uploaded);
+    throw err;
+  }
+  if (current?.logo_path && current.logo_path !== logoPath) await removeLogo(current.logo_path);
+}
+
+// Takes a sponsor off the list (the database refuses while it has prizes), and its logo's file with it.
+export async function removeSponsor(sponsorId: string): Promise<void> {
+  const logoPath = await rows<string | null>(supabase.rpc("remove_sponsor", { p_sponsor_id: sponsorId }));
+  if (logoPath) await removeLogo(logoPath);
+}
+
+// One row for each one to win: three gift cards are three prizes.
+export async function addPrizes(sponsorId: string, description: string, count: number): Promise<void> {
+  await rows<number>(supabase.rpc("add_prizes", { p_sponsor_id: sponsorId, p_description: description, p_count: count }));
+}
+
+export async function removePrize(prizeId: string): Promise<void> {
+  await rows<null>(supabase.rpc("remove_prize", { p_prize_id: prizeId }));
 }
 
 // The section saved for a morning's newsletter, if any.

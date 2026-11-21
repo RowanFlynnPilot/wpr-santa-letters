@@ -2182,6 +2182,118 @@ textarea.ruled {
   font-size: 1.125rem;
 }
 
+/* Sponsors and prizes (Sponsors.tsx): each level's sponsors as cards, the logo beside the name, the link
+   and the prizes; the forms open inside the card they belong to. */
+.sponsors-desk {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 48rem;
+}
+
+.sponsors-desk section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.sponsor-rows {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sponsor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  background: var(--sheet);
+}
+
+/* The logo on white, as the stamp shows it; or a dashed box where one will go. */
+.sponsor-logo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+/* Out of the flow, so every box is the same size whatever shape its logo is. */
+.sponsor-logo img {
+  position: absolute;
+  inset: 0.35rem;
+  width: calc(100% - 0.7rem);
+  height: calc(100% - 0.7rem);
+  object-fit: contain;
+}
+
+.sponsor-logo span {
+  color: var(--bark);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.sponsor-logo:has(span) {
+  border-style: dashed;
+  border-color: var(--bark);
+  background: none;
+}
+
+.sponsor-body {
+  display: grid;
+  justify-items: start;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.sponsor-body h3 {
+  font-size: 1.125rem;
+}
+
+.sponsor-prizes {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.sponsor-prizes li > * + * {
+  margin-left: 0.75rem;
+}
+
+.sponsor-form {
+  justify-self: stretch;
+  max-width: 34rem;
+}
+
+.sponsor-body .sponsor-form {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.sponsor-reads {
+  padding: 0.6rem 0.9rem;
+  border-left: 4px solid var(--teal-deep);
+  background: var(--paper);
+}
+
+@media (max-width: 30rem) {
+  .sponsor-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sponsor-logo {
+    width: 6.5rem;
+  }
+}
+
 .article-desk {
   display: grid;
   gap: 1rem;

@@ -1,5 +1,5 @@
-// The staff page: review form letters, type in emailed and mailed ones, run the prize drawing, and
-// copy out the Dec. 23 article. Open directly (not embedded): /wpr-santa-letters/#/admin. Staff sign
+// The staff page: review form letters, type in emailed and mailed ones, keep the list of sponsors and
+// their prizes, run the prize drawing, and copy out the Dec. 23 article. Open directly (not embedded): /wpr-santa-letters/#/admin. Staff sign
 // in with a one-time email code; accounts must already exist and be in `staff`.
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useState, type FormEvent } from "react";
@@ -12,11 +12,13 @@ import { Article } from "./admin/Article";
 import { Newsletter } from "./admin/Newsletter";
 import { Prizes } from "./admin/Prizes";
 import { Review } from "./admin/Review";
+import { Sponsors } from "./admin/Sponsors";
 
 const TOOLS = [
   { tool: "review", label: "Review letters" },
   { tool: "add", label: "Add a letter" },
   { tool: "newsletter", label: "Newsletter" },
+  { tool: "sponsors", label: "Sponsors and prizes" },
   { tool: "prizes", label: "Prize drawing" },
   { tool: "article", label: "Dec. 23 article" },
 ] as const;
@@ -150,6 +152,8 @@ function StaffOnly({ email }: { email: string | undefined }) {
         <AddLetter season={season} />
       ) : tool === "newsletter" ? (
         <Newsletter season={season} />
+      ) : tool === "sponsors" ? (
+        <Sponsors season={season} />
       ) : tool === "prizes" ? (
         <Prizes seasonId={season.id} />
       ) : (
