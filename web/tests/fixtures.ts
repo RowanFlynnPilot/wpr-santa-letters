@@ -101,9 +101,18 @@ export const SIX_PRIZES = [
   })),
 ];
 
+// Two made-up businesses' banner ads (fixtures/ad-one.png, ad-two.png), as ads.json lists the real ones.
+export const ADS = [
+  { sponsor: "Pine Ridge Hardware", href: "https://example.com/pine-ridge", image: "ad-one.png", width: 970, height: 500, alt: "Happy holidays from Pine Ridge Hardware" },
+  { sponsor: "Larkspur Dental", href: "https://example.com/larkspur", image: "ad-two.png", width: 970, height: 500, alt: "Season’s greetings from Larkspur Dental", through: "2027-01-01" },
+];
+
+// `ads`: what the app's own ads.json holds (ads.ts). No ads unless a test asks for them, so the season's
+// real ads are never in a test or an approved screenshot; `null` is a list that isn't there, and a string
+// is the file's words as they are.
 export async function mockBackend(
   page: Page,
-  options: { pick?: boolean; sponsors?: unknown[]; prizes?: unknown[]; phase?: Phase; letters?: (typeof LETTERS)[number][] } = {},
+  options: { pick?: boolean; sponsors?: unknown[]; prizes?: unknown[]; phase?: Phase; letters?: (typeof LETTERS)[number][]; ads?: unknown[] | string | null } = {},
 ) {
   const phase = options.phase ?? "open";
   // Before letters open the mailbag is empty; on delivery day the first letter has won the prize.
@@ -128,6 +137,14 @@ export async function mockBackend(
       headers: { "access-control-allow-origin": "*" },
       body: readFileSync(file(`./fixtures/${route.request().url().split("/").pop()}`)),
     }));
+
+  await page.route("**/ads/ads.json*", (route) =>
+    options.ads === null
+      ? route.fulfill({ status: 404, contentType: "text/plain", body: "Not found" })
+      : route.fulfill({ status: 200, contentType: "application/json", body: typeof options.ads === "string" ? options.ads : JSON.stringify(options.ads ?? []) }));
+
+  await page.route("**/ads/ad-*.png", (route) =>
+    route.fulfill({ status: 200, contentType: "image/png", body: readFileSync(file(`./fixtures/${route.request().url().split("/").pop()}`)) }));
 
   await page.route("**/rest/v1/**", (route) => {
     const request = route.request();

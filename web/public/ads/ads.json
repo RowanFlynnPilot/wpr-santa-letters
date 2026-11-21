@@ -1,0 +1,21 @@
+[
+  {
+    "sponsor": "Maher Water",
+    "href": "https://www.maherwater.com/",
+    "image": "maher-water.jpg",
+    "width": 970,
+    "height": 500,
+    "alt": "Merry Christmas and Happy New Year from all of us at Maher Water Corporation. 888-796-2437, maherwater.com",
+    "through": "2027-01-01"
+  },
+  {
+    "sponsor": "PGA Inc.",
+    "href": "https://pgainc.net/",
+    "image": "pga.jpg",
+    "sharp": "pga-1940.jpg",
+    "width": 970,
+    "height": 500,
+    "alt": "Merry Christmas and Happy New Year from PGA Inc.: plumbing, heating, cooling, electrical and excavation. 715-355-6717, TrustPGA.com",
+    "through": "2027-01-01"
+  }
+]

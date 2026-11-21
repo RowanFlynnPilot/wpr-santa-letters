@@ -11,8 +11,8 @@ every post promoting the mailbag, a prize of its own for the drawing) are the on
 email on Nov. 11, 2026, on the model of the last season's offer; change them only on their word. On Nov. 15
 Rowan and Shereen settled the rest: up to four presenting sponsors, as the last season had (the envelope
 holds four stamps and the database refuses a fifth), and the ad's run and size as that offer gave them. The
-banner ad is WPR's own ad space on the homepage and on the WordPress page that holds the mailbag, not part
-of this app.
+banner ad runs in WPR's own ad space on the homepage (WordPress) and, on the Letters to Santa page, in the
+mailbag's own place above the letters (web/src/ads.ts).
 The page is self-contained (fonts and pictures inside it), so it opens anywhere.
 """
 import base64

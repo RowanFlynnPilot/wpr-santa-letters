@@ -1605,6 +1605,36 @@ textarea.ruled {
   font-size: 0.9375rem;
 }
 
+/* A presenting sponsor's banner ad (SponsorAd.tsx): the sponsor's own artwork, 970 by 500, under a small
+   label, set no wider than 48rem so it doesn't stand taller than the letters it introduces. Its room is
+   held by the picture's own width and height. */
+.sponsor-ad {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 48rem;
+  margin: 2rem auto 0;
+}
+
+.sponsor-ad-label {
+  color: var(--bark);
+  font: 700 0.75rem / 1.4 var(--body);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sponsor-ad a {
+  display: block;
+  border: 1px solid var(--line);
+  background: var(--sheet);
+  box-shadow: 0 0.35rem 1rem rgba(30, 38, 34, 0.1);
+}
+
+.sponsor-ad img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 /* The foot of the mailbag: other ways to send, prizes, sponsors. ------------------- */
 
 .mailbag-foot {

@@ -9,11 +9,12 @@ export function salesMailto(subject: string): string {
   return `mailto:${SALES_EMAIL}?subject=${encodeURIComponent(subject)}`;
 }
 
-// Where a sponsor's logo sits; it rides along as utm_content so each placement is reportable.
-export type Placement = "mailbag-title" | "write-form" | "supporters" | "sponsor-list" | "front-page" | "newsletter" | "santa-reply";
+// Where a sponsor's logo sits, or its banner ad (`banner`: ads.ts); it rides along as utm_content so each
+// placement is reportable.
+export type Placement = "mailbag-title" | "write-form" | "supporters" | "sponsor-list" | "front-page" | "newsletter" | "santa-reply" | "banner";
 
 // Tagged so the visit shows up in the sponsor's own analytics as coming from us.
-export function sponsorHref(sponsor: Sponsor, placement: Placement): string | null {
+export function sponsorHref(sponsor: Pick<Sponsor, "name" | "website_url">, placement: Placement): string | null {
   if (!sponsor.website_url) return null;
   let url: URL;
   try {

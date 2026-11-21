@@ -1,9 +1,13 @@
+import type { Ad } from "./ads";
+
 // Rows as the database returns them (supabase/migrations).
 
 export type Phase = "upcoming" | "open" | "closed" | "delivered";
 export type LetterStatus = "pending" | "approved" | "rejected";
 export type LetterSource = "form" | "email" | "mail";
-export type SponsorTier = "presenting" | "supporting";
+// A `donor` gives a prize and pays nothing (migration 0012): named with its prize and at the foot, never
+// on a stamp or in the supporting sponsors' row.
+export type SponsorTier = "presenting" | "supporting" | "donor";
 
 export interface Season {
   id: string;
@@ -58,6 +62,8 @@ export interface Mailbag {
   featured: string | null;
   // Empty for readers until the letters are delivered.
   winners: Winner[];
+  // The presenting sponsors' banner ads showing today (ads.ts); empty when there are none.
+  ads: Ad[];
 }
 
 // Staff only: a letter with the family's details and its review trail.

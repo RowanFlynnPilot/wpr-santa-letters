@@ -2,10 +2,12 @@
 // they're posted, and the prizes and sponsors at the foot. On delivery day the winners lead. A link
 // to one letter (linked.ts) opens it under the envelope, before the rest.
 import { type RefObject, useEffect, useRef } from "react";
+import { pickAd } from "../ads";
 import { LetterCard } from "../components/LetterCard";
 import { LetterWall } from "../components/LetterWall";
 import { Horizon, NightSky, Route } from "../components/Night";
 import { Postmark } from "../components/Postmark";
+import { SponsorAd } from "../components/SponsorAd";
 import { Stamps, StampsOpening } from "../components/Stamp";
 import { EDITOR_EMAIL, MAIL_TO } from "../contact";
 import { apDate, apLastDay, apNumber, byline, capitalize, count, possessive } from "../format";
@@ -18,6 +20,14 @@ import { keepStamps, keptStamps } from "../stampsKept";
 import { logoUrl } from "../storage";
 import type { Letter, Mailbag as MailbagData, Prize, Season, Sponsor } from "../types";
 import { useLoad } from "../useLoad";
+
+// Which presenting sponsor's banner ad this visit shows (ads.ts): drawn once as the page loads, so the ad
+// doesn't change under a reader; `?ad=2` asks for the second in the list.
+const AD_ROLL = Math.random();
+const AD_WANTED = new URLSearchParams(window.location.search).get("ad");
+// "Thanks to our sponsors" names the presenting sponsors first, then the supporting ones, then the prize
+// donors, each in the order they signed on.
+const TIER_ORDER = { presenting: 0, supporting: 1, donor: 2 } as const;
 
 export function Mailbag() {
   const mailbag = useLoad(loadMailbag);
@@ -49,6 +59,7 @@ export function Mailbag() {
   // The route counts down to the next date on the calendar; a sales preview counts as open, like the rest of the page.
   const calendar = DEMO && season.phase === "upcoming" ? { ...season, phase: "open" as const } : season;
   const presenting = presentingSponsors(sponsors);
+  const ad = pickAd(mailbag.data.ads, AD_ROLL, AD_WANTED);
   return (
     <Sponsors.Provider value={sponsors}>
       <main className="mailbag">
@@ -145,6 +156,9 @@ export function Mailbag() {
         </section>
       )}
 
+      {/* A presenting sponsor's banner ad: above the letters, or under the three steps before there are any. */}
+      {ad && letters.length > 0 && <SponsorAd ad={ad} />}
+
       {letters.length > 0 ? (
         <LetterWall letters={letters.filter((l) => l !== linked && l !== featured)} />
       ) : season.phase === "upcoming" || open ? (
@@ -157,12 +171,13 @@ export function Mailbag() {
         <p className="empty-mailbag">No letters came in {season.year}.</p>
       )}
 
+      {ad && letters.length === 0 && <SponsorAd ad={ad} />}
+
       <footer className="mailbag-foot">
         {(season.phase === "upcoming" || season.phase === "open") && <OtherWays />}
         {prizes.length > 0 && season.phase !== "delivered" && <PrizeList prizes={prizes} sponsors={sponsors} sectionRef={prizesRef} />}
         {sponsors.some((s) => !s.demo) && (
-          // The presenting sponsors first, then the rest, each in the order they signed on.
-          <SponsorList sponsors={sponsors.filter((s) => !s.demo).sort((a, b) => Number(b.tier === "presenting") - Number(a.tier === "presenting"))} />
+          <SponsorList sponsors={sponsors.filter((s) => !s.demo).sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier])} />
         )}
       </footer>
       </div>
