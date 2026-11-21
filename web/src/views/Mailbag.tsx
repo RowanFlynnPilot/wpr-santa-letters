@@ -54,8 +54,11 @@ export function Mailbag() {
   const { season, sponsors, prizes, letters, winners } = mailbag.data;
   const open = season.phase === "open" || DEMO;
   const linked = LINKED_LETTER ? letters.find((l) => l.id === LINKED_LETTER) : undefined;
-  // The editor's pick leads the letters, unless it's the letter the reader followed a link to (shown above).
-  const featured = letters.find((l) => l.id === mailbag.data.featured && l !== linked);
+  // On delivery day each winning letter is shown with its prize, at the head of the mailbag.
+  const won = new Set(season.phase === "delivered" ? winners.map((w) => w.letter_id) : []);
+  // A letter is on the page once, in the first place that has it: the link a reader followed, the
+  // winners, the editor's pick, then the wall.
+  const featured = letters.find((l) => l.id === mailbag.data.featured && l !== linked && !won.has(l.id));
   // The route counts down to the next date on the calendar; a sales preview counts as open, like the rest of the page.
   const calendar = DEMO && season.phase === "upcoming" ? { ...season, phase: "open" as const } : season;
   const presenting = presentingSponsors(sponsors);
@@ -85,6 +88,12 @@ export function Mailbag() {
             <span>From the kids of the Wausau area</span>
           </p>
           <p className="lede">{lede(season)}</p>
+          {season.phase === "delivered" && !DEMO && (
+            // A rubber stamp across the envelope, saying what the line above it says: decoration.
+            <p className="envelope-delivered" aria-hidden="true">
+              Delivered · {apDate(season.delivered_at)} · North Pole
+            </p>
+          )}
           {(open || letters.length > 0) && (
             <div className="envelope-actions">
               {open && (
@@ -142,9 +151,7 @@ export function Mailbag() {
         </section>
       )}
 
-      {season.phase === "delivered" && winners.length > 0 && (
-        <Winners data={mailbag.data} />
-      )}
+      {season.phase === "delivered" && winners.length > 0 && <Winners data={mailbag.data} linked={linked} />}
 
       {featured && (
         <section className="featured-letter" aria-labelledby="featured-heading">
@@ -160,7 +167,7 @@ export function Mailbag() {
       {ad && letters.length > 0 && <SponsorAd ad={ad} />}
 
       {letters.length > 0 ? (
-        <LetterWall letters={letters.filter((l) => l !== linked && l !== featured)} />
+        <LetterWall letters={letters.filter((l) => l !== linked && l !== featured && !won.has(l.id))} />
       ) : season.phase === "upcoming" || open ? (
         // Nothing to read yet: the letters' place says how the mailbag works.
         <>
@@ -173,9 +180,10 @@ export function Mailbag() {
 
       {ad && letters.length === 0 && <SponsorAd ad={ad} />}
 
+      {prizes.length > 0 && season.phase !== "delivered" && <PrizeList prizes={prizes} sponsors={sponsors} sectionRef={prizesRef} />}
+
       <footer className="mailbag-foot">
         {(season.phase === "upcoming" || season.phase === "open") && <OtherWays />}
-        {prizes.length > 0 && season.phase !== "delivered" && <PrizeList prizes={prizes} sponsors={sponsors} sectionRef={prizesRef} />}
         {sponsors.some((s) => !s.demo) && (
           <SponsorList sponsors={sponsors.filter((s) => !s.demo).sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier])} />
         )}
@@ -302,7 +310,10 @@ function OtherWays() {
   );
 }
 
-// Prizes given more than once are listed once, with how many there are to win.
+// The prizes in the drawing, each on a gift tag: what it is, who gives it (with their logo, when they have
+// one: for a prize donor this is the place their name is seen) and, for a prize given more than once, how
+// many there are to win. It reads as the plain list it was: "A $25 gift card from Rib River Pizza (three
+// to win)"; the parentheses are there for a screen reader and a copied line, and the tag doesn't draw them.
 
 function PrizeList({ prizes, sponsors, sectionRef }: { prizes: Prize[]; sponsors: Sponsor[]; sectionRef: RefObject<HTMLElement | null> }) {
   const groups = new Map<string, { prize: Prize; count: number }>();
@@ -317,14 +328,30 @@ function PrizeList({ prizes, sponsors, sectionRef }: { prizes: Prize[]; sponsors
     <section className="prize-list" ref={sectionRef} tabIndex={-1} aria-labelledby="prizes-heading">
       <h2 id="prizes-heading">Prizes</h2>
       <p>Letters in the mailbag are entered in a drawing for:</p>
-      <ul>
+      <ul className="prize-tags">
         {[...groups.values()].map(({ prize, count }) => {
           const sponsor = sponsors.find((s) => s.id === prize.sponsor_id);
           return (
-            <li key={prize.id}>
-              {capitalize(prize.description)}
-              {sponsor && ` from ${sponsor.name}`}
-              {count > 1 && ` (${apNumber(count)} to win)`}
+            <li key={prize.id} className="prize-tag">
+              <div>
+                <span className="prize-what">{capitalize(prize.description)}</span>
+                {sponsor && (
+                  <span className="prize-from">
+                    {" "}
+                    from <b>{sponsor.name}</b>
+                  </span>
+                )}
+                {count > 1 && (
+                  <span className="prize-count">
+                    {" "}
+                    <span className="visually-hidden">(</span>
+                    {apNumber(count)} to win
+                    <span className="visually-hidden">)</span>
+                  </span>
+                )}
+                {/* The giver's logo, at the tag's end; its name is in the line beside it. */}
+                {sponsor?.logo_path && <img src={logoUrl(sponsor.logo_path)} alt="" loading="lazy" />}
+              </div>
             </li>
           );
         })}
@@ -386,12 +413,15 @@ function SponsorList({ sponsors }: { sponsors: Sponsor[] }) {
   );
 }
 
-function Winners({ data }: { data: MailbagData }) {
+// Delivery day: the winners lead the mailbag, each with a rosette, the line that names the prize, and the
+// winning letter itself (which then isn't repeated on the wall below). The letter a reader followed a link
+// to is already at the top of the page, so there the line stands alone.
+function Winners({ data, linked }: { data: MailbagData; linked: Letter | undefined }) {
   const { season, sponsors, prizes, letters, winners } = data;
   const letterById = new Map<string, Letter>(letters.map((l) => [l.id, l]));
   return (
-    <section className="winners">
-      <h2>Our {season.year} prize winners</h2>
+    <section className="winners" aria-labelledby="winners-heading">
+      <h2 id="winners-heading">Our {season.year} prize winners</h2>
       <ul>
         {prizes.map((prize) => {
           const winner = winners.find((w) => w.prize_id === prize.id);
@@ -399,15 +429,33 @@ function Winners({ data }: { data: MailbagData }) {
           if (!letter) return null;
           const sponsor = sponsors.find((s) => s.id === prize.sponsor_id);
           return (
-            <li key={prize.id}>
-              {/* AP: the age and town are set off by commas on both sides. */}
-              <strong>{byline(letter)}</strong>, wins {prize.description}
-              {sponsor && ` from ${sponsor.name}`}.
+            <li key={prize.id} className="winner">
+              <p className="winner-line">
+                <Rosette />
+                {/* AP: the age and town are set off by commas on both sides. */}
+                <strong>{byline(letter)}</strong>, wins {prize.description}
+                {sponsor && ` from ${sponsor.name}`}.
+              </p>
+              {letter !== linked && <LetterCard letter={letter} share />}
             </li>
           );
         })}
       </ul>
-      <p>We’re reaching out to each winner’s family. Congratulations, and Merry Christmas!</p>
+      <p className="winners-note">We’re reaching out to each winner’s family. Congratulations, and Merry Christmas!</p>
     </section>
+  );
+}
+
+// A prize ribbon: a scalloped rosette with a star and two tails, in the envelope's red.
+function Rosette() {
+  return (
+    <svg className="winner-rosette" viewBox="0 0 44 58" aria-hidden="true">
+      <path d="M13 30 7 56l8-6 6 8 3-26z" fill="#8f1e18" />
+      <path d="M31 30l6 26-8-6-6 8-3-26z" fill="#b3261e" />
+      <circle cx="22" cy="20" r="16.5" fill="none" stroke="#b3261e" strokeWidth="6" strokeDasharray="3.4 2.36" />
+      <circle cx="22" cy="20" r="15" fill="#b3261e" />
+      <circle cx="22" cy="20" r="11.5" fill="#fffdf8" />
+      <path transform="translate(13.6 11.4) scale(0.7)" d="M12 1.5l3 7.1 7.6.6-5.8 5 1.8 7.4L12 17.7 5.4 21.6l1.8-7.4-5.8-5 7.6-.6z" fill="#b3261e" />
+    </svg>
   );
 }

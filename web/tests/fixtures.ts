@@ -112,7 +112,16 @@ export const ADS = [
 // is the file's words as they are.
 export async function mockBackend(
   page: Page,
-  options: { pick?: boolean; sponsors?: unknown[]; prizes?: unknown[]; phase?: Phase; letters?: (typeof LETTERS)[number][]; ads?: unknown[] | string | null } = {},
+  options: {
+    pick?: boolean;
+    sponsors?: unknown[];
+    prizes?: unknown[];
+    phase?: Phase;
+    letters?: (typeof LETTERS)[number][];
+    ads?: unknown[] | string | null;
+    // Who won what, on delivery day; the first letter wins the one prize unless a test says otherwise.
+    winners?: { prize_id: string; letter_id: string }[];
+  } = {},
 ) {
   const phase = options.phase ?? "open";
   // Before letters open the mailbag is empty; on delivery day the first letter has won the prize.
@@ -162,7 +171,7 @@ export async function mockBackend(
         return json(route, options.prizes ?? [PRIZE]);
       case "prize_winners":
         // Readers get winners only once the letters are delivered (RLS, in the real database).
-        return json(route, phase === "delivered" ? [{ prize_id: PRIZE.id, letter_id: LETTERS[0].id }] : []);
+        return json(route, phase === "delivered" ? (options.winners ?? [{ prize_id: PRIZE.id, letter_id: LETTERS[0].id }]) : []);
       case "featured_letters":
         return json(route, options.pick === false || letters.length === 0 ? [] : [{ letter_id: PICK.id }]);
       case "mailbag": {
