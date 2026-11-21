@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(30);
 
 -- Seed ------------------------------------------------------------------------
 
@@ -79,6 +79,18 @@ select throws_ok(
   $$ insert into public.sponsors (season_id, name, tier)
      select id, repeat('x', 81), 'supporting' from public.seasons where year = 2026 $$,
   '23514', null, 'a sponsor name fits the title (80 characters)'
+);
+-- A prize donor gives a prize and pays nothing (migration 0012): a level of its own, so it isn't entered
+-- as a supporting sponsor and shown in the row a supporting sponsor pays for.
+select lives_ok(
+  $$ insert into public.sponsors (id, season_id, name, tier)
+     select '00000000-0000-0000-0000-00000000c0d0', id, 'Candy Shop', 'donor' from public.seasons where year = 2026 $$,
+  'a prize donor is a level of its own, beside the four presenting sponsors'
+);
+select lives_ok(
+  $$ insert into public.prizes (season_id, sponsor_id, description)
+     select id, '00000000-0000-0000-0000-00000000c0d0', 'a candy basket' from public.seasons where year = 2026 $$,
+  'and its prize hangs on its row like any sponsor''s'
 );
 select lives_ok(
   $$ insert into public.prizes (season_id, sponsor_id, description)

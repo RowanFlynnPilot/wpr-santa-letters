@@ -5,19 +5,22 @@
 // Everything runs in Chrome's engine and in Safari's; the season's other three phases (before letters open,
 // after they close, delivery day) each get a test of their own at the foot.
 import AxeBuilder from "@axe-core/playwright";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
+import { usableAds } from "../src/ads";
 import { fitLogo, presentedBy } from "../src/emailMarks";
 import { hashOf } from "../src/looks";
 import { santaReply } from "../src/santaReply";
 import {
+  ADS,
   FOUR_SPONSORS,
   LETTERS,
   LOGO_SPONSORS,
   mockBackend,
   type Phase,
   PICK,
+  PRIZE,
   scrollsSideways,
   settled,
   SIX_PRIZES,
@@ -699,6 +702,8 @@ test("the newsletter’s Presented by line sets four logos side by side, each in
 });
 
 test("a saved picture is made with the sponsor’s logo, whatever its shape", async ({ page }, testInfo) => {
+  // Four pictures made in one test: more time than a test that makes one (Safari's engine is the slow one).
+  test.setTimeout(90_000);
   for (const sponsor of LOGO_SPONSORS) {
     await page.goto("about:blank");
     await open(page, "#/mailbag", DESK, { sponsors: [sponsor] });
@@ -713,6 +718,152 @@ test("a saved picture is made with the sponsor’s logo, whatever its shape", as
     expect(size).toBeGreaterThan(40_000);
     await expect(page.locator(".featured-letter .share-note")).toHaveText("Picture saved. It’s ready to post.");
   }
+});
+
+// The presenting sponsors' banner ads ------------------------------------------------------------
+
+for (const [name, size] of [["desk", DESK], ["phone", PHONE], ["320", { width: 320, height: 700 }]] as const) {
+  test(`a presenting sponsor’s banner ad sits above the letters, ${name}`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await mockBackend(page, { ads: ADS });
+    await page.goto("?ad=1#/mailbag");
+    const ad = page.locator(".sponsor-ad");
+    await expect(ad).toHaveCount(1);
+    // Whose it is, said and shown; and a paid link like every other here.
+    await expect(ad).toHaveAttribute("aria-label", "Presenting sponsor: Pine Ridge Hardware");
+    await expect(ad.locator(".sponsor-ad-label")).toHaveText("Presenting sponsor");
+    const link = ad.getByRole("link", { name: "Happy holidays from Pine Ridge Hardware" });
+    await expect(link).toHaveAttribute(
+      "href",
+      "https://example.com/pine-ridge?utm_source=wausaupilotandreview&utm_medium=widget&utm_campaign=letters-to-santa&utm_content=banner",
+    );
+    await expect(link).toHaveAttribute("rel", /\bsponsored\b/);
+    await expect(link).toHaveAttribute("target", "_blank");
+
+    // The artwork loads, keeps its shape at any width, and stands above the letters.
+    await settled(page);
+    const picture = ad.locator("img");
+    expect(await picture.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(970);
+    const box = (await picture.boundingBox())!;
+    expect(Math.abs(box.width / box.height - 970 / 500)).toBeLessThan(0.02);
+    expect(box.width).toBeLessThanOrEqual(770);
+    expect(box.y + box.height).toBeLessThanOrEqual((await page.locator(".letter-wall").boundingBox())!.y);
+    expect(await scrollsSideways(page)).toBe(false);
+    await expectAccessible(page);
+    if (test.info().project.name === "chromium") await expect(ad).toHaveScreenshot(`ad-${name}.png`);
+  });
+}
+
+test("each visit shows one sponsor’s ad, and a click on it is counted for that sponsor", async ({ page }) => {
+  await page.setViewportSize(DESK);
+  await mockBackend(page, { ads: ADS });
+  // The page draws a number as it loads to choose the ad: here, one that lands on the second of two.
+  await page.addInitScript(() => {
+    Math.random = () => 0.9;
+  });
+  await page.goto("#/mailbag");
+  const ad = page.locator(".sponsor-ad");
+  await expect(ad).toHaveCount(1);
+  await expect(ad).toHaveAttribute("aria-label", "Presenting sponsor: Larkspur Dental");
+
+  // The click is counted before the sponsor's site opens (which the test doesn't let it).
+  const link = ad.getByRole("link");
+  await link.evaluate((a) => a.addEventListener("click", (event) => event.preventDefault()));
+  await link.click();
+  expect(await counted(page, "Sponsor Click")).toEqual([{ sponsor: "Larkspur Dental", placement: "banner" }]);
+
+  // Asked for by its place in the list, the first shows whatever the draw.
+  await page.goto("about:blank");
+  await page.goto("?ad=1#/mailbag");
+  await expect(page.locator(".sponsor-ad")).toHaveAttribute("aria-label", "Presenting sponsor: Pine Ridge Hardware");
+});
+
+test("the mailbag never depends on the ads: no list, a mistyped one, an ad past its last day; and before letters open the ad follows the three steps", async ({ page }) => {
+  // Five visits in one test: more time than a test with one.
+  test.setTimeout(90_000);
+  await page.setViewportSize(DESK);
+  const expired = { ...ADS[0], through: "2026-12-04" };
+  for (const ads of [null, "<html>not a list</html>", [expired, { ...ADS[1], href: "http://example.com/" }]]) {
+    await page.unrouteAll({ behavior: "wait" });
+    await mockBackend(page, { ads });
+    await page.goto("about:blank");
+    await page.goto("#/mailbag");
+    await expect(page.locator(".letter-wall .letter").first()).toBeVisible();
+    await expect(page.locator(".sponsor-ad")).toHaveCount(0);
+  }
+
+  // One still running beside one that has ended: the one still running is the ad, whatever the draw.
+  await page.unrouteAll({ behavior: "wait" });
+  await mockBackend(page, { ads: [expired, ADS[1]] });
+  await page.goto("about:blank");
+  await page.goto("#/mailbag");
+  await expect(page.locator(".sponsor-ad")).toHaveAttribute("aria-label", "Presenting sponsor: Larkspur Dental");
+
+  // Before the first letter there is nothing for it to stand above: it comes after how the mailbag works.
+  await page.unrouteAll({ behavior: "wait" });
+  await mockBackend(page, { ads: ADS, phase: "upcoming" });
+  await page.goto("about:blank");
+  await page.goto("?ad=2#/mailbag");
+  await expect(page.locator(".sponsor-ad")).toHaveAttribute("aria-label", "Presenting sponsor: Larkspur Dental");
+  await settled(page);
+  const [how, ad] = await Promise.all([".how", ".sponsor-ad"].map((part) => page.locator(part).boundingBox()));
+  expect(ad!.y).toBeGreaterThanOrEqual(how!.y + how!.height);
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+});
+
+test("the season’s own ads: every one in the list would show, and its artwork is there in the shape the list gives", async ({ page, baseURL }) => {
+  // The other tests never see the real list (fixtures.ts answers for it). This one reads it as it will be
+  // published: a slip in it wouldn't break the mailbag, it would quietly drop a sponsor's ad.
+  const folder = fileURLToPath(new URL("../public/ads/", import.meta.url));
+  const listed = JSON.parse(readFileSync(`${folder}ads.json`, "utf8")) as unknown[];
+  // As of a day before any could have ended: this checks the list, not the calendar.
+  const ads = usableAds(listed, "2000-01-01");
+  expect(ads.length).toBe(listed.length);
+  expect(new Set(ads.map((ad) => ad.sponsor)).size).toBe(ads.length);
+
+  const size = (name: string) =>
+    page.evaluate(
+      (src) =>
+        new Promise<{ width: number; height: number }>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+          img.onerror = () => reject(new Error(`${src} didn't load`));
+          img.src = src;
+        }),
+      `${baseURL}ads/${name}`,
+    );
+  await page.goto(`${baseURL}ads/ads.json`);
+  for (const ad of ads) {
+    expect(await size(ad.image), ad.image).toEqual({ width: ad.width, height: ad.height });
+    if (ad.sharp) expect(await size(ad.sharp), ad.sharp).toEqual({ width: ad.width * 2, height: ad.height * 2 });
+    // A phone on a slow connection loads these too.
+    for (const name of [ad.image, ad.sharp]) if (name) expect(statSync(folder + name).size, name).toBeLessThan(400_000);
+  }
+});
+
+test("a prize donor is named with its prize and at the foot, not on a stamp or in the supporting sponsors’ row", async ({ page }) => {
+  const donor = { id: "00000000-0000-4000-8000-0000000000e1", name: "Sugar Maple Sweets", tier: "donor", logo_path: "logo-wide.png", website_url: "https://example.com/sweets" };
+  // The donor signed on first: the order at the foot is by level, then by who signed on first.
+  await open(page, "#/mailbag", DESK, {
+    sponsors: [donor, SUPPORTERS[0], SPONSOR],
+    prizes: [PRIZE, { ...PRIZE, id: "00000000-0000-4000-8000-0000000000e2", sponsor_id: donor.id, description: "a candy basket" }],
+  });
+  await expect(page.locator(".prize-list li")).toHaveText(["A $50 savings starter from Northwoods Community Bank", "A candy basket from Sugar Maple Sweets"]);
+  // One stamp, the presenting sponsor's, and one name in the row a supporting sponsor pays for.
+  await expectStampWhole(page);
+  await expect(page.locator(".envelope .stamp-caption")).not.toContainText("Sugar Maple");
+  await expect(page.locator(".supporters li")).toHaveCount(1);
+  await expect(page.locator(".supporters")).not.toContainText("Sugar Maple");
+  expect(await page.locator(".sponsor-list li").evaluateAll((items) => items.map((li) => li.querySelector("img")?.alt ?? li.textContent))).toEqual([
+    "Northwoods Community Bank",
+    "Rib River Pizza",
+    "Sugar Maple Sweets",
+  ]);
+  await expect(page.locator(".sponsor-list a").last()).toHaveAttribute("href", /utm_content=sponsor-list/);
+  await settled(page);
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
 });
 
 // What's counted for a sponsor's report -----------------------------------------------------------

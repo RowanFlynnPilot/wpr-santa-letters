@@ -2,6 +2,7 @@
 // REST API with the publishable key: readers only read public rows, so they never download the
 // Supabase client. The staff page, the one page that loads it, hands these reads the session's token
 // through readAsSignedIn() in data.ts, so staff read as themselves, RLS and all.
+import { type Ad, usableAds, wausauDay } from "./ads";
 import { env } from "./env";
 import { withDemoSponsor } from "./sales";
 import type { Letter, Mailbag, Prize, Season, Sponsor, Winner } from "./types";
@@ -128,14 +129,28 @@ export async function loadFeaturedId(seasonId: string): Promise<string | null> {
   }
 }
 
+// The presenting sponsors' banner ads (ads.ts): a list of our own beside the app, public/ads/ads.json. Like
+// the editor's pick, the page never depends on it: a list that's missing, mistyped or slow to answer is no
+// ads, and the mailbag is as it would be without them. It's asked for with the letters, so the ad's place
+// is there when the page first draws and nothing moves to make room for it.
+export async function loadAds(): Promise<Ad[]> {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}ads/ads.json`, { cache: "no-cache" });
+    return response.ok ? usableAds(await response.json(), wausauDay(Date.now())) : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function loadMailbag(): Promise<Mailbag> {
   const season = await loadSeason();
-  const [sponsors, prizes, letters, winners, featured] = await Promise.all([
+  const [sponsors, prizes, letters, winners, featured, ads] = await Promise.all([
     loadSponsors(season.id),
     loadPrizes(season.id),
     loadLetters(season.id),
     loadWinners(season.id),
     loadFeaturedId(season.id),
+    loadAds(),
   ]);
-  return { season, sponsors, prizes, letters, winners, featured };
+  return { season, sponsors, prizes, letters, winners, featured, ads };
 }
