@@ -221,7 +221,7 @@ A flood of junk letters (abuse past Turnstile) is declined from the staff page: 
 - Supabase project, keys, secrets, SMTP, magic-link template, staff accounts: Shereen signs in with editor@wausaupilotandreview.com, Rowan with his own address (README, First deploy).
 - The digest's two Vault secrets (README, First deploy, step 10).
 - wpr-newsletter: done. Its `main` has the `santa-letters-section` change with production's address and key (checked Nov. 21; the save-and-read path was rehearsed on a local stack the same day: README, Newsletter). What's left is watching the first morning a section is saved.
-- Chris: the presenting sponsors' names as they should be set, then `docs/social/kit.json` and `scripts/browser-tests.sh social` (the launch kit was made Nov. 21 with the names as we had them).
+- The presenting sponsors' names are set (Rowan, Nov. 21): Jones & Jones, Maher Water, One Community Bank, PGA. The launch kit and the ad list (`ads.json`) use them; enter each on the staff page spelled the same way, so a click on a sponsor's banner ad is counted under the same name as a click on its stamp.
 - Shereen: the wording of the grown-up's part of Santa's letter paper (`#/paper`), which restates the form's permission for a letter that comes by mail.
 - One real-iPhone letter end to end inside WordPress, then take it down.
 
