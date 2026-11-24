@@ -214,7 +214,7 @@ A flood of junk letters (abuse past Turnstile) is declined from the staff page: 
 
 - Shereen: whether staff may have Claude read mailed letters (invariant 24; RULES.md's bracketed line). If yes, an Anthropic API key in Supabase secrets (README, Reading a mailed letter).
 - Shereen: the dates above; the rules page (draft in `RULES.md`), at `VITE_RULES_URL`; confirm the mailing address in `web/src/contact.ts`.
-- Chris: up to four presenting sponsors, supporting sponsors and prize donors, added on the staff page as they close (Sponsors and prizes; each presenting sponsor's prize is added there too), and each presenting sponsor's banner ad into the app (README).
+- Chris: up to four presenting sponsors, supporting sponsors and prize donors, added on the staff page as they close (Sponsors and prizes; each presenting sponsor's prize is added there too), and each presenting sponsor's banner ad into the app (README). Three of the four are in: Maher Water's and PGA's (Nov. 20) and Jones & Jones's (Nov. 23). One Community Bank's is still to come.
 - Shereen: each presenting sponsor's banner ad on the homepage in WordPress, Nov. 23 through Jan. 1 (the sheet promises it; the app shows the ads on the Letters to Santa page itself, so that page needs none placed in WordPress).
 - Shereen: `web/public/og-image.png` as the featured image of the Letters to Santa page in WordPress, so a link shared on Facebook shows the envelope on the night (a link to WPR's page takes its picture from WordPress, not from the app).
 - The 2024 letters moved off `/letters-to-santa/` to a dated post; the iframe on that page and `embed.js` site-wide (README, WordPress embed).
