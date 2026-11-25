@@ -738,6 +738,13 @@ test("the envelope says there are prizes and takes a reader down to them", async
   // without the parentheses a reader of the plain line gets.
   await expect(page.locator(".prize-tag")).toHaveCount(4);
   await expect(page.locator(".prize-tag img")).toHaveCount(3);
+  // A logo that came on a white background shows no white box on the cream: under the envelope, on a
+  // tag and at the foot, its white takes the colour of what's behind it. (The tests' own logos don't sit
+  // on white, so no screenshot would notice this rule going missing.)
+  for (const place of [".supporters img", ".prize-tag img", ".sponsor-list img"]) {
+    const blended = await page.locator(place).evaluateAll((logos) => logos.length > 0 && logos.every((logo) => getComputedStyle(logo).mixBlendMode === "multiply"));
+    expect(blended, place).toBe(true);
+  }
   await expect(page.locator(".prize-count")).toHaveText("(three to win)");
   expect(await page.locator(".prize-count .visually-hidden").evaluateAll((marks) => marks.map((mark) => [mark.textContent, Math.round(mark.getBoundingClientRect().width)]))).toEqual([
     ["(", 1],

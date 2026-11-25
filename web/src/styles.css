@@ -1794,6 +1794,16 @@ textarea.ruled {
   font: 650 1.0625rem var(--display);
 }
 
+/* A logo that came on a white background (most do: a JPEG has no other kind) showed as a white box on
+   the page's cream. Multiplied with what's behind it, its white takes the page's own colour and the box
+   is gone; the logo's colours are all but unchanged, cream being nearly white. A stamp's face is white
+   already and needs none of this. */
+.supporters img,
+.prize-tag img,
+.sponsor-list img {
+  mix-blend-mode: multiply;
+}
+
 /* Delivery day: the winners lead. */
 .winners {
   display: grid;
