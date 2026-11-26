@@ -157,11 +157,17 @@ The frame scrolls inside itself, and the mailbag's Write a letter to Santa butto
 
 **The picture a shared link shows** comes from WordPress, not from the app: a link to `/letters-to-santa/` pasted into Facebook or a text shows that page's featured image. Set it to `web/public/og-image.png` (the envelope on the winter night, 1200 by 630; `scripts/browser-tests.sh og` remakes it). The same file is what a link straight to the app shows.
 
-**Site-wide: `embed.js`.** Install it before the first letter goes up. The Buck Board's host script is already in the site's header or footer code; this one sits beside it, added once by an administrator:
+**The page's one script, `embed.js`, is added by Cloudflare, not by WordPress** (since Nov. 26, 2026). WordPress can't carry it: the firewall refuses script in a page save, the site has no header-and-footer plugin, and Shereen can't add site-wide code. The site is served through Cloudflare, so a small Worker adds the tag to the Letters to Santa page as it goes out:
 
 ```html
-<script src="https://rowanflynnpilot.github.io/wpr-santa-letters/embed.js" defer data-no-optimize="1"></script>
+<script src="https://rowanflynnpilot.github.io/wpr-santa-letters/embed.js" defer data-no-optimize="1" data-cfasync="false"></script>
 ```
+
+- The Worker is `docs/cloudflare/letters-to-santa-host.js`, deployed by hand in the Cloudflare account that holds wausaupilotandreview.com as `letters-to-santa-host` (Workers & Pages). Nothing in this repo deploys it: after changing the file, paste it into the Worker's editor and deploy.
+- Its route is `wausaupilotandreview.com/letters-to-santa*`, set to fail open. No other page gets the script (the rules page matches the pattern too; the script does nothing on a page without the mailbag's frame).
+- To undo it, delete the route (the Worker's Domains tab). The page goes back to a frame of fixed height that scrolls inside itself.
+- Checked the day it went in: the tag is on the page once, the frame sizes itself at a desk's width and a phone's, `#write` opens the form, the homepage has no tag, and Cloudflare still serves the page from its cache.
+- An earlier version of this section said the Buck Board's host script was already in the site's header or footer code. It never was: no page of the site carried a script of ours until this Worker. The Buck Board's frames run at their fixed heights.
 
 With it, the frame is sized to the mailbag (no inner scrollbar), the page scrolls to the top of the frame when the form gives way to its confirmation, `/letters-to-santa/#write` (for promos, the newsletter and social posts) opens the form, and `/letters-to-santa/#letter=<id>` opens the mailbag at that letter. Every link to one letter has that form: the posted email, Share, the front-page strip and the newsletter block. Without the script the page still works, but those links land at the top of the mailbag. No other anchor moves the frame, so a half-written letter survives a click on `#comments`.
 
