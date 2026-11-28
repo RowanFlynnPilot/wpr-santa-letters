@@ -119,6 +119,36 @@ test("a link to one letter opens it first and leaves no trace of which letter in
   await expect(card(page, "Liam")).toHaveCount(1);
 });
 
+test("Share hands out the letter's share page, and at a computer Facebook is offered with the same link", async ({ page }) => {
+  // A stand-in for a phone's share sheet, which keeps what it was handed.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        (window as unknown as { shared?: ShareData }).shared = data;
+      },
+    });
+  });
+  await open(page, "#/mailbag", DESK, { pick: false });
+  const emma = card(page, "Emma");
+  // The page a previewer can read (the Cloudflare Worker's), not an address ending in #letter=.
+  const link = `https://wausaupilotandreview.com/letters-to-santa/letter/${LETTERS[0].id}`;
+  await emma.getByRole("button", { name: "Share Emma’s letter" }).click();
+  expect(await page.evaluate(() => (window as unknown as { shared?: ShareData }).shared)).toEqual({ title: "Emma’s letter to Santa", url: link });
+
+  const facebook = emma.getByRole("link", { name: "Share on Facebook" });
+  await expect(facebook).toHaveAttribute("href", `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`);
+  await expect(facebook).toHaveAttribute("target", "_blank");
+  // Counted by how it was shared, never which letter. (The click is stopped here: the test doesn't visit Facebook.)
+  await facebook.evaluate((a) => a.addEventListener("click", (event) => event.preventDefault()));
+  await facebook.click();
+  expect(await counted(page, "Letter Shared")).toEqual([{ method: "share sheet" }, { method: "facebook" }]);
+
+  // The front-page strip's links go straight to the mailbag: nobody previews those.
+  await open(page, "#/embed", { width: 1100, height: 340 });
+  await expect(page.locator(".strip-letters a").first()).toHaveAttribute("href", /\/letters-to-santa\/#letter=.*&from=front-page$/);
+});
+
 test("Save it as a picture saves a JPEG of the letter", async ({ page }) => {
   await open(page, "#/mailbag", DESK);
   const download = page.waitForEvent("download");
