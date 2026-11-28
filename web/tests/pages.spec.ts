@@ -97,6 +97,8 @@ test("mailbag without a pick is the letters alone", async ({ page }) => {
 });
 
 test("a letter opens over the page: the child's whole page, and the words written out as a reader watches", async ({ page }) => {
+  // It watches a letter being written, which takes its own few seconds: give a busy machine room.
+  test.setTimeout(60_000);
   await open(page, "#/mailbag", DESK, { pick: false });
   const ava = card(page, "Ava");
   await expect(ava.locator(".letter-photo img")).toBeVisible();
@@ -125,6 +127,23 @@ test("a letter opens over the page: the child's whole page, and the words writte
   await expect.poll(async () => (await sheet.boundingBox())!.y).toBeLessThan(120);
   expect((await sheet.boundingBox())!.y).toBeGreaterThanOrEqual(0);
   expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+
+  // On to the next letter without closing: the button, and the keyboard's arrows, through every letter in
+  // the mailbag, newest first, and around the end. Each letter starts its own writing.
+  const steps = sheet.getByRole("navigation", { name: "More letters" });
+  await expect(steps).toContainText("3 of 8");
+  await steps.getByRole("button", { name: "Next letter" }).click();
+  const fourth = page.getByRole("dialog", { name: "Henry’s letter to Santa" });
+  await expect(fourth.getByRole("heading", { level: 2 })).toHaveText("Henry, 4, of Mosinee");
+  await expect(fourth.locator(".viewer-photo")).toHaveCount(0);
+  await expect(fourth.getByRole("navigation", { name: "More letters" })).toContainText("4 of 8");
+  await expect.poll(() => fourth.locator(".viewer-rest").evaluateAll((rest) => rest.every((r) => r.textContent === "")), { timeout: 9000 }).toBe(true);
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByRole("dialog", { name: "Liam’s letter to Santa" })).toBeVisible();
+  await page.keyboard.press("ArrowRight");
+  await expect(sheet.locator(".viewer-photo")).toBeVisible();
   await expectAccessible(page);
 
   // Escape closes it and hands the keyboard back to the photo that opened it.
@@ -750,10 +769,22 @@ test("the thank-you page after a letter carries every presenting sponsor’s sta
   expect(await scrollsSideways(page)).toBe(false);
   // The thank-you itself: the preview's sample letter under it is the sales page's, not a reader's.
   await expectAccessible(page, ".sent");
+  // The send-off: the envelope is postmarked with the day, and the letter that flew off is gone. Both are
+  // picture only, and neither widens the page.
+  await expect(page.locator(".sent-postmark")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator(".sent-postmark .postmark")).toContainText("DEC. 5");
+  expect(await page.locator(".sent-flight").evaluate((flight) => getComputedStyle(flight).opacity)).toBe("0");
+  expect(await page.locator(".sent").evaluate((sent) => getComputedStyle(sent).animationName)).toBe("sent-land");
   // The envelope lies on the mailbag's night, with the horizon under it.
   await expect(page.locator(".sent-night .night-horizon")).toBeVisible();
   expect(await page.locator(".sent-night").evaluate((night) => getComputedStyle(night).backgroundColor)).toBe("rgb(16, 40, 58)");
   if (test.info().project.name === "chromium") await expect(page.locator(".sent-night")).toHaveScreenshot("sent-four-phone.png");
+
+  // For a reader who asks for less motion, nothing lands or flies: the envelope and its postmark are there.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await page.locator(".sent").evaluate((sent) => getComputedStyle(sent).animationName)).toBe("none");
+  expect(await page.locator(".sent-flight").evaluate((flight) => getComputedStyle(flight).animationName)).toBe("none");
+  await expect(page.locator(".sent-postmark")).toBeVisible();
 });
 
 // The night scene -----------------------------------------------------------------------------------
