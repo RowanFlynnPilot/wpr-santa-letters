@@ -7,12 +7,19 @@ import { countdown, route } from "../countdown";
 import { apDate, apLastDay } from "../format";
 import type { Season } from "../types";
 
-// Behind the envelope: the moon in the corner. The snow is two CSS layers on .night itself (styles.css).
+// Behind the envelope: the northern lights, faint across the top of the sky, and the moon in the corner.
+// The snow is two CSS layers on .night itself (styles.css), and falls in front of both.
 export function NightSky() {
-  return <div className="night-moon" aria-hidden="true" />;
+  return (
+    <>
+      <div className="night-aurora" aria-hidden="true" />
+      <div className="night-moon" aria-hidden="true" />
+    </>
+  );
 }
 
-// The foot of the scene: a far ridge, pines, the striped pole, and the snow the page itself is made of.
+// The foot of the scene: a far ridge, pines, a cabin with a lit window and a thread of smoke, the striped
+// pole, and the snow the page itself is made of.
 export function Horizon() {
   return (
     <svg className="night-horizon" viewBox="0 0 1280 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -36,6 +43,24 @@ export function Horizon() {
         <polygon points="1150,86 1126,130 1174,130" />
         <polygon points="1224,40 1198,92 1250,92" />
         <polygon points="1224,68 1190,126 1258,126" />
+      </g>
+      {/* A cabin among the pines, in the gap between two stands of them: dark like the trees, snow on its
+          roof, one window lit, and smoke from the chimney (styles.css lets it drift). The snow in front
+          covers its foot. */}
+      <g className="night-cabin">
+        <g className="night-smoke">
+          <circle cx="469" cy="82" r="3" />
+          <circle cx="473" cy="73" r="4" />
+          <circle cx="470" cy="62" r="5" />
+        </g>
+        <rect x="466" y="88" width="6" height="12" />
+        <rect x="430" y="104" width="46" height="30" />
+        <polygon points="424,106 453,86 482,106" />
+        <path className="night-cabin-snow" d="M427 104 453 86.5 479 104" />
+        <rect className="night-cabin-glow" x="439" y="109" width="16" height="15" rx="2" />
+        <rect className="night-cabin-window" x="442" y="112" width="10" height="9" />
+        <path className="night-cabin-panes" d="M447 112v9M442 116.5h10" />
+        <rect className="night-cabin-door" x="460" y="114" width="8" height="20" />
       </g>
       {/* The striped pole and its sign: low enough to clear the envelope's foot, and far enough in that a
           phone's narrower view of the horizon still shows them. */}
