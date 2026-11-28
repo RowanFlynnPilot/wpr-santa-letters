@@ -59,6 +59,18 @@ Deno.test("a person is sent on to the mailbag at that letter, before anything is
   assertEquals(calls.length, 0);
 });
 
+Deno.test("the posted email's link is sent on as from the email, and anything else as a share", async () => {
+  const { fetcher } = supabase();
+  const email = await sharePage(get(`/letters-to-santa/letter/${ID}?from=email`, IPHONE), fetcher);
+  assertEquals(email.headers.get("location"), `${PAGE}#letter=${ID}&from=email`);
+  const other = await sharePage(get(`/letters-to-santa/letter/${ID}?from=%22%3E&x=1`, IPHONE), fetcher);
+  assertEquals(other.headers.get("location"), `${PAGE}#letter=${ID}&from=share`);
+  // A previewer's page is the same either way: one address for the letter.
+  const html = await (await sharePage(get(`/letters-to-santa/letter/${ID}?from=email`, FACEBOOK), fetcher)).text();
+  assertEquals(meta(html, "og:url"), `${PAGE}letter/${ID}`);
+  assertStringIncludes(html, `#letter=${ID}&from=email")`);
+});
+
 Deno.test("a preview crawler gets the letter's own title, first words, sponsors and the envelope", async () => {
   const { fetcher, calls } = supabase();
   const response = await sharePage(get(`/letters-to-santa/letter/${ID.toUpperCase()}/`, FACEBOOK), fetcher);

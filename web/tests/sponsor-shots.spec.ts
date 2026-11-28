@@ -49,6 +49,6 @@ test("Santa's reply", async ({ page }) => {
 test("a letter saved as a picture", async ({ page }) => {
   await open(page, "?demo#/mailbag", { width: 1200, height: 900 });
   const download = page.waitForEvent("download");
-  await page.locator(".featured-letter").getByRole("button", { name: "Save it as a picture" }).click();
+  await page.locator(".featured-letter").getByRole("button", { name: "Save picture" }).click();
   await (await download).saveAs(`${OUT}/picture-${PICK.first_name.toLowerCase()}.jpg`);
 });

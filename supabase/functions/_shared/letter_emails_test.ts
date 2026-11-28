@@ -203,7 +203,7 @@ const NOTICE = {
 };
 
 Deno.test("the posted email links to the letter and Santa's reply, and mentions the drawing while there is one", () => {
-  const link = "https://example.com/letters-to-santa/#letter=id-1&from=email";
+  const link = "https://example.com/letters-to-santa/letter/id-1?from=email";
   const reply = "https://example.com/app/?letter=id-1&from=email#/reply";
   const email = postedEmail(NOTICE, "id-1", { letter: link, reply });
   assertEquals(email.to, ["pat@example.com"]);

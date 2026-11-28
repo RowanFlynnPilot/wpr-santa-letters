@@ -9,7 +9,7 @@
 //
 // 2. A letter's share page:  /letters-to-santa/letter/<letter id>. The link the mailbag's Share hands out.
 //    A person who follows it is sent straight on to the mailbag at that letter (#letter=<id>&from=share,
-//    which embed.js opens). A link-preview crawler (Facebook, iMessage, WhatsApp, Slack…) is given a small
+//    which embed.js opens; the posted email's link adds ?from=email, and is sent on as from=email). A link-preview crawler (Facebook, iMessage, WhatsApp, Slack…) is given a small
 //    page of Open Graph tags instead, so the preview says "Emma’s letter to Santa" with the letter's first
 //    words, and shows the child's own page when the letter has a photo, in place of the same envelope for
 //    every letter. It reads only the public mailbag view, with the publishable key the app itself ships: a
@@ -87,7 +87,10 @@ export async function sharePage(request, fetcher, timeoutMs = SUPABASE_TIMEOUT_M
 
   // People are sent on before anything is looked up: a share that goes around costs Supabase nothing, and
   // a redirect keeps the visit's referrer, so a click from Facebook still counts as Facebook.
-  const letterPage = `${MAILBAG_PAGE}#letter=${id}&from=share`;
+  // Where the link was followed from, for the mailbag's count: Share, or the email a family gets when
+  // their letter goes up (which they forward, and paste into Facebook).
+  const from = url.searchParams.get("from") === "email" ? "email" : "share";
+  const letterPage = `${MAILBAG_PAGE}#letter=${id}&from=${from}`;
   if (!PREVIEW_CRAWLERS.test(request.headers.get("user-agent") ?? "")) return Response.redirect(letterPage, 302);
 
   const card = await loadCard(id, fetcher, timeoutMs).catch((error) => {
