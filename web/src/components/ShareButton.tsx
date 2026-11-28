@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { type ReactNode, useContext, useState } from "react";
 import { track } from "../analytics";
 import { env } from "../env";
 import { possessive } from "../format";
@@ -33,7 +33,8 @@ const SHARE = "M8 10V1.75M5 4.5l3-3 3 3M4 7.5H3.25v7h9.5v-7H12";
 const FACEBOOK = "M9.25 14.5V8.75h2l.3-2.25h-2.3V5.1c0-.7.3-1.1 1.15-1.1h1.2V2.05a9 9 0 0 0-1.7-.1c-1.75 0-2.9 1.05-2.9 2.95V6.5h-2v2.25h2v5.75";
 const PICTURE = "M2.25 3.25h11.5v9.5H2.25zM2.5 10.5l3-3 2.5 2.5 2-2 3.5 3.5M10.5 6.25h.01";
 
-export function ShareButton({ letter }: { letter: Letter }) {
+// `lead` is the card's own first control (Open), set in the same row.
+export function ShareButton({ letter, lead }: { letter: Letter; lead?: ReactNode }) {
   const [note, setNote] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
   const sponsor = presentingFor(useContext(Sponsors), letter.id);
@@ -91,6 +92,7 @@ export function ShareButton({ letter }: { letter: Letter }) {
 
   return (
     <div className="share">
+      {lead}
       <button type="button" className="chip" onClick={share} aria-label={`Share ${possessive(letter.first_name)} letter`}>
         <Icon path={SHARE} />
         Share

@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ageLabel, apDate, paragraphs, possessive } from "../format";
 import { paperFor } from "../looks";
 import { photoUrl } from "../storage";
 import type { Letter } from "../types";
+import { LetterViewer } from "./LetterViewer";
 import { Postmark } from "./Postmark";
 import { ShareButton } from "./ShareButton";
 
 // One letter, with its name, age and town filled into the blanks across the top. When there's a photo of
 // the handwritten letter it leads, since the child's own hand is the letter; the typed words follow on
 // ruled paper (one of three kinds, by the letter: looks.ts), and a small postmark carries the day it
-// reached the mailbag. The photo opens to its whole height in place (a pop-over would land off screen
-// inside a tall WordPress frame). `preview` is the form's own photo, before anything is uploaded;
+// reached the mailbag. The photo, and in the mailbag an Open button, open the letter over the page
+// (LetterViewer): the whole photo and the words set large, written out as a reader watches. `preview` is
+// the form's own photo, before anything is uploaded;
 // `share` adds the Share link (the mailbag only); `large` is the one letter a reader followed a link to,
 // set wide, so its photo comes from the full-size file.
 export function LetterCard({
@@ -25,8 +27,15 @@ export function LetterCard({
   large?: boolean;
 }) {
   const arrived = apDate(letter.created_at);
+  const card = useRef<HTMLElement>(null);
+  // Where the card sits on the page when it's opened: the letter opens there (LetterViewer).
+  const [openAt, setOpenAt] = useState<number | null>(null);
+  const open = () => setOpenAt(Math.round((card.current?.getBoundingClientRect().top ?? 0) + window.scrollY));
+  const close = useCallback(() => setOpenAt(null), []);
+  const whole = preview ?? (letter.photo_id ? photoUrl(letter.photo_id, "full") : undefined);
   return (
     <article
+      ref={card}
       className="letter"
       data-paper={paperFor(letter.id)}
       data-letter-id={letter.id}
@@ -43,7 +52,7 @@ export function LetterCard({
         <LetterPhoto
           name={letter.first_name}
           thumb={preview ?? photoUrl(letter.photo_id!, large ? "full" : "thumb")}
-          full={preview ?? photoUrl(letter.photo_id!, "full")}
+          onOpen={open}
         />
       )}
       <div className="letter-body">
@@ -52,9 +61,22 @@ export function LetterCard({
         ))}
       </div>
       <div className="letter-foot">
-        {share && <ShareButton letter={letter} />}
+        {share && (
+          <ShareButton
+            letter={letter}
+            lead={
+              <button type="button" className="chip" onClick={open} aria-label={`Open ${possessive(letter.first_name)} letter`}>
+                <svg className="chip-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                  <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9" />
+                </svg>
+                Open
+              </button>
+            }
+          />
+        )}
         <Postmark place="Santa’s mailbag" date={arrived} label={`Arrived ${arrived}`} />
       </div>
+      {openAt !== null && <LetterViewer letter={letter} photo={whole} written={share} top={openAt} onClose={close} />}
     </article>
   );
 }
@@ -70,38 +92,35 @@ function Blank({ label, value }: { label: string; value: string }) {
 
 // The photo fills the card's width. A tall page shows its top (the greeting and the first lines) in a
 // frame no taller than 4:5, held open before the photo loads so the letters below don't jump; a wide one
-// (a drawing) shows whole. Only a cropped photo gets the button, which shows all of it from the full-size
-// file; the photo itself can be clicked too.
+// (a drawing) shows whole. The photo is a button: it opens the letter (LetterViewer), where the whole page
+// is shown. Until Nov. 28 a cropped photo had a "See all of …'s letter" link under it that lengthened the
+// photo in place, which showed more of the page at the same small size and helped nobody read it.
 const TALLEST = 4 / 5;
 
-function LetterPhoto({ name, thumb, full }: { name: string; thumb: string; full: string }) {
-  const [open, setOpen] = useState(false);
+function LetterPhoto({ name, thumb, onOpen }: { name: string; thumb: string; onOpen: () => void }) {
   const [ratio, setRatio] = useState(TALLEST);
-  const [cropped, setCropped] = useState(false);
-  const toggle = () => setOpen((now) => !now);
   return (
-    <figure className="letter-photo" data-cropped={cropped || undefined} data-open={open || undefined}>
-      <img
-        src={open ? full : thumb}
-        alt={`${possessive(name)} letter, as written`}
-        loading="lazy"
-        style={open ? undefined : { aspectRatio: String(ratio) }}
-        onClick={cropped ? toggle : undefined}
-        onLoad={(event) => {
-          const { naturalWidth, naturalHeight } = event.currentTarget;
-          if (open || !naturalWidth || !naturalHeight) return;
-          const natural = naturalWidth / naturalHeight;
-          // A hair taller than 4:5 shows whole; a button is only worth it when a real part is out of view.
-          const tall = natural < TALLEST * 0.95;
-          setRatio(tall ? TALLEST : natural);
-          setCropped(tall);
-        }}
-      />
-      {cropped && (
-        <button type="button" className="link-button" aria-expanded={open} onClick={toggle}>
-          {open ? "Show less" : `See all of ${possessive(name)} letter`}
-        </button>
-      )}
+    <figure className="letter-photo">
+      <button type="button" className="letter-photo-open" onClick={onOpen} aria-label={`Open ${possessive(name)} letter, as written`}>
+        <img
+          src={thumb}
+          alt=""
+          loading="lazy"
+          style={{ aspectRatio: String(ratio) }}
+          onLoad={(event) => {
+            const { naturalWidth, naturalHeight } = event.currentTarget;
+            if (!naturalWidth || !naturalHeight) return;
+            const natural = naturalWidth / naturalHeight;
+            // A hair taller than 4:5 shows whole.
+            setRatio(natural < TALLEST * 0.95 ? TALLEST : natural);
+          }}
+        />
+        <span className="letter-photo-hint" aria-hidden="true">
+          <svg className="chip-icon" viewBox="0 0 16 16" focusable="false">
+            <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9" />
+          </svg>
+        </span>
+      </button>
     </figure>
   );
 }
