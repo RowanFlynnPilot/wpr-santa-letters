@@ -329,6 +329,82 @@ test("Santa’s letter paper", async ({ page }) => {
   if (test.info().project.name === "chromium") expect(await printedPages(page)).toBe(1);
 });
 
+// The lobby screen ------------------------------------------------------------------------------
+
+// Everything the screen shows sits inside it: a TV has no scrollbar and nobody to scroll it.
+const insideTheScreen = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll(".tv-print, .tv-paper, .tv-empty, .tv-side > *, .tv-presented li")]
+      .map((el) => ({ what: el.className, box: el.getBoundingClientRect() }))
+      .filter(({ box }) => box.left < 0 || box.top < 0 || box.right > innerWidth || box.bottom > innerHeight)
+      .map(({ what }) => what)
+      // And the column down the right ends above the horizon: its white cards aren't set on the snow.
+      .concat(
+        document.querySelector(".tv-side")!.lastElementChild!.getBoundingClientRect().bottom > document.querySelector(".tv > .night-horizon")!.getBoundingClientRect().top + 1
+          ? ["the side column runs onto the horizon"]
+          : [],
+      ),
+  );
+
+// A letter's words all fit its page: nothing runs past the foot.
+const letterFits = (page: Page) => page.locator(".tv-paper").evaluate((paper) => paper.scrollHeight <= paper.clientHeight + 1);
+
+for (const [name, size] of [["720p", { width: 1280, height: 720 }], ["1080p", { width: 1920, height: 1080 }], ["upright", { width: 1080, height: 1920 }]] as const) {
+  test(`the lobby screen, ${name}: one letter at a time, how to send one, and the presenting sponsors`, async ({ page }) => {
+    await open(page, "#/tv", size, { sponsors: LOGO_SPONSORS });
+    const from = page.locator(".tv-stage").getByRole("heading", { level: 2 });
+    await expect(from).toHaveText("Emma, 7, of Wausau");
+    await expect(page.getByRole("heading", { level: 1, name: "Letters to Santa" })).toBeVisible();
+    await expect(page.locator(".tv-count")).toHaveText(/^8\s+letters in Santa’s mailbag$/);
+    await expect(page.locator(".tv-days")).toHaveText("13 days left to send a letter.");
+    await expect(page.locator(".tv-scan-label")).toHaveText("Scan to write to Santa. It’s free.");
+    await expect(page.locator(".tv-address")).toHaveText("wausaupilotandreview.com/letters-to-santa");
+    await expect(page.locator(".tv-qr")).toHaveJSProperty("complete", true);
+    expect(await page.locator(".tv-qr").evaluate((qr: HTMLImageElement) => qr.naturalWidth)).toBeGreaterThan(0);
+    await expect(page.getByRole("list", { name: `Presented by ${FOUR_SPONSORS.map((s) => s.name).slice(0, 3).join(", ")} and ${FOUR_SPONSORS[3].name}` }).locator("img")).toHaveCount(4);
+    // Nothing to press on a lobby wall, and nothing a letter's card in the mailbag doesn't show.
+    await expect(page.locator(".tv a")).toHaveCount(0);
+
+    // A remote's arrows step through the letters, newest first, and around the end.
+    await page.keyboard.press("ArrowRight");
+    await expect(from).toHaveText("Liam, 5, of Rib Mountain");
+    await page.keyboard.press("ArrowRight");
+    await expect(from).toHaveText("Ava, 9, of Schofield");
+    // A letter with the child's own page shows it, whole, beside the words.
+    await expect(page.locator(".tv-print img")).toBeVisible();
+    await settled(page);
+    await page.locator(".tv-letter").evaluate((letter) => Promise.all(letter.getAnimations().map((a) => a.finished)));
+    expect(await insideTheScreen(page)).toEqual([]);
+    expect(await letterFits(page)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expectAccessible(page);
+    if (name === "720p") await shot(page, "tv.png");
+
+    for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowLeft");
+    await expect(from).toHaveText("Mason, 11, of Athens");
+    // The longest letter still fits its page, in smaller type.
+    await page.locator(".tv-letter").evaluate((letter) => Promise.all(letter.getAnimations().map((a) => a.finished)));
+    expect(await insideTheScreen(page)).toEqual([]);
+    expect(await letterFits(page)).toBe(true);
+  });
+}
+
+test("the lobby screen before letters open, and with none yet: the envelope's address and when", async ({ page }) => {
+  await open(page, "#/tv", { width: 1280, height: 720 }, { phase: "upcoming" });
+  await expect(page.locator(".tv-empty")).toContainText("To Santa Claus, at the North Pole");
+  await expect(page.locator(".tv-empty-line")).toHaveText("Santa’s mailbag opens Nov. 27.");
+  await expect(page.locator(".tv-count")).toHaveCount(0);
+  await expect(page.locator(".tv-scan-label")).toHaveText("Scan to see Santa’s mailbag");
+  expect(await insideTheScreen(page)).toEqual([]);
+  await expectAccessible(page);
+});
+
+test("the lobby screen once letters are open and none is in yet: an invitation to be the first", async ({ page }) => {
+  await open(page, "#/tv", { width: 1280, height: 720 }, { letters: [] });
+  await expect(page.locator(".tv-empty-line")).toHaveText("Yours could be the first letter in the mailbag.");
+  await expect(page.locator(".tv-ask")).toHaveText("Parents and guardians, send your child’s letter through Dec. 18.");
+});
+
 test("the letter paper prints on one sheet with room to spare, and fits the narrowest phone", async ({ page }) => {
   // A letter-size page less 0.6in margins is 700px wide and 940px tall, which is how wide print sets the sheet.
   await open(page, "#/paper", { width: 700, height: 1100 });

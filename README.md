@@ -38,6 +38,18 @@ Nine of them are the staff page (`web/tests/staff.spec.ts`), which needs a sign-
 
 The script runs in the same Playwright image as CI, because text renders a little differently on every system and a screenshot approved on a laptop would fail there. After `update`, look at the changed pictures before committing them: approving a screenshot is saying the page looks right. When `@playwright/test` is upgraded, change the image tag in `.github/workflows/pages.yml` to match and run `update`.
 
+## A screen for a lobby
+
+`https://rowanflynnpilot.github.io/wpr-santa-letters/#/tv` is the mailbag as a slideshow for a TV where people wait: a sponsor's counter, a bank's lobby, WPR's own office. Open that address in the TV's browser (or a streaming stick's, or a laptop plugged into the TV), press OK or click **Full screen**, and leave it running.
+
+- It shows one letter at a time, 12 to 28 seconds each by its length, with the child's own page beside the words when there is one; and how many letters are in, the countdown, a QR code that opens the form, and the presenting sponsors.
+- It re-reads the mailbag every five minutes: a new letter joins the loop, and a letter that's taken down is off every screen within five minutes. If the connection drops, it keeps showing what it has.
+- A remote's left and right arrows step through the letters. Nothing on it can be clicked.
+- It reloads itself every six hours, so a change to the site reaches a screen that's been left on.
+- The QR code is `web/public/tv-qr.svg`. If the page's address changes, change it in `scripts/tv_qr.py` and run `python scripts/tv_qr.py` (it needs `segno`, `zxing-cpp` and `Pillow`, and reads the code back before keeping it). A scan arrives at WPR's page with `?ref=tv`.
+
+Whether a sponsor gets a screen as part of its level isn't on the sponsor sheet; that's Shereen's and Chris's to decide.
+
 ## Sponsor sheet
 
 `docs/sponsor-sheet/letters-to-santa-sponsor-sheet.pdf` (and the `.html` beside it) is the one page Chris sends a prospective sponsor: what the mailbag is, WPR's audience, what each of the three levels gets and costs, and how to reach her. The prices are the ones Shereen and Chris set on Nov. 11, 2026: a presenting sponsor pays $500 and gives a prize for the drawing, a supporting sponsor pays $300 and is named in the "With support from" row under the mailbag's envelope and again at the foot, and a prize donor gives a prize worth $75 to $100 and pays nothing. There are four presenting sponsorships at most (decided Nov. 15; the database refuses a fifth). A presenting sponsor also gets a banner ad rotating on WPR's homepage and on the Letters to Santa page, Nov. 23 through Jan. 1, 970 by 500 pixels, and is named in every post promoting the mailbag; the ad is WPR's own ad space in WordPress, not part of this app, so someone places it there. To change it, edit `docs/sponsor-sheet/build.py`, then:

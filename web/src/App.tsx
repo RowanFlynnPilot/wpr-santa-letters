@@ -14,6 +14,7 @@ const Write = lazy(() => import("./views/Write").then((m) => ({ default: m.Write
 const Admin = lazy(() => import("./views/Admin").then((m) => ({ default: m.Admin })));
 const Reply = lazy(() => import("./views/Reply").then((m) => ({ default: m.Reply })));
 const Paper = lazy(() => import("./views/Paper").then((m) => ({ default: m.Paper })));
+const Tv = lazy(() => import("./views/Tv").then((m) => ({ default: m.Tv })));
 
 // Hash routes, so GitHub Pages needs no rewrites. WordPress embeds the mailbag by URL, and the form
 // opens inside the same frame. The reader pages carry WPR's flag and footer when opened on their own
@@ -21,6 +22,7 @@ const Paper = lazy(() => import("./views/Paper").then((m) => ({ default: m.Paper
 // flag is left out and the footer keeps only the feature's own lines. The front-page strip (#/embed)
 // sits inside WPR's front page and carries neither; #/admin is staff-only. Santa's reply (#/reply) is
 // a sheet to print, so it carries neither; so is Santa's letter paper (#/paper), for a child to write on.
+// The lobby screen (#/tv) fills a TV on its own.
 const ROUTES: Record<string, { View: LazyExoticComponent<ComponentType>; reader: boolean; loading: string }> = {
   "#/embed": { View: Embed, reader: false, loading: "" },
   "#/mailbag": { View: Mailbag, reader: true, loading: "Opening Santa’s mailbag…" },
@@ -28,6 +30,7 @@ const ROUTES: Record<string, { View: LazyExoticComponent<ComponentType>; reader:
   "#/admin": { View: Admin, reader: false, loading: "Loading…" },
   "#/reply": { View: Reply, reader: false, loading: "Opening Santa’s reply…" },
   "#/paper": { View: Paper, reader: false, loading: "Getting Santa’s letter paper…" },
+  "#/tv": { View: Tv, reader: false, loading: "Opening Santa’s mailbag…" },
 };
 
 export function App() {
