@@ -4,6 +4,7 @@
 import { type RefObject, useEffect, useRef } from "react";
 import { pickAd } from "../ads";
 import { LetterCard } from "../components/LetterCard";
+import { Letters } from "../components/LetterViewer";
 import { LetterWall } from "../components/LetterWall";
 import { Horizon, NightSky, Route } from "../components/Night";
 import { Postmark } from "../components/Postmark";
@@ -65,6 +66,7 @@ export function Mailbag() {
   const ad = pickAd(mailbag.data.ads, AD_ROLL, AD_WANTED);
   return (
     <Sponsors.Provider value={sponsors}>
+      <Letters.Provider value={letters}>
       <main className="mailbag">
       <div className="night">
         <NightSky />
@@ -190,6 +192,7 @@ export function Mailbag() {
       </footer>
       </div>
       </main>
+      </Letters.Provider>
     </Sponsors.Provider>
   );
 }

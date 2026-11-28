@@ -10,6 +10,7 @@ import { track } from "../analytics";
 import { clearDraft, loadDraft, saveDraft } from "../letterDraft";
 import { LetterCard } from "../components/LetterCard";
 import { PhotoField, type ChosenPhoto } from "../components/PhotoField";
+import { Postmark } from "../components/Postmark";
 import { Horizon, NightSky } from "../components/Night";
 import { Stamps } from "../components/Stamp";
 import { Turnstile } from "../components/Turnstile";
@@ -269,8 +270,17 @@ export function Write() {
     return (
       <main className="write">
         {/* The same winter night as the mailbag's (Night.tsx), with the letter's own small envelope on it. */}
+        {/* The send-off (styles.css): the envelope lands, a postmark comes down on it, and a small letter
+            flies off over the pines. All of it is picture; the heading says what happened. */}
         <div className="night sent-night">
+          <svg className="sent-flight" viewBox="0 0 32 22" aria-hidden="true" focusable="false">
+            <rect x="1" y="1" width="30" height="20" rx="1.5" />
+            <path d="M1.5 2 16 12.5 30.5 2" />
+          </svg>
           <section className="sent">
+            <span className="sent-postmark" aria-hidden="true">
+              <Postmark place="Santa’s mailbag" date={apDate(new Date().toISOString())} label="" />
+            </span>
             <Stamps sponsors={presenting} placement="write-form" />
             <h1 ref={headingRef} tabIndex={-1}>
               {possessive(sent.first_name)} letter is on its way
