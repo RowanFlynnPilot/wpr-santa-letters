@@ -387,21 +387,16 @@ img {
 }
 
 .night::before {
-  background-image:
-    radial-gradient(circle at 1.5rem 2rem, #fffdf8 0 1.5px, transparent 2px),
-    radial-gradient(circle at 9rem 6rem, #fffdf8 0 2px, transparent 2.5px),
-    radial-gradient(circle at 15.5rem 11.5rem, #fffdf8 0 1.5px, transparent 2px),
-    radial-gradient(circle at 5rem 15rem, #fffdf8 0 2.5px, transparent 3px),
-    radial-gradient(circle at 12.5rem 17.25rem, #fffdf8 0 1.5px, transparent 2px);
+  /* The near snow: five miniature snowflakes to a tile, each a different size and turn (one SVG). They
+     were dots until Nov. 28. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300' fill='none' stroke='%23fffdf8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(24 32) rotate(10) scale(0.6)'%3E%3Cpath transform='rotate(0)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(60)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(120)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3C/g%3E%3Cg transform='translate(144 96) rotate(25) scale(0.8)'%3E%3Cpath transform='rotate(0)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(60)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(120)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3C/g%3E%3Cg transform='translate(248 184) rotate(0) scale(0.55)'%3E%3Cpath transform='rotate(0)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(60)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(120)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3C/g%3E%3Cg transform='translate(80 240) rotate(15) scale(0.95)'%3E%3Cpath transform='rotate(0)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(60)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(120)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3C/g%3E%3Cg transform='translate(200 276) rotate(40) scale(0.6)'%3E%3Cpath transform='rotate(0)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(60)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3Cpath transform='rotate(120)' d='M0-8V8M-2.3-6.3 0-4 2.3-6.3M-2.3 6.3 0 4 2.3 6.3'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 18.75rem 18.75rem;
   opacity: 0.85;
 }
 
 .night::after {
-  background-image:
-    radial-gradient(circle at 3rem 1.25rem, #fffdf8 0 1px, transparent 1.5px),
-    radial-gradient(circle at 10rem 4.5rem, #fffdf8 0 1.5px, transparent 2px),
-    radial-gradient(circle at 6.5rem 9.5rem, #fffdf8 0 1px, transparent 1.5px);
+  /* The far snow: smaller and fainter, three plain strokes each, since anything finer would blur. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200' fill='none' stroke='%23fffdf8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(48 20) rotate(0) scale(0.42)'%3E%3Cpath transform='rotate(0)' d='M0-8V8'/%3E%3Cpath transform='rotate(60)' d='M0-8V8'/%3E%3Cpath transform='rotate(120)' d='M0-8V8'/%3E%3C/g%3E%3Cg transform='translate(160 72) rotate(30) scale(0.55)'%3E%3Cpath transform='rotate(0)' d='M0-8V8'/%3E%3Cpath transform='rotate(60)' d='M0-8V8'/%3E%3Cpath transform='rotate(120)' d='M0-8V8'/%3E%3C/g%3E%3Cg transform='translate(104 152) rotate(15) scale(0.4)'%3E%3Cpath transform='rotate(0)' d='M0-8V8'/%3E%3Cpath transform='rotate(60)' d='M0-8V8'/%3E%3Cpath transform='rotate(120)' d='M0-8V8'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 12.5rem 12.5rem;
   opacity: 0.5;
 }
@@ -446,7 +441,12 @@ img {
     background:
       radial-gradient(circle at 34% 36%, #e6dcba 0 0.5rem, transparent 0.55rem),
       radial-gradient(circle at 66% 64%, #e6dcba 0 0.35rem, transparent 0.4rem),
+      radial-gradient(circle at 44% 74%, #e6dcba 0 0.2rem, transparent 0.25rem),
       var(--moon);
+    /* A halo: the moon lights the snow around it. */
+    box-shadow:
+      0 0 1.25rem 0.2rem rgba(244, 236, 210, 0.3),
+      0 0 4.5rem 1.5rem rgba(244, 236, 210, 0.12);
   }
 }
 
@@ -4119,5 +4119,145 @@ body:has(.viewer) {
 @media print {
   .reply-envelope {
     display: none;
+  }
+}
+
+/* The northern lights (Night.tsx, Nov. 28): three soft curtains of green, teal and violet across the top of
+   the night, behind the snow and everything else, drifting a little and breathing, over most of a minute.
+   Faint on purpose: the route's words are set on it, and cream on the night stays far past 7:1 under its
+   brightest green. A reader who asks for less motion gets it still. Not on the front-page strip or the
+   lobby screen, where the band is all words, nor on paper. */
+.night-aurora {
+  position: absolute;
+  z-index: -2;
+  inset: 0 0 auto;
+  height: min(100%, 21rem);
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(#000 35%, transparent);
+  mask-image: linear-gradient(#000 35%, transparent);
+}
+
+.night-aurora::before,
+.night-aurora::after {
+  content: "";
+  position: absolute;
+  inset: -40% -12%;
+  filter: blur(2.25rem);
+}
+
+.night-aurora::before {
+  background:
+    radial-gradient(ellipse 38% 55% at 22% 38%, rgba(96, 226, 168, 0.4), transparent 70%),
+    radial-gradient(ellipse 30% 48% at 58% 30%, rgba(72, 196, 190, 0.32), transparent 70%);
+}
+
+.night-aurora::after {
+  background:
+    radial-gradient(ellipse 34% 50% at 78% 42%, rgba(150, 128, 232, 0.38), transparent 70%),
+    radial-gradient(ellipse 26% 42% at 40% 52%, rgba(96, 226, 168, 0.24), transparent 70%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .night-aurora::before {
+    animation: aurora-drift 34s ease-in-out infinite alternate;
+  }
+
+  .night-aurora::after {
+    animation: aurora-drift 47s ease-in-out -12s infinite alternate-reverse;
+  }
+
+  @keyframes aurora-drift {
+    0% {
+      opacity: 0.7;
+      transform: translateX(-5%) skewX(-6deg) scaleY(0.92);
+    }
+
+    50% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0.75;
+      transform: translateX(5%) skewX(7deg) scaleY(1.08);
+    }
+  }
+}
+
+.strip .night-aurora,
+.tv .night-aurora {
+  display: none;
+}
+
+@media print {
+  .night-aurora {
+    display: none;
+  }
+}
+
+/* The cabin on the horizon (Night.tsx, Nov. 28): as dark as the pines, a line of snow on its roof, one
+   window lit, and smoke that rises and thins. The only warm color in the night, and small: a place for
+   the eye to land at the foot of the scene. */
+.night-cabin {
+  fill: var(--pine);
+}
+
+.night-cabin-snow {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.night-cabin-window {
+  fill: #f6c35a;
+}
+
+.night-cabin-glow {
+  fill: rgba(246, 195, 90, 0.28);
+}
+
+.night-cabin-panes {
+  fill: none;
+  stroke: var(--pine);
+  stroke-width: 1.2;
+}
+
+.night-cabin-door {
+  fill: #071520;
+}
+
+.night-smoke {
+  fill: rgba(244, 236, 210, 0.3);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .night-smoke circle {
+    animation: smoke-rise 6s ease-out infinite;
+  }
+
+  .night-smoke circle:nth-child(2) {
+    animation-delay: -2s;
+  }
+
+  .night-smoke circle:nth-child(3) {
+    animation-delay: -4s;
+  }
+
+  @keyframes smoke-rise {
+    0% {
+      opacity: 0;
+      translate: 0 8px;
+    }
+
+    30% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+      translate: 7px -14px;
+    }
   }
 }
