@@ -57,12 +57,14 @@ export function Horizon() {
 // letter."); the track under it is a picture of the same thing, the sleigh as far along as the season is,
 // with the season's three dates under it. Without a season (the mailbag is still loading) it is the bare
 // track, the same height, so nothing moves when the season arrives. A sales preview counts as open, like
-// the rest of the page.
+// the rest of the page. Once the letters are delivered the sleigh makes the whole trip as the page opens
+// (styles.css: the send-off), from Wausau to the North Pole; the phase, which the database
+// decides, is what says so (invariant 1), never the clock.
 export function Route({ season }: { season?: Season }) {
   const at = season ? route(season) : null;
   const sentence = season ? countdown(season) : null;
   return (
-    <div className="route">
+    <div className="route" data-phase={season?.phase}>
       {/* The line is there, at its height, with or without the sentence (none while loading or once delivered). */}
       <div className="route-count">{sentence && <p className="countdown">{sentence}</p>}</div>
       <div

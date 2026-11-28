@@ -876,10 +876,44 @@ test("the sleigh waits in Wausau before letters open and is at the North Pole on
   await open(page, "#/mailbag", DESK, { phase: "delivered" });
   await expect(page.locator(".winners")).toBeVisible();
   expect(await sleighAt(page)).toBe(100);
+  // The send-off: the sleigh makes the whole trip as the page opens, from Wausau, with the line filling
+  // in behind it, the star flaring and the Delivered stamp coming down.
+  const moving = (selector: string) => page.locator(selector).evaluate((el) => getComputedStyle(el).animationName);
+  expect(await moving(".route-sleigh")).toBe("sleigh-home");
+  expect(await moving(".route-done")).toBe("route-home");
+  expect(await moving(".route-star")).toBe("star-home");
+  expect(await moving(".envelope-delivered")).toBe("stamp-home");
+  // Where it sets off from, read at the flight's first moment (held there, so a busy machine can't have
+  // let it leave already): Wausau, the left end of the track.
+  const track = (await page.locator(".route-track").boundingBox())!;
+  const setOff = await page.locator(".route-sleigh").evaluate((sleigh) => {
+    const [flight] = sleigh.getAnimations();
+    flight.pause();
+    flight.currentTime = 500;
+    const { x } = sleigh.getBoundingClientRect();
+    flight.play();
+    return { x };
+  });
+  expect(setOff.x).toBeLessThan(track.x + 40);
+  // When it's over, everything is where the page always had it.
+  await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().endTime !== Infinity).map((a) => a.finished)));
   // Nothing left to count down to; the sleigh pulls up beside the star, not on it.
   await expect(page.locator(".countdown")).toHaveCount(0);
   const [sleigh, star] = await Promise.all([".route-sleigh", ".route-star"].map((s) => page.locator(s).boundingBox()));
   expect(sleigh!.x + sleigh!.width).toBeLessThanOrEqual(star!.x + star!.width / 2);
+  expect(sleigh!.x).toBeGreaterThan(setOff.x + 400);
+  await expect(page.locator(".envelope-delivered")).toBeVisible();
+  expect(await scrollsSideways(page)).toBe(false);
+
+  // Before delivery nothing flies; and on delivery day, not for a reader who asks for less motion.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await moving(".route-sleigh")).toBe("none");
+  expect(await moving(".envelope-delivered")).toBe("none");
+  await page.goto("about:blank");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await open(page, "#/mailbag", DESK, { phase: "closed" });
+  await expect(page.locator(".route-sleigh")).toBeVisible();
+  expect(await moving(".route-sleigh")).toBe("none");
 });
 
 // Supporting sponsors, and the prizes ----------------------------------------------------------------
