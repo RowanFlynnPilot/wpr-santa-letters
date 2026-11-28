@@ -3732,18 +3732,19 @@ body:has(main.strip) {
 }
 
 /* Snow behind the page itself (Nov. 28), where the mailbag and the form are read: small six-armed
-   snowflakes (dots at first; they read as specks), in a blue-grey that shows on the page's cream, sliding down by exactly one tile and starting again. Letters
-   and cards are opaque, so it falls in the spaces between them. Only at a desk's width: there the layer is
-   a few thousand pixels tall, and on a phone it would be three times that, more than a phone's browser
-   moves smoothly. And only for a reader who hasn't asked for less motion: standing still on cream, a
-   flake reads as a speck on the page. The layer starts one tile above the top of the page, where nothing
-   can scroll to, and stops one tile short of the foot, so the slide never lengthens the page. */
+   snowflakes (dots at first; they read as specks), in a blue-grey that shows on the page's cream, sliding
+   down by exactly one tile and starting again. Letters and cards are opaque, so it falls in the spaces
+   between them. At every width since Nov. 28 (a desk's only at first, for fear of a phone's much taller
+   page; timed in Safari's engine, the snow adds about a tenth to how long a page takes to settle). Only for a reader who hasn't asked for less motion:
+   standing still on cream, a flake reads as a speck on the page. The layer starts one tile above the top
+   of the page, where nothing can scroll to, and stops one tile short of the foot, so the slide never
+   lengthens the page. */
 body:has(main.mailbag, main.write),
 body:has(.viewer) {
   position: relative;
 }
 
-@media (min-width: 62rem) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
   body:has(main.mailbag, main.write)::before {
     content: "";
     position: absolute;
@@ -3755,6 +3756,9 @@ body:has(.viewer) {
     background-size: 18.75rem 18.75rem;
     opacity: 0.55;
     animation: snowfall 46s linear infinite;
+    /* No will-change here. It was tried, to promise the browser a layer up front, and in Safari's engine
+       it made every page with the snow about three times slower to settle: it holds the whole tall layer
+       in memory at once, which is the cost the animation alone avoids. */
   }
 }
 

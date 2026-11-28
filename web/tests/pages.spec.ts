@@ -194,7 +194,7 @@ test("an opened letter on a phone fits the screen, and for less motion its words
   await expect(sheet).toHaveCount(0);
 });
 
-test("snow falls behind the page at a desk, and not on a phone or for a reader who asks for less motion", async ({ page }) => {
+test("snow falls behind the page, at a desk and on a phone, and not for a reader who asks for less motion", async ({ page }) => {
   const snow = () => page.evaluate(() => getComputedStyle(document.body, "::before").animationName);
   const pageLength = () => page.evaluate(() => [document.documentElement.scrollHeight, Math.ceil(document.body.getBoundingClientRect().bottom + scrollY)]);
   await open(page, "#/mailbag", DESK);
@@ -205,10 +205,16 @@ test("snow falls behind the page at a desk, and not on a phone or for a reader w
   expect(scroll).toBeLessThanOrEqual(body + 1);
   expect(await scrollsSideways(page)).toBe(false);
 
+  // On a phone too, where the page is far taller: still no longer than its letters, and no wider.
   await page.setViewportSize(PHONE);
+  expect(await snow()).toBe("snowfall");
+  // (Once the wall has settled into a phone's one column: it re-lays itself out a moment after the window narrows.)
+  await expect.poll(() => scrollsSideways(page)).toBe(false);
+  const [phoneScroll, phoneBody] = await pageLength();
+  expect(phoneScroll).toBeLessThanOrEqual(phoneBody + 1);
+  await page.emulateMedia({ reducedMotion: "reduce" });
   expect(await snow()).toBe("none");
   await page.setViewportSize(DESK);
-  await page.emulateMedia({ reducedMotion: "reduce" });
   expect(await snow()).toBe("none");
 });
 
