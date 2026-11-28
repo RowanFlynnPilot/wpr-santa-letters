@@ -3948,3 +3948,176 @@ body:has(.viewer) {
     }
   }
 }
+
+/* Santa's reply arrives sealed (Reply.tsx): the back of an envelope on the night, addressed to the child,
+   closed with a red wax seal that opens it. On screen only: on paper the reply is the sheet alone, opened
+   or not. */
+@media screen {
+  .reply-sheet[data-sealed] {
+    display: none;
+  }
+}
+
+.reply-envelope {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 30rem);
+  aspect-ratio: 3 / 2;
+  margin: clamp(1rem, 6vh, 4rem) auto 2rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: var(--sheet);
+  box-shadow: 0 1.5rem 3rem rgba(4, 14, 22, 0.55);
+  color: var(--ink);
+  rotate: -1.5deg;
+}
+
+.reply-envelope-back {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The flap: a shade darker than the envelope, hinged along its top edge. */
+.reply-envelope-flap {
+  fill: color-mix(in srgb, var(--sheet) 90%, var(--bark));
+  transform-box: fill-box;
+  transform-origin: top;
+}
+
+.reply-envelope-to {
+  position: absolute;
+  bottom: 9%;
+  display: grid;
+  justify-items: center;
+  font: 650 clamp(1.125rem, 5vw, 1.5rem) / 1.25 var(--display);
+  text-align: center;
+}
+
+.reply-envelope-to span + span {
+  color: var(--bark);
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+/* The seal sits on the flap's point. It is the one thing to press: large, and a thumb's size and more. */
+.reply-seal {
+  position: absolute;
+  top: 46.9%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: clamp(4rem, 17vw, 5rem);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d2463c, var(--airmail) 55%, var(--airmail-deep));
+  box-shadow:
+    inset 0 0 0 0.3rem rgba(255, 255, 255, 0.14),
+    0 0.3rem 0.6rem rgba(30, 38, 34, 0.4);
+  color: #fff;
+  font: italic 700 clamp(1.75rem, 8vw, 2.25rem) / 1 var(--display);
+  cursor: pointer;
+  translate: -50% -50%;
+}
+
+.reply-envelope-hint {
+  position: absolute;
+  top: calc(100% + 0.9rem);
+  width: 100%;
+  color: var(--moon);
+  font-size: 0.9375rem;
+  text-align: center;
+  rotate: 1.5deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* It asks to be pressed: a slow breath, until it is. */
+  .reply-seal {
+    animation: seal-breathe 2.4s ease-in-out infinite;
+  }
+
+  @keyframes seal-breathe {
+    50% {
+      scale: 1.07;
+    }
+  }
+
+  /* Opening: the seal breaks away, the flap lifts, and the envelope falls off the foot of the screen. */
+  .reply-envelope[data-opening] .reply-seal {
+    animation: seal-break 0.3s ease-in both;
+  }
+
+  .reply-envelope[data-opening] .reply-envelope-flap {
+    animation: flap-lift 0.45s ease-in 0.15s both;
+  }
+
+  .reply-envelope[data-opening] {
+    animation: envelope-away 0.4s ease-in 0.5s both;
+  }
+
+  .reply-envelope[data-opening] .reply-envelope-hint {
+    opacity: 0;
+  }
+
+  @keyframes seal-break {
+    to {
+      opacity: 0;
+      scale: 1.6;
+    }
+  }
+
+  @keyframes flap-lift {
+    to {
+      transform: scaleY(-0.55);
+    }
+  }
+
+  @keyframes envelope-away {
+    to {
+      opacity: 0;
+      translate: 0 3rem;
+    }
+  }
+
+  /* The sheet unfolds from its top edge, in three folds' worth, as a letter does. */
+  .reply-sheet[data-unfolding] {
+    transform-origin: top;
+    animation: reply-unfold 0.9s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+  }
+
+  @keyframes reply-unfold {
+    0% {
+      opacity: 0;
+      clip-path: inset(0 0 67% 0);
+      transform: perspective(60rem) rotateX(-28deg) translateY(-1rem);
+    }
+
+    25% {
+      opacity: 1;
+    }
+
+    55% {
+      clip-path: inset(0 0 33% 0);
+      transform: perspective(60rem) rotateX(-10deg);
+    }
+
+    100% {
+      clip-path: inset(0 0 0 0);
+      transform: none;
+    }
+  }
+}
+
+@media print {
+  .reply-envelope {
+    display: none;
+  }
+}

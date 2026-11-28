@@ -3,6 +3,14 @@
 // so it prints as one sheet. It speaks to the child by first name and town and promises nothing:
 // no gifts, no lists. A presenting sponsor's stamp sits in the corner, as on the mailbag's envelope: with
 // several, they take turns by letter, and the foot names them all.
+//
+// It arrives sealed (Nov. 28): an envelope addressed to the child, closed with a wax seal, which the child
+// taps to open; the flap lifts, the envelope falls away and the sheet unfolds. The seal is one button, and
+// that is all there is to it: the reply itself, how it prints and what it says are as they were. A reader
+// who asks for less motion gets the sheet at the tap, without the unfolding. Staff, who print replies for
+// mailed letters (from=staff), get the sheet straight away. And a sheet printed without opening it is
+// still the sheet: the envelope is the screen's alone.
+import { useEffect, useRef, useState } from "react";
 import { track } from "../analytics";
 import { Horizon, NightSky } from "../components/Night";
 import { Postmark } from "../components/Postmark";
@@ -50,18 +58,55 @@ function SantasReply({ letter, sponsors }: { letter: Letter; sponsors: Sponsor[]
     track("Santa Reply Printed", { from: LINKED_FROM, ...stampedBy(sponsor) });
     window.print();
   };
+  // Sealed, then opening (the envelope's flap lifts and it falls away), then open (the sheet unfolds).
+  const [seal, setSeal] = useState<"sealed" | "opening" | "open">(LINKED_FROM === "staff" ? "open" : "sealed");
+  const heading = useRef<HTMLHeadingElement>(null);
+  const unseal = () => setSeal(matchMedia("(prefers-reduced-motion: reduce)").matches ? "open" : "opening");
+  useEffect(() => {
+    if (seal !== "opening") return;
+    const timer = window.setTimeout(() => setSeal("open"), 900);
+    return () => window.clearTimeout(timer);
+  }, [seal]);
+  // Once it's open, a screen reader is told what it's looking at. (Not for staff, who came for the sheet.)
+  const wasSealed = useRef(seal === "sealed");
+  useEffect(() => {
+    if (seal === "open" && wasSealed.current) heading.current?.focus({ preventScroll: true });
+  }, [seal]);
   return (
     <main className="reply night">
       <NightSky />
       <div className="reply-inner">
-      <div className="reply-tools">
-        <button type="button" className="button button-airmail" onClick={print}>
-          Print Santa’s reply
-        </button>
-        <span>It fits on one sheet of letter paper.</span>
-      </div>
-      <article className="reply-sheet">
-        <h1 className="visually-hidden">Santa’s reply to {letter.first_name}</h1>
+      {/* The page's heading, sealed or open: what a screen reader is told when the seal is broken. */}
+      <h1 ref={heading} tabIndex={-1} className="visually-hidden">
+        Santa’s reply to {letter.first_name}
+      </h1>
+      {seal !== "open" && (
+        <div className="reply-envelope" data-opening={seal === "opening" || undefined}>
+          <svg className="reply-envelope-back" viewBox="0 0 480 320" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path className="reply-envelope-folds" d="M0 320 204 124M480 320 276 124" />
+            <path className="reply-envelope-flap" d="M0 0 240 150 480 0Z" />
+          </svg>
+          <p className="reply-envelope-to">
+            <span>For {letter.first_name}</span>
+            {letter.town && <span>{letter.town}</span>}
+          </p>
+          <button type="button" className="reply-seal" onClick={unseal} disabled={seal === "opening"} aria-label={`Open Santa’s reply to ${letter.first_name}`}>
+            <span aria-hidden="true">S</span>
+          </button>
+          <p className="reply-envelope-hint" aria-hidden="true">
+            From the North Pole. Tap the seal to open it.
+          </p>
+        </div>
+      )}
+      {seal === "open" && (
+        <div className="reply-tools">
+          <button type="button" className="button button-airmail" onClick={print}>
+            Print Santa’s reply
+          </button>
+          <span>It fits on one sheet of letter paper.</span>
+        </div>
+      )}
+      <article className="reply-sheet" data-sealed={seal !== "open" || undefined} data-unfolding={(seal === "open" && wasSealed.current) || undefined}>
         <header className="reply-head">
           <div>
             <p className="reply-from">Santa Claus</p>
