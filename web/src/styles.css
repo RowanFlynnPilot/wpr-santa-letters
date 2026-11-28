@@ -1411,17 +1411,71 @@ textarea.ruled {
 }
 
 .share {
-  display: grid;
-  justify-items: start;
-  gap: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   padding-bottom: 0.5rem;
   font-size: 0.875rem;
-  font-weight: 600;
 }
 
 .share-note {
+  flex-basis: 100%;
   color: var(--bark);
-  font-weight: 400;
+}
+
+/* A letter's controls (ShareButton.tsx): a quiet row of small pills, each a glyph and a word or two. On
+   every kind of paper the outline is the ink's own, thinned, so it never fights the ruled lines. */
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 32px;
+  padding: 0.2rem 0.75rem 0.2rem 0.6rem;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sheet) 82%, transparent);
+  color: var(--teal-deep);
+  font: 600 0.8125rem/1.2 var(--body);
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: border-color 0.2s;
+}
+
+/* 32px to the eye, 44px to a thumb. */
+.chip::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
+}
+
+.chip:disabled {
+  color: var(--bark);
+  cursor: progress;
+}
+
+.chip-icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    border-color: currentColor;
+  }
+}
+
+.chip:active {
+  translate: 0 1px;
 }
 
 .find {

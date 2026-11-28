@@ -25,7 +25,9 @@ const mailer = createMailer({
   replyTo: optionalEnv("EMAIL_REPLY_TO") ?? "editor@wausaupilotandreview.com",
   url: optionalEnv("RESEND_API_URL") ?? undefined,
 });
-// The WordPress Letters to Santa page; embed.js opens the mailbag at #letter=<id>.
+// The WordPress Letters to Santa page. The email links to the letter's share page on it (the Cloudflare
+// Worker, docs/cloudflare): it sends a person on to the mailbag at #letter=<id>&from=email, and a family
+// that pastes the link into Facebook or a text gets a preview of their child's letter.
 const MAILBAG = optionalEnv("MAILBAG_PAGE_URL") ?? "https://wausaupilotandreview.com/letters-to-santa/";
 // The app itself, where Santa's reply opens on its own page so it prints as one sheet.
 const APP = optionalEnv("APP_URL") ?? "https://rowanflynnpilot.github.io/wpr-santa-letters/";
@@ -50,7 +52,7 @@ Deno.serve(async (req) => {
     if (!notice) return json({ sent: false, reason: "Not posted, no email, or the family was already told." }, 200);
 
     const email = postedEmail(notice as PostedNotice, letterId, {
-      letter: `${MAILBAG}#letter=${letterId}&from=email`,
+      letter: `${MAILBAG}letter/${letterId}?from=email`,
       reply: `${APP}?letter=${letterId}&from=email#/reply`,
     });
     const result = await mailer(email);

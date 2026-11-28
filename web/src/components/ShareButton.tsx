@@ -21,6 +21,18 @@ const AT_A_DESK = typeof matchMedia === "function" && !matchMedia("(pointer: coa
 // link copied (allow="clipboard-write"). Families send it to grandparents; each share brings readers.
 // Or as a picture to post (picture.ts): on a phone it goes to the share sheet, elsewhere it's saved.
 // At a computer there is also Share on Facebook, which opens Facebook's own box with the letter's link in it.
+// The controls are small pills with a glyph each, not a column of underlined links: the letter is the
+// card, and these are its buttons. Each is 32px tall to the eye and a thumb (44px) to a tap (styles.css).
+const Icon = ({ path }: { path: string }) => (
+  <svg className="chip-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <path d={path} />
+  </svg>
+);
+// The share sheet's own glyph (a box with an arrow out of it), Facebook's letter, and a picture frame.
+const SHARE = "M8 10V1.75M5 4.5l3-3 3 3M4 7.5H3.25v7h9.5v-7H12";
+const FACEBOOK = "M9.25 14.5V8.75h2l.3-2.25h-2.3V5.1c0-.7.3-1.1 1.15-1.1h1.2V2.05a9 9 0 0 0-1.7-.1c-1.75 0-2.9 1.05-2.9 2.95V6.5h-2v2.25h2v5.75";
+const PICTURE = "M2.25 3.25h11.5v9.5H2.25zM2.5 10.5l3-3 2.5 2.5 2-2 3.5 3.5M10.5 6.25h.01";
+
 export function ShareButton({ letter }: { letter: Letter }) {
   const [note, setNote] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
@@ -79,22 +91,26 @@ export function ShareButton({ letter }: { letter: Letter }) {
 
   return (
     <div className="share">
-      <button type="button" className="link-button" onClick={share}>
-        Share {possessive(letter.first_name)} letter
+      <button type="button" className="chip" onClick={share} aria-label={`Share ${possessive(letter.first_name)} letter`}>
+        <Icon path={SHARE} />
+        Share
       </button>
       {AT_A_DESK && (
         <a
-          className="link-button"
+          className="chip"
+          aria-label="Share on Facebook"
           href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
           target="_blank"
           rel="noopener"
           onClick={() => track("Letter Shared", { method: "facebook" })}
         >
-          Share on Facebook
+          <Icon path={FACEBOOK} />
+          Facebook
         </a>
       )}
-      <button type="button" className="link-button" onClick={picture} disabled={drawing}>
-        {drawing ? "Making the picture…" : "Save it as a picture"}
+      <button type="button" className="chip" onClick={picture} disabled={drawing}>
+        <Icon path={PICTURE} />
+        {drawing ? "Making the picture…" : "Save picture"}
       </button>
       {note && (
         <p className="share-note" role="status">

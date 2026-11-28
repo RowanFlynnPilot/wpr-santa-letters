@@ -137,6 +137,7 @@ test("Share hands out the letter's share page, and at a computer Facebook is off
   expect(await page.evaluate(() => (window as unknown as { shared?: ShareData }).shared)).toEqual({ title: "Emma’s letter to Santa", url: link });
 
   const facebook = emma.getByRole("link", { name: "Share on Facebook" });
+  await expect(facebook).toHaveText("Facebook");
   await expect(facebook).toHaveAttribute("href", `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`);
   await expect(facebook).toHaveAttribute("target", "_blank");
   // Counted by how it was shared, never which letter. (The click is stopped here: the test doesn't visit Facebook.)
@@ -149,10 +150,10 @@ test("Share hands out the letter's share page, and at a computer Facebook is off
   await expect(page.locator(".strip-letters a").first()).toHaveAttribute("href", /\/letters-to-santa\/#letter=.*&from=front-page$/);
 });
 
-test("Save it as a picture saves a JPEG of the letter", async ({ page }) => {
+test("Save picture saves a JPEG of the letter", async ({ page }) => {
   await open(page, "#/mailbag", DESK);
   const download = page.waitForEvent("download");
-  await page.locator(".featured-letter").getByRole("button", { name: "Save it as a picture" }).click();
+  await page.locator(".featured-letter").getByRole("button", { name: "Save picture" }).click();
   const saved = await download;
   expect(saved.suggestedFilename()).toBe("letter-to-santa.jpg");
   const { size } = await import("node:fs").then((fs) => saved.path().then((path) => fs.statSync(path)));
@@ -860,7 +861,7 @@ test("a saved picture is made with the sponsor’s logo, whatever its shape", as
     // The picture reads the logo back itself (a fetch), apart from the stamp already on the page.
     const fetched = page.waitForResponse((response) => response.url().endsWith(`sponsor-logos/${sponsor.logo_path}`) && response.request().resourceType() === "fetch");
     const download = page.waitForEvent("download");
-    await page.locator(".featured-letter").getByRole("button", { name: "Save it as a picture" }).click();
+    await page.locator(".featured-letter").getByRole("button", { name: "Save picture" }).click();
     expect((await fetched).ok()).toBe(true);
     const saved = await download;
     await saved.saveAs(testInfo.outputPath(`picture-${sponsor.logo_path}.jpg`));
@@ -1034,7 +1035,7 @@ test("a saved picture and a printed reply count whose stamp they carried, and ne
 
   await open(page, "#/mailbag", DESK, { sponsors: FOUR_SPONSORS });
   const download = page.waitForEvent("download");
-  await page.locator(".featured-letter").getByRole("button", { name: "Save it as a picture" }).click();
+  await page.locator(".featured-letter").getByRole("button", { name: "Save picture" }).click();
   await download;
   await expect(page.locator(".featured-letter .share-note")).toHaveText("Picture saved. It’s ready to post.");
   const shared = await counted(page, "Letter Shared");
