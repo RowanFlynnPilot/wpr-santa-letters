@@ -49,6 +49,18 @@ async function open(
   await page.setViewportSize(size);
   await mockBackend(page, options);
   await page.goto(path);
+  // Santa's reply arrives sealed: these tests are of the reply, so the seal is opened on the way in. (The
+  // envelope has a test of its own, which goes to the page itself.)
+  if (path.includes("#/reply")) {
+    // Past "Opening Santa's reply…": the envelope, the open sheet, or a line saying why there's neither.
+    await page.locator(".reply-seal, .reply-tools, .status").filter({ hasNotText: "Opening Santa’s reply" }).first().waitFor();
+    const seal = page.locator(".reply-seal");
+    if (await seal.count()) {
+      // The seal breathes until it's pressed, so it is never "still" for a click to wait on.
+      await seal.click({ force: true });
+      await page.locator(".reply-tools").waitFor();
+    }
+  }
 }
 
 const card = (page: Page, firstName: string) =>
@@ -369,6 +381,7 @@ test("Santa’s longest possible reply still prints on one sheet", async ({ page
   await page.setViewportSize({ width: 700, height: 1100 });
   await mockBackend(page, { sponsors: FOUR_SPONSORS, letters: [{ id, ...child, photo_id: null, created_at: "2026-12-05T15:00:00Z", body: "Dear Santa" }] });
   await page.goto(`?letter=${id}&from=email#/reply`);
+  await page.locator(".reply-seal").click({ force: true });
   await expect(page.getByText("Dear Maximiliana-Josephine-Annabelle,")).toBeVisible();
   await expect(page.locator(".reply-sheet")).toContainText("Thank you to the grown-up who helped you write it, too.");
   await settled(page);
@@ -416,6 +429,56 @@ test("Santa’s letter paper", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Print Santa’s letter paper" })).toBeHidden();
   await expect(sheet.locator(".paper-dear")).toBeVisible();
   if (test.info().project.name === "chromium") expect(await printedPages(page)).toBe(1);
+});
+
+test("Santa’s reply arrives sealed: an envelope for the child, and a seal that opens it", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 1100 });
+  await mockBackend(page);
+  await page.goto(`?letter=${LETTERS[0].id}&from=email#/reply`);
+  const envelope = page.locator(".reply-envelope");
+  await expect(envelope.locator(".reply-envelope-to")).toHaveText("For EmmaWausau");
+  const seal = page.getByRole("button", { name: "Open Santa’s reply to Emma" });
+  await expect(seal).toBeVisible();
+  // Until it's opened there is the envelope and nothing else: no sheet, no print button.
+  await expect(page.locator(".reply-sheet")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Print Santa’s reply" })).toHaveCount(0);
+  expect((await seal.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+  // But on paper it is the sheet, opened or not: the envelope is the screen's alone.
+  await page.emulateMedia({ media: "print" });
+  await expect(page.locator(".reply-sheet")).toBeVisible();
+  await expect(envelope).toBeHidden();
+  await page.emulateMedia({ media: "screen" });
+
+  // The seal opens it: the envelope goes, the sheet is there, and a screen reader is told what it is.
+  await seal.click({ force: true });
+  await expect(page.getByText("Dear Emma,")).toBeVisible();
+  await expect(envelope).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Print Santa’s reply" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Santa’s reply to Emma" })).toBeFocused();
+  expect(await page.locator(".reply-sheet").evaluate((sheet) => getComputedStyle(sheet).animationName)).toBe("reply-unfold");
+
+  // On a phone the envelope fits, and for less motion the sheet is there at the tap, without unfolding.
+  await page.goto("about:blank");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto(`?letter=${LETTERS[1].id}&from=email#/reply`);
+  const small = page.getByRole("button", { name: "Open Santa’s reply to Liam" });
+  await expect(small).toBeVisible();
+  expect(await scrollsSideways(page)).toBe(false);
+  await small.click();
+  await expect(page.getByText("Dear Liam,")).toBeVisible();
+  expect(await page.locator(".reply-sheet").evaluate((sheet) => getComputedStyle(sheet).animationName)).toBe("none");
+});
+
+test("staff, who print replies for mailed letters, get Santa’s reply already open", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 1100 });
+  await mockBackend(page);
+  await page.goto(`?letter=${LETTERS[0].id}&from=staff#/reply`);
+  await expect(page.getByText("Dear Emma,")).toBeVisible();
+  await expect(page.locator(".reply-envelope")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Print Santa’s reply" })).toBeVisible();
 });
 
 // The lobby screen ------------------------------------------------------------------------------
