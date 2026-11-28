@@ -1259,6 +1259,7 @@ textarea.ruled {
 }
 
 .letter-photo img {
+  display: block;
   width: 100%;
   border: 1px solid var(--line);
   background: var(--paper);
@@ -1266,12 +1267,152 @@ textarea.ruled {
   object-position: top;
 }
 
-.letter-photo[data-cropped] img {
+/* The photo is the button that opens the letter (LetterViewer); a small glyph in its corner says so. */
+.letter-photo-open {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
   cursor: zoom-in;
 }
 
-.letter-photo[data-open] img {
-  cursor: zoom-out;
+.letter-photo-hint {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sheet) 90%, transparent);
+  color: var(--teal-deep);
+  box-shadow: 0 1px 4px rgba(30, 38, 34, 0.25);
+}
+
+/* A letter, opened (LetterViewer.tsx): over the rest of the mailbag, on the night's own blue. The veil
+   covers the whole page; the sheet is set at the place of the card that was opened. */
+.viewer {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  min-height: 100%;
+  background: color-mix(in srgb, var(--night) 86%, transparent);
+}
+
+/* Where the page scrolls to when a letter opens: just above the sheet. */
+.viewer-mark {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.viewer-sheet {
+  position: absolute;
+  right: 0;
+  left: 0;
+  display: grid;
+  gap: 0.9rem;
+  width: min(46rem, 100% - 1.5rem);
+  margin-inline: auto;
+  padding: 1rem clamp(0.75rem, 3vw, 1.5rem) 1.25rem;
+  border-radius: 0.5rem;
+  background: var(--paper);
+  box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .viewer {
+    animation: viewer-veil 0.25s ease-out both;
+  }
+
+  .viewer-sheet {
+    animation: viewer-open 0.3s ease-out both;
+  }
+
+  @keyframes viewer-veil {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes viewer-open {
+    from {
+      opacity: 0;
+      translate: 0 0.75rem;
+    }
+  }
+}
+
+.viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.viewer-head h2 {
+  font: 700 clamp(1.25rem, 4vw, 1.625rem) / 1.2 var(--display);
+}
+
+/* The child's whole page, as large as the sheet is wide. */
+.viewer-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.viewer-paper {
+  --row: 2.5rem;
+  display: block;
+  padding: 1rem 1.25rem 1rem 0;
+}
+
+.viewer-words {
+  min-height: calc(var(--row) * 3);
+  font-size: clamp(1.25rem, 4.2vw, 1.5rem);
+}
+
+.viewer-words[data-writing] {
+  cursor: pointer;
+}
+
+/* What's still to be written keeps its room, unseen, so nothing moves as the words arrive. */
+.viewer-rest {
+  visibility: hidden;
+}
+
+/* The pen's place: a thin stroke that blinks where the next letter goes. */
+.viewer-pen {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin: 0 1px -0.15em;
+  background: var(--airmail);
+  animation: viewer-pen 0.9s steps(2, jump-none) infinite;
+}
+
+@keyframes viewer-pen {
+  50% {
+    opacity: 0;
+  }
+}
+
+.viewer-skip {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+@media print {
+  .viewer {
+    display: none;
+  }
 }
 
 /* Under the words: Share on the left, and in the corner the day the letter reached the mailbag, in the
@@ -3587,5 +3728,42 @@ body:has(main.strip) {
     flex: 0 1 auto;
     width: 100%;
     max-height: calc(var(--u) * 30);
+  }
+}
+
+/* Snow behind the page itself (Nov. 28), where the mailbag and the form are read: the night's flakes, in
+   a blue-grey that shows on the page's cream, sliding down by exactly one tile and starting again. Letters
+   and cards are opaque, so it falls in the spaces between them. Only at a desk's width: there the layer is
+   a few thousand pixels tall, and on a phone it would be three times that, more than a phone's browser
+   moves smoothly. And only for a reader who hasn't asked for less motion: standing still on cream, a
+   flake reads as a speck on the page. The layer starts one tile above the top of the page, where nothing
+   can scroll to, and stops one tile short of the foot, so the slide never lengthens the page. */
+body:has(main.mailbag, main.write),
+body:has(.viewer) {
+  position: relative;
+}
+
+@media (min-width: 62rem) and (prefers-reduced-motion: no-preference) {
+  body:has(main.mailbag, main.write)::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: -18.75rem 0 18.75rem;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 1.5rem 2rem, #8fa9ba 0 1.5px, transparent 2px),
+      radial-gradient(circle at 9rem 6rem, #8fa9ba 0 2px, transparent 2.5px),
+      radial-gradient(circle at 15.5rem 11.5rem, #8fa9ba 0 1.5px, transparent 2px),
+      radial-gradient(circle at 5rem 15rem, #8fa9ba 0 2.5px, transparent 3px),
+      radial-gradient(circle at 12.5rem 17.25rem, #8fa9ba 0 1.5px, transparent 2px);
+    background-size: 18.75rem 18.75rem;
+    opacity: 0.55;
+    animation: snowfall 46s linear infinite;
+  }
+}
+
+@media print {
+  body::before {
+    display: none;
   }
 }

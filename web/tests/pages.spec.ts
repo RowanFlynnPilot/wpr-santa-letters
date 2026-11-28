@@ -96,19 +96,89 @@ test("mailbag without a pick is the letters alone", async ({ page }) => {
   await expect(page.locator(".featured-letter")).toHaveCount(0);
 });
 
-test("a tall photo opens to its whole height and closes again", async ({ page }) => {
+test("a letter opens over the page: the child's whole page, and the words written out as a reader watches", async ({ page }) => {
   await open(page, "#/mailbag", DESK, { pick: false });
   const ava = card(page, "Ava");
-  const photo = ava.locator(".letter-photo img");
-  await expect(photo).toBeVisible();
+  await expect(ava.locator(".letter-photo img")).toBeVisible();
   await settled(page);
-  const closed = (await photo.boundingBox())!.height;
-  await ava.getByRole("button", { name: "See all of Ava’s letter" }).click();
-  await expect(ava.getByRole("button", { name: "Show less" })).toHaveAttribute("aria-expanded", "true");
-  await expect.poll(async () => (await photo.boundingBox())!.height).toBeGreaterThan(closed * 1.1);
-  // The drawing fits whole, so it has no button.
-  await expect(card(page, "Mai").locator(".letter-photo img")).toBeVisible();
-  await expect(card(page, "Mai").locator(".letter-photo button")).toHaveCount(0);
+  // The photo is the button; the old "See all of Ava's letter" link, which only lengthened it in place, is gone.
+  await expect(page.getByText("See all of")).toHaveCount(0);
+  await ava.getByRole("button", { name: "Open Ava’s letter, as written" }).click();
+  const sheet = page.getByRole("dialog", { name: "Ava’s letter to Santa" });
+  await expect(sheet.getByRole("heading", { level: 2 })).toHaveText("Ava, 9, of Schofield");
+  // The whole page, in its own shape, not the top of it.
+  const photo = sheet.locator(".viewer-photo");
+  await expect(photo).toBeVisible();
+  await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  expect(await photo.evaluate((img: HTMLImageElement) => Math.abs(img.clientWidth / img.clientHeight - img.naturalWidth / img.naturalHeight))).toBeLessThan(0.02);
+  // A screen reader has the whole letter from the start; on the page it is written out, and nothing moves
+  // as it arrives, since what's still to come keeps its room.
+  await expect(sheet.locator(".visually-hidden")).toContainText("I will leave you cookies and a carrot for Rudolph.");
+  const words = sheet.locator(".viewer-words");
+  const height = (await words.boundingBox())!.height;
+  await expect(sheet.getByRole("button", { name: "Show the whole letter" })).toBeVisible();
+  await expect.poll(() => words.evaluate((el) => [...el.querySelectorAll(".viewer-rest")].every((rest) => rest.textContent === "")), { timeout: 9000 }).toBe(true);
+  await expect(sheet.locator(".viewer-pen")).toHaveCount(0);
+  await expect(sheet.getByRole("button", { name: "Show the whole letter" })).toHaveCount(0);
+  expect((await words.boundingBox())!.height).toBe(height);
+  // It opened where the reader was: the sheet is at the top of the screen, not the middle of a tall page.
+  await expect.poll(async () => (await sheet.boundingBox())!.y).toBeLessThan(120);
+  expect((await sheet.boundingBox())!.y).toBeGreaterThanOrEqual(0);
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+
+  // Escape closes it and hands the keyboard back to the photo that opened it.
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+  await expect(ava.getByRole("button", { name: "Open Ava’s letter, as written" })).toBeFocused();
+
+  // A letter with no photo opens from its Open button; a click on the words, or the link, shows them all.
+  const emma = card(page, "Emma");
+  await emma.getByRole("button", { name: "Open Emma’s letter" }).click();
+  const second = page.getByRole("dialog", { name: "Emma’s letter to Santa" });
+  await second.getByRole("button", { name: "Show the whole letter" }).click();
+  await expect(second.locator(".viewer-rest").first()).toHaveText("");
+  await expect(second.locator(".viewer-photo")).toHaveCount(0);
+  await second.getByRole("button", { name: "Close" }).click();
+  await expect(second).toHaveCount(0);
+  // The page is as long as it was: an opened letter leaves nothing behind.
+  expect(await page.evaluate(() => document.documentElement.style.minHeight)).toBe("");
+});
+
+test("an opened letter on a phone fits the screen, and for less motion its words are there at once", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await open(page, "#/mailbag", PHONE, { pick: false });
+  await card(page, "Mason").getByRole("button", { name: "Open Mason’s letter" }).click();
+  const sheet = page.getByRole("dialog", { name: "Mason’s letter to Santa" });
+  await expect(sheet.locator(".viewer-words")).toContainText("he only chewed one shoe this year.");
+  await expect(sheet.getByRole("button", { name: "Show the whole letter" })).toHaveCount(0);
+  expect(await sheet.locator(".viewer-rest").evaluateAll((rest) => rest.every((r) => r.textContent === ""))).toBe(true);
+  const box = (await sheet.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(PHONE.width);
+  expect(await scrollsSideways(page)).toBe(false);
+  await expectAccessible(page);
+  // The veil outside the sheet closes it too.
+  await page.locator(".viewer").click({ position: { x: 4, y: 4 } });
+  await expect(sheet).toHaveCount(0);
+});
+
+test("snow falls behind the page at a desk, and not on a phone or for a reader who asks for less motion", async ({ page }) => {
+  const snow = () => page.evaluate(() => getComputedStyle(document.body, "::before").animationName);
+  const pageLength = () => page.evaluate(() => [document.documentElement.scrollHeight, Math.ceil(document.body.getBoundingClientRect().bottom + scrollY)]);
+  await open(page, "#/mailbag", DESK);
+  await expect(page.locator(".letter-wall .letter").first()).toBeVisible();
+  expect(await snow()).toBe("snowfall");
+  // It never lengthens the page or lets it scroll sideways.
+  const [scroll, body] = await pageLength();
+  expect(scroll).toBeLessThanOrEqual(body + 1);
+  expect(await scrollsSideways(page)).toBe(false);
+
+  await page.setViewportSize(PHONE);
+  expect(await snow()).toBe("none");
+  await page.setViewportSize(DESK);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await snow()).toBe("none");
 });
 
 test("a link to one letter opens it first and leaves no trace of which letter in the address", async ({ page }) => {
