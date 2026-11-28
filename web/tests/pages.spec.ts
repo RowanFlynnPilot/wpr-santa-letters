@@ -97,6 +97,8 @@ test("mailbag without a pick is the letters alone", async ({ page }) => {
 });
 
 test("a letter opens over the page: the child's whole page, and the words written out as a reader watches", async ({ page }) => {
+  // It watches a letter being written, which takes its own few seconds: give a busy machine room.
+  test.setTimeout(60_000);
   await open(page, "#/mailbag", DESK, { pick: false });
   const ava = card(page, "Ava");
   await expect(ava.locator(".letter-photo img")).toBeVisible();
