@@ -3872,3 +3872,79 @@ body:has(.viewer) {
 .viewer-skip {
   min-height: 1.5rem;
 }
+
+/* Delivery day's send-off (Nov. 28): as the page opens, the sleigh makes the whole trip, from Wausau to
+   the North Pole, lifting off the track and coming down beside the star; the line fills
+   in behind it; the star flares as it lands; and the envelope's Delivered stamp comes down. Once a visit,
+   about five seconds, on the mailbag from delivery day on. Every one of them ends where the page already
+   was, so a reader who asks for less motion, and every screenshot, has the page as it stood before. */
+@media (prefers-reduced-motion: no-preference) {
+  .route[data-phase="delivered"] .route-sleigh {
+    animation: sleigh-home 3.6s cubic-bezier(0.5, 0.05, 0.25, 1) 0.5s both;
+  }
+
+  .route[data-phase="delivered"] .route-done {
+    animation: route-home 3.6s cubic-bezier(0.5, 0.05, 0.25, 1) 0.5s both;
+  }
+
+  .route[data-phase="delivered"] .route-star {
+    animation: star-home 0.9s ease-out 4s both;
+  }
+
+  .night:has(.route[data-phase="delivered"]) .envelope-delivered {
+    animation: stamp-home 0.3s ease-in 4.5s both;
+  }
+
+  @keyframes sleigh-home {
+    0% {
+      left: 0.75rem;
+      translate: -50% 0;
+      rotate: 0deg;
+    }
+
+    45% {
+      translate: -50% -0.85rem;
+      rotate: -7deg;
+    }
+
+    85% {
+      translate: -50% -0.3rem;
+      rotate: 4deg;
+    }
+
+    100% {
+      translate: -50% 0;
+      rotate: 0deg;
+    }
+  }
+
+  @keyframes route-home {
+    from {
+      width: 0%;
+    }
+  }
+
+  @keyframes star-home {
+    0% {
+      scale: 1;
+      filter: drop-shadow(0 0 0 rgba(244, 236, 210, 0));
+    }
+
+    35% {
+      scale: 1.9;
+      filter: drop-shadow(0 0 0.6rem rgba(244, 236, 210, 0.95));
+    }
+
+    100% {
+      scale: 1;
+      filter: drop-shadow(0 0 0 rgba(244, 236, 210, 0));
+    }
+  }
+
+  @keyframes stamp-home {
+    from {
+      opacity: 0;
+      scale: 2.2;
+    }
+  }
+}
