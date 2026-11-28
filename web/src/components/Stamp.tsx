@@ -6,8 +6,10 @@ import { sponsorHref, type Placement } from "../sales";
 import { logoUrl } from "../storage";
 import type { Sponsor } from "../types";
 
-// A logo at least twice as wide as it is tall: a wordmark, which an upright stamp can only show small.
-const WORDMARK = 2;
+// A logo this much wider than it is tall is a wordmark, which an upright stamp can only show small. It was
+// 2 until the first real logos went up: Jones & Jones's, at 1.9 and drawn in thin pale lines, was a faint
+// sliver beside three bolder ones with nothing under it to say whose it was.
+const WORDMARK = 1.75;
 
 // A stamp's face: the sponsor's logo, or until the logo arrives its name set in type, linked to its site.
 // `named` is for the small stamps that share a corner: there a wordmark is a sliver, so the sponsor's name
